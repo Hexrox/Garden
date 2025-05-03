@@ -28,7 +28,7 @@ Prosta aplikacja internetowa do zarządzania poletkami i grządkami, stworzona z
 ### 1. Klonowanie repozytorium
 
 ```bash
-git clone https://github.com/Hexrox/Garden/garden-app.git
+git clone https://github.com/Hexrox/Garden.git
 cd garden-app
 ```
 
