@@ -58,6 +58,24 @@ check_sshpass() {
     fi
 }
 
+# Wykrywanie trybu deployment (fresh install vs update)
+detect_deployment_mode() {
+    print_header "WYBÓR TRYBU DEPLOYMENT"
+
+    echo "1) Nowa instalacja (fresh install)"
+    echo "2) Aktualizacja istniejącej instalacji (update)"
+    echo ""
+    read -p "Wybierz tryb (1/2): " DEPLOY_MODE
+
+    if [[ "$DEPLOY_MODE" == "2" ]]; then
+        DEPLOYMENT_MODE="update"
+        print_info "Tryb: AKTUALIZACJA"
+    else
+        DEPLOYMENT_MODE="fresh"
+        print_info "Tryb: NOWA INSTALACJA"
+    fi
+}
+
 # Zbieranie informacji o serwerze
 collect_server_info() {
     print_header "KONFIGURACJA SERWERA VPS"
@@ -72,35 +90,44 @@ collect_server_info() {
     read -p "Port SSH (domyślnie: 22): " VPS_PORT
     VPS_PORT=${VPS_PORT:-22}
 
-    read -p "Domena dla aplikacji (opcjonalnie, naciśnij Enter aby pominąć): " APP_DOMAIN
+    if [[ "$DEPLOYMENT_MODE" == "fresh" ]]; then
+        read -p "Domena dla aplikacji (opcjonalnie, naciśnij Enter aby pominąć): " APP_DOMAIN
 
-    read -p "Nazwa folderu aplikacji (domyślnie: garden-app): " APP_FOLDER
-    APP_FOLDER=${APP_FOLDER:-garden-app}
+        read -p "Nazwa folderu aplikacji (domyślnie: garden-app): " APP_FOLDER
+        APP_FOLDER=${APP_FOLDER:-garden-app}
 
-    read -p "Port backendu (domyślnie: 3001): " BACKEND_PORT
-    BACKEND_PORT=${BACKEND_PORT:-3001}
+        read -p "Port backendu (domyślnie: 3001): " BACKEND_PORT
+        BACKEND_PORT=${BACKEND_PORT:-3001}
 
-    read -p "Skonfigurować SSL z Let's Encrypt? (t/n, domyślnie: n): " SETUP_SSL
-    SETUP_SSL=${SETUP_SSL:-n}
+        read -p "Skonfigurować SSL z Let's Encrypt? (t/n, domyślnie: n): " SETUP_SSL
+        SETUP_SSL=${SETUP_SSL:-n}
 
-    if [[ "$SETUP_SSL" == "t" || "$SETUP_SSL" == "T" ]]; then
-        if [[ -z "$APP_DOMAIN" ]]; then
-            print_error "SSL wymaga domeny. Podaj domenę:"
-            read -p "Domena: " APP_DOMAIN
+        if [[ "$SETUP_SSL" == "t" || "$SETUP_SSL" == "T" ]]; then
+            if [[ -z "$APP_DOMAIN" ]]; then
+                print_error "SSL wymaga domeny. Podaj domenę:"
+                read -p "Domena: " APP_DOMAIN
+            fi
+            read -p "Email dla certyfikatu SSL: " SSL_EMAIL
         fi
-        read -p "Email dla certyfikatu SSL: " SSL_EMAIL
+    else
+        # Update mode - ask for existing installation folder
+        read -p "Nazwa folderu istniejącej aplikacji (domyślnie: garden-app): " APP_FOLDER
+        APP_FOLDER=${APP_FOLDER:-garden-app}
     fi
 
     echo ""
     print_info "Podsumowanie konfiguracji:"
+    echo "  Tryb: $DEPLOYMENT_MODE"
     echo "  Serwer: $VPS_USER@$VPS_HOST:$VPS_PORT"
     echo "  Folder: /var/www/$APP_FOLDER"
-    echo "  Domena: ${APP_DOMAIN:-brak (używa IP)}"
-    echo "  Backend port: $BACKEND_PORT"
-    echo "  SSL: $SETUP_SSL"
+    if [[ "$DEPLOYMENT_MODE" == "fresh" ]]; then
+        echo "  Domena: ${APP_DOMAIN:-brak (używa IP)}"
+        echo "  Backend port: $BACKEND_PORT"
+        echo "  SSL: $SETUP_SSL"
+    fi
     echo ""
 
-    read -p "Czy kontynuować deployment? (t/n): " CONFIRM
+    read -p "Czy kontynuować? (t/n): " CONFIRM
     if [[ "$CONFIRM" != "t" && "$CONFIRM" != "T" ]]; then
         print_error "Deployment anulowany"
         exit 0
@@ -128,6 +155,121 @@ ssh_exec() {
 # Kopiowanie plików na serwer
 scp_copy() {
     sshpass -p "$VPS_PASSWORD" scp -o StrictHostKeyChecking=no -P "$VPS_PORT" -r "$1" "$VPS_USER@$VPS_HOST:$2"
+}
+
+# Sprawdzenie czy aplikacja już istnieje
+check_existing_installation() {
+    if [[ "$DEPLOYMENT_MODE" != "update" ]]; then
+        return
+    fi
+
+    print_header "SPRAWDZANIE ISTNIEJĄCEJ INSTALACJI"
+
+    if ssh_exec "test -d /var/www/$APP_FOLDER/garden-app"; then
+        print_success "Znaleziono instalację w /var/www/$APP_FOLDER"
+
+        # Odczytaj konfigurację z istniejącego .env
+        if ssh_exec "test -f /var/www/$APP_FOLDER/garden-app/backend/.env"; then
+            BACKEND_PORT=$(ssh_exec "grep '^PORT=' /var/www/$APP_FOLDER/garden-app/backend/.env | cut -d'=' -f2" || echo "3001")
+            print_info "Wykryty port backendu: $BACKEND_PORT"
+        else
+            print_warning "Nie znaleziono pliku .env, używam domyślnego portu 3001"
+            BACKEND_PORT=3001
+        fi
+
+        # Sprawdź konfigurację nginx
+        CONFIG_NAME="garden-app-${APP_FOLDER}"
+        if ssh_exec "test -f /etc/nginx/sites-available/$CONFIG_NAME"; then
+            SERVER_NAME=$(ssh_exec "grep 'server_name' /etc/nginx/sites-available/$CONFIG_NAME | awk '{print \$2}' | sed 's/;//'" || echo "")
+            if [[ -n "$SERVER_NAME" ]]; then
+                APP_DOMAIN="$SERVER_NAME"
+                print_info "Wykryta domena: $APP_DOMAIN"
+            fi
+        fi
+    else
+        print_error "Nie znaleziono instalacji w /var/www/$APP_FOLDER"
+        print_error "Użyj trybu 'Nowa instalacja' zamiast 'Aktualizacja'"
+        exit 1
+    fi
+}
+
+# Backup bazy danych przed aktualizacją
+backup_database() {
+    if [[ "$DEPLOYMENT_MODE" != "update" ]]; then
+        return
+    fi
+
+    print_header "BACKUP BAZY DANYCH"
+
+    DB_PATH="/var/www/$APP_FOLDER/garden-app/backend/garden.db"
+
+    if ssh_exec "test -f $DB_PATH"; then
+        BACKUP_NAME="garden-db-backup-$(date +%Y%m%d-%H%M%S).tar.gz"
+        print_info "Tworzenie backupu: $BACKUP_NAME"
+
+        ssh_exec "mkdir -p /var/www/$APP_FOLDER/backups"
+        ssh_exec "tar -czf /var/www/$APP_FOLDER/backups/$BACKUP_NAME -C /var/www/$APP_FOLDER/garden-app/backend garden.db uploads/"
+
+        print_success "Backup utworzony: /var/www/$APP_FOLDER/backups/$BACKUP_NAME"
+        print_info "W razie problemów przywróć komendą:"
+        echo "  tar -xzf /var/www/$APP_FOLDER/backups/$BACKUP_NAME -C /var/www/$APP_FOLDER/garden-app/backend"
+    else
+        print_warning "Nie znaleziono bazy danych do backupu"
+    fi
+}
+
+# Aktualizacja aplikacji (zamiast pełnej instalacji)
+update_application() {
+    if [[ "$DEPLOYMENT_MODE" != "update" ]]; then
+        return
+    fi
+
+    print_header "AKTUALIZACJA APLIKACJI"
+
+    # Zatrzymaj backend przed aktualizacją
+    print_info "Zatrzymywanie backendu..."
+    ssh_exec "pm2 stop garden-app-backend" 2>/dev/null || print_warning "Backend nie był uruchomiony"
+
+    # Zapisz stary plik .env
+    print_info "Zapisywanie konfiguracji .env..."
+    ssh_exec "cp /var/www/$APP_FOLDER/garden-app/backend/.env /tmp/garden-app-env-backup" 2>/dev/null || true
+
+    # Pakowanie nowej wersji
+    print_info "Pakowanie nowej wersji aplikacji..."
+    cd "$(dirname "$0")"
+    tar -czf /tmp/garden-app-update.tar.gz \
+        --exclude='node_modules' \
+        --exclude='.git' \
+        --exclude='*.log' \
+        --exclude='garden.db' \
+        --exclude='uploads/*' \
+        garden-app/
+
+    # Kopiowanie na serwer
+    print_info "Przesyłanie na serwer..."
+    scp_copy "/tmp/garden-app-update.tar.gz" "/tmp/"
+
+    # Backup starych plików
+    print_info "Backup starych plików aplikacji..."
+    ssh_exec "tar -czf /var/www/$APP_FOLDER/backups/app-backup-$(date +%Y%m%d-%H%M%S).tar.gz -C /var/www/$APP_FOLDER garden-app/ 2>/dev/null" || true
+
+    # Usuń stare pliki aplikacji (zachowaj .env, garden.db, uploads)
+    print_info "Usuwanie starych plików kodu..."
+    ssh_exec "find /var/www/$APP_FOLDER/garden-app -mindepth 1 -maxdepth 1 ! -name 'backend' ! -name 'frontend' -exec rm -rf {} +" 2>/dev/null || true
+    ssh_exec "find /var/www/$APP_FOLDER/garden-app/backend -mindepth 1 -maxdepth 1 ! -name '.env' ! -name 'garden.db' ! -name 'uploads' ! -name 'node_modules' -exec rm -rf {} +" 2>/dev/null || true
+    ssh_exec "find /var/www/$APP_FOLDER/garden-app/frontend -mindepth 1 -maxdepth 1 ! -name 'node_modules' -exec rm -rf {} +" 2>/dev/null || true
+
+    # Rozpakowywanie nowej wersji
+    print_info "Rozpakowywanie nowej wersji..."
+    ssh_exec "cd /var/www/$APP_FOLDER && tar -xzf /tmp/garden-app-update.tar.gz --strip-components=1"
+    ssh_exec "rm /tmp/garden-app-update.tar.gz"
+    rm /tmp/garden-app-update.tar.gz
+
+    # Przywróć .env (zachowaj JWT_SECRET)
+    print_info "Przywracanie konfiguracji .env..."
+    ssh_exec "cp /tmp/garden-app-env-backup /var/www/$APP_FOLDER/garden-app/backend/.env" 2>/dev/null || true
+
+    print_success "Pliki aplikacji zaktualizowane"
 }
 
 # Sprawdzenie i instalacja wymaganych pakietów
@@ -222,12 +364,13 @@ setup_backend() {
     print_info "Instalacja zależności backendu..."
     ssh_exec "cd /var/www/$APP_FOLDER/garden-app/backend && npm install --production"
 
-    print_info "Tworzenie pliku .env..."
+    if [[ "$DEPLOYMENT_MODE" == "fresh" ]]; then
+        print_info "Tworzenie pliku .env..."
 
-    # Generowanie silnego JWT_SECRET
-    JWT_SECRET=$(openssl rand -base64 64 | tr -d '\n')
+        # Generowanie silnego JWT_SECRET
+        JWT_SECRET=$(openssl rand -base64 64 | tr -d '\n')
 
-    ssh_exec "cat > /var/www/$APP_FOLDER/garden-app/backend/.env << 'ENVEOF'
+        ssh_exec "cat > /var/www/$APP_FOLDER/garden-app/backend/.env << 'ENVEOF'
 NODE_ENV=production
 PORT=$BACKEND_PORT
 JWT_SECRET=$JWT_SECRET
@@ -236,9 +379,12 @@ DATABASE_PATH=./garden.db
 UPLOAD_DIR=./uploads
 ENVEOF"
 
-    print_info "Tworzenie folderu uploads..."
-    ssh_exec "mkdir -p /var/www/$APP_FOLDER/garden-app/backend/uploads"
-    ssh_exec "chmod 755 /var/www/$APP_FOLDER/garden-app/backend/uploads"
+        print_info "Tworzenie folderu uploads..."
+        ssh_exec "mkdir -p /var/www/$APP_FOLDER/garden-app/backend/uploads"
+        ssh_exec "chmod 755 /var/www/$APP_FOLDER/garden-app/backend/uploads"
+    else
+        print_info "Zachowano istniejący plik .env (JWT_SECRET nie zmieniony)"
+    fi
 
     print_success "Backend skonfigurowany"
 }
@@ -414,17 +560,21 @@ setup_firewall() {
 
 # Wyświetlenie podsumowania
 show_summary() {
-    print_header "🎉 DEPLOYMENT ZAKOŃCZONY POMYŚLNIE!"
+    if [[ "$DEPLOYMENT_MODE" == "fresh" ]]; then
+        print_header "🎉 DEPLOYMENT ZAKOŃCZONY POMYŚLNIE!"
+        print_success "Garden App został zainstalowany na VPS"
+    else
+        print_header "🎉 AKTUALIZACJA ZAKOŃCZONA POMYŚLNIE!"
+        print_success "Garden App został zaktualizowany do najnowszej wersji"
+    fi
 
-    echo ""
-    print_success "Garden App został zainstalowany na VPS"
     echo ""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "📍 Adresy aplikacji:"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
     if [[ -n "$APP_DOMAIN" ]]; then
-        if [[ "$SETUP_SSL" == "t" || "$SETUP_SSL" == "T" ]]; then
+        if [[ "$SETUP_SSL" == "t" || "$SETUP_SSL" == "T" ]] || ssh_exec "test -f /etc/letsencrypt/live/$APP_DOMAIN/fullchain.pem" 2>/dev/null; then
             echo "🌐 Frontend: https://$APP_DOMAIN"
             echo "🔌 Backend:  https://$APP_DOMAIN/api"
         else
@@ -453,6 +603,11 @@ show_summary() {
     echo "Frontend:   /var/www/$APP_FOLDER/public"
     echo "Nginx conf: /etc/nginx/sites-available/garden-app-${APP_FOLDER}"
     echo "Nginx logs: /var/log/nginx/garden-app-${APP_FOLDER}-*.log"
+
+    if [[ "$DEPLOYMENT_MODE" == "update" ]]; then
+        echo "Backups:    /var/www/$APP_FOLDER/backups"
+    fi
+
     echo ""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "🔧 Użyteczne komendy:"
@@ -461,15 +616,33 @@ show_summary() {
     echo "Sprawdź nginx:      systemctl status nginx"
     echo "Restart nginx:      systemctl restart nginx"
     echo "Sprawdź logi:       tail -f /var/log/nginx/garden-app-${APP_FOLDER}-error.log"
+
+    if [[ "$DEPLOYMENT_MODE" == "update" ]]; then
+        echo ""
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo "💾 Backup (w razie problemów):"
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo "Lista backupów:     ls -lh /var/www/$APP_FOLDER/backups"
+        echo "Przywróć bazę:      tar -xzf /var/www/$APP_FOLDER/backups/garden-db-backup-*.tar.gz -C /var/www/$APP_FOLDER/garden-app/backend"
+        echo "Przywróć aplikację: tar -xzf /var/www/$APP_FOLDER/backups/app-backup-*.tar.gz -C /var/www/$APP_FOLDER"
+    fi
+
     echo ""
 
     if [[ "$SETUP_SSL" == "t" || "$SETUP_SSL" == "T" ]]; then
         print_info "Certyfikat SSL automatycznie odnowi się za pomocą certbot"
     fi
 
-    echo ""
-    print_warning "WAŻNE: Hasła i sekrety zostały automatycznie wygenerowane."
-    print_warning "JWT_SECRET zapisany w /var/www/$APP_FOLDER/garden-app/backend/.env"
+    if [[ "$DEPLOYMENT_MODE" == "fresh" ]]; then
+        echo ""
+        print_warning "WAŻNE: Hasła i sekrety zostały automatycznie wygenerowane."
+        print_warning "JWT_SECRET zapisany w /var/www/$APP_FOLDER/garden-app/backend/.env"
+    else
+        echo ""
+        print_info "Zachowano oryginalny JWT_SECRET i bazę danych"
+        print_success "Aplikacja zaktualizowana bez utraty danych"
+    fi
+
     echo ""
 }
 
@@ -492,19 +665,37 @@ EOF
     # Sprawdzenie wymagań lokalnych
     check_sshpass
 
+    # Wybór trybu deployment
+    detect_deployment_mode
+
     # Zbieranie informacji
     collect_server_info
 
-    # Deployment
+    # Testowanie połączenia
     test_ssh_connection
-    install_dependencies
-    prepare_application
-    setup_backend
-    setup_frontend
-    start_backend
-    setup_nginx
-    setup_ssl
-    setup_firewall
+
+    if [[ "$DEPLOYMENT_MODE" == "fresh" ]]; then
+        # NOWA INSTALACJA
+        install_dependencies
+        prepare_application
+        setup_backend
+        setup_frontend
+        start_backend
+        setup_nginx
+        setup_ssl
+        setup_firewall
+    else
+        # AKTUALIZACJA
+        check_existing_installation
+        backup_database
+        update_application
+        setup_backend
+        setup_frontend
+        start_backend
+        # Nginx już skonfigurowany, tylko reload
+        print_info "Reload konfiguracji nginx..."
+        ssh_exec "systemctl reload nginx"
+    fi
 
     # Podsumowanie
     show_summary

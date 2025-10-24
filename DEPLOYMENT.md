@@ -16,19 +16,30 @@ chmod +x deploy-to-vps.sh
 ./deploy-to-vps.sh
 ```
 
-2. **Podaj informacje o serwerze** (skrypt zapyta):
+2. **Wybierz tryb**:
+   - `1` - Nowa instalacja (fresh install)
+   - `2` - Aktualizacja istniejącej instalacji (update)
+
+3. **Podaj informacje o serwerze** (skrypt zapyta):
    - Adres IP lub domena VPS
    - Użytkownik SSH (domyślnie `root`)
    - Hasło SSH
    - Port SSH (domyślnie `22`)
+
+   **Tylko dla nowej instalacji:**
    - Domena dla aplikacji (opcjonalnie)
    - Nazwa folderu aplikacji (domyślnie `garden-app`)
    - Port backendu (domyślnie `3001`)
    - Czy skonfigurować SSL (t/n)
 
-3. **Poczekaj na deployment** (5-15 minut zależnie od prędkości VPS)
+   **Tylko dla aktualizacji:**
+   - Nazwa folderu istniejącej aplikacji (domyślnie `garden-app`)
+
+4. **Poczekaj na deployment** (5-15 minut dla nowej instalacji, 3-8 minut dla aktualizacji)
 
 ### Co Robi Skrypt?
+
+**Tryb: Nowa Instalacja (Fresh Install)**
 
 1. ✅ **Testuje połączenie SSH**
 2. ✅ **Instaluje wymagane pakiety**:
@@ -55,6 +66,38 @@ chmod +x deploy-to-vps.sh
    - Obsługa static files
 8. ✅ **Opcjonalnie: SSL z Let's Encrypt**
 9. ✅ **Konfiguruje firewall (UFW)**
+
+**Tryb: Aktualizacja (Update)**
+
+1. ✅ **Testuje połączenie SSH**
+2. ✅ **Wykrywa istniejącą instalację**:
+   - Sprawdza folder aplikacji
+   - Odczytuje konfigurację (.env, nginx)
+   - Wykrywa port backendu i domenę
+3. ✅ **Tworzy backup**:
+   - **Baza danych** (garden.db)
+   - **Folder uploads** (zdjęcia użytkowników)
+   - **Cała aplikacja** (kod + config)
+4. ✅ **Zatrzymuje backend** (PM2)
+5. ✅ **Zapisuje .env** (zachowuje JWT_SECRET!)
+6. ✅ **Aktualizuje kod aplikacji**:
+   - Usuwa stare pliki kodu
+   - Kopiuje nowe pliki z lokalnej wersji
+   - **Przywraca .env** (bez utraty JWT_SECRET)
+   - **Zachowuje bazę danych i uploads**
+7. ✅ **Instaluje nowe zależności**:
+   - Backend: `npm install --production`
+   - Frontend: `npm install`
+8. ✅ **Buduje frontend**: `npm run build`
+9. ✅ **Restartuje backend** z PM2
+10. ✅ **Reload nginx** (bez downtime)
+
+**Bezpieczeństwo aktualizacji:**
+- ⚠️ Baza danych: **ZACHOWANA** (nie nadpisywana)
+- ⚠️ Uploads: **ZACHOWANE** (zdjęcia nie tracone)
+- ⚠️ JWT_SECRET: **ZACHOWANY** (użytkownicy nie wylogowani)
+- ⚠️ Backup: **ZAWSZE tworzony** (rollback możliwy)
+- ⚠️ Nginx: **Tylko reload** (brak downtime)
 
 ---
 
@@ -154,16 +197,43 @@ tail -f /var/log/nginx/garden-app-*-access.log
 
 ### Aktualizacja Aplikacji
 
-Po wprowadzeniu zmian w kodzie:
+**NOWA METODA - Automatyczna aktualizacja:**
 
 ```bash
-# 1. Uruchom ponownie skrypt deployment
+# Uruchom skrypt w trybie aktualizacji
 ./deploy-to-vps.sh
 
-# LUB ręcznie:
+# Wybierz opcję:
+# 2) Aktualizacja istniejącej instalacji (update)
+```
 
-# 2. Połącz się z VPS
+**Co robi tryb aktualizacji:**
+1. ✅ Wykrywa istniejącą instalację
+2. ✅ Odczytuje konfigurację (.env, nginx)
+3. ✅ **Tworzy backup bazy danych i uploads** (ważne!)
+4. ✅ Zatrzymuje backend
+5. ✅ **Zachowuje .env (JWT_SECRET nie zmieniony!)**
+6. ✅ Usuwa stare pliki kodu
+7. ✅ Kopiuje nowe pliki
+8. ✅ **Przywraca .env i bazę danych**
+9. ✅ Instaluje nowe zależności npm
+10. ✅ Buduje frontend
+11. ✅ Restartuje backend
+12. ✅ Reload nginx
+
+**Backup:**
+- Baza danych: `/var/www/garden-app/backups/garden-db-backup-*.tar.gz`
+- Aplikacja: `/var/www/garden-app/backups/app-backup-*.tar.gz`
+
+**STARA METODA - Ręczna aktualizacja:**
+
+```bash
+# 1. Połącz się z VPS
 ssh root@your-vps-ip
+
+# 2. Backup bazy danych
+cd /var/www/garden-app/garden-app/backend
+tar -czf ~/backup-$(date +%Y%m%d).tar.gz garden.db uploads/
 
 # 3. Przejdź do folderu aplikacji
 cd /var/www/garden-app/garden-app
@@ -271,11 +341,49 @@ scp root@your-vps-ip:/root/garden-db-backup-*.tar.gz ./
 # Zatrzymaj backend
 pm2 stop garden-app-backend
 
-# Restore
+# Restore z backup utworzonego przez skrypt aktualizacji
+tar -xzf /var/www/garden-app/backups/garden-db-backup-20251024-143000.tar.gz \
+    -C /var/www/garden-app/garden-app/backend
+
+# LUB restore z ręcznego backupu
 cp garden.db.backup-20251024 garden.db
 
 # Uruchom backend
 pm2 start garden-app-backend
+```
+
+### Rollback Aplikacji (po nieudanej aktualizacji)
+
+Jeśli aktualizacja poszła źle i aplikacja nie działa:
+
+```bash
+# Połącz się z VPS
+ssh root@your-vps-ip
+
+# 1. Zatrzymaj backend
+pm2 stop garden-app-backend
+
+# 2. Lista dostępnych backupów
+ls -lh /var/www/garden-app/backups/
+
+# 3. Przywróć bazę danych (najnowszy backup)
+tar -xzf /var/www/garden-app/backups/garden-db-backup-20251024-143000.tar.gz \
+    -C /var/www/garden-app/garden-app/backend
+
+# 4. Przywróć aplikację (opcjonalnie, jeśli kod jest zepsuty)
+cd /var/www/garden-app
+rm -rf garden-app
+tar -xzf /var/www/garden-app/backups/app-backup-20251024-143000.tar.gz
+
+# 5. Uruchom backend
+pm2 start garden-app-backend
+
+# 6. Restart nginx
+systemctl reload nginx
+
+# 7. Sprawdź status
+pm2 status
+pm2 logs garden-app-backend --lines 50
 ```
 
 ### Automatyczny Backup (Cron)
