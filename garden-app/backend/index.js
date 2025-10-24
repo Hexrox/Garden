@@ -13,6 +13,8 @@ const bedRoutes = require('./routes/beds');
 const sprayRoutes = require('./routes/sprays');
 const reminderRoutes = require('./routes/reminders');
 const exportRoutes = require('./routes/export');
+const weatherRoutes = require('./routes/weather');
+const taskRoutes = require('./routes/tasks');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -65,6 +67,8 @@ app.use('/api', bedRoutes);
 app.use('/api', sprayRoutes);
 app.use('/api', reminderRoutes);
 app.use('/api', exportRoutes);
+app.use('/api/weather', weatherRoutes);
+app.use('/api/tasks', taskRoutes);
 
 // 404 handler
 app.use((req, res) => {

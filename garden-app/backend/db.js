@@ -67,6 +67,41 @@ db.serialize(() => {
     FOREIGN KEY(bed_id) REFERENCES beds(id) ON DELETE CASCADE
   )`);
 
+  // Tasks table (new - task management)
+  db.run(`CREATE TABLE IF NOT EXISTS tasks (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    bed_id INTEGER,
+    task_type TEXT CHECK(task_type IN ('spray', 'harvest', 'water', 'custom')) NOT NULL,
+    description TEXT NOT NULL,
+    due_date DATE,
+    priority INTEGER DEFAULT 1,
+    completed BOOLEAN DEFAULT 0,
+    completed_at DATETIME,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY(bed_id) REFERENCES beds(id) ON DELETE CASCADE
+  )`);
+
+  // Add location columns to users table (for weather)
+  db.run(`ALTER TABLE users ADD COLUMN latitude REAL`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding latitude column:', err.message);
+    }
+  });
+
+  db.run(`ALTER TABLE users ADD COLUMN longitude REAL`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding longitude column:', err.message);
+    }
+  });
+
+  db.run(`ALTER TABLE users ADD COLUMN city TEXT`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding city column:', err.message);
+    }
+  });
+
   // Create indexes for better query performance
   db.run('CREATE INDEX IF NOT EXISTS idx_plots_user_id ON plots(user_id)');
   db.run('CREATE INDEX IF NOT EXISTS idx_beds_plot_id ON beds(plot_id)');
@@ -75,6 +110,8 @@ db.serialize(() => {
   db.run('CREATE INDEX IF NOT EXISTS idx_reminders_spray_id ON reminders(spray_id)');
   db.run('CREATE INDEX IF NOT EXISTS idx_spray_date ON spray_history(spray_date)');
   db.run('CREATE INDEX IF NOT EXISTS idx_safe_harvest_date ON spray_history(safe_harvest_date)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_tasks_user_id ON tasks(user_id)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_tasks_due_date ON tasks(due_date)');
 
   console.log('✅ Database tables and indexes created successfully');
 });

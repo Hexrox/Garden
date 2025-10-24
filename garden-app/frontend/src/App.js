@@ -13,6 +13,7 @@ import SprayForm from './pages/SprayForm';
 import SprayHistory from './pages/SprayHistory';
 import Reminders from './pages/Reminders';
 import Export from './pages/Export';
+import Profile from './pages/Profile';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -128,6 +129,14 @@ function AppRoutes() {
           element={
             <ProtectedRoute>
               <Export />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <Profile />
             </ProtectedRoute>
           }
         />
