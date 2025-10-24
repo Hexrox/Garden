@@ -1,0 +1,220 @@
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import axios from 'axios';
+import { useAuth } from '../context/AuthContext';
+
+const Dashboard = () => {
+  const { user } = useAuth();
+  const [stats, setStats] = useState({
+    totalPlots: 0,
+    totalBeds: 0,
+    activeSprays: 0
+  });
+  const [reminders, setReminders] = useState([]);
+  const [activeSprays, setActiveSprays] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadDashboardData();
+  }, []);
+
+  const loadDashboardData = async () => {
+    try {
+      const [plotsRes, remindersRes, spraysRes] = await Promise.all([
+        axios.get('/api/plots'),
+        axios.get('/api/reminders'),
+        axios.get('/api/sprays/active')
+      ]);
+
+      setStats({
+        totalPlots: plotsRes.data.length,
+        activeSprays: spraysRes.data.length
+      });
+
+      setReminders(remindersRes.data.slice(0, 5));
+      setActiveSprays(spraysRes.data.slice(0, 5));
+    } catch (error) {
+      console.error('Error loading dashboard:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const markReminderAsRead = async (id) => {
+    try {
+      await axios.put(`/api/reminders/${id}/read`);
+      setReminders(reminders.filter(r => r.id !== id));
+    } catch (error) {
+      console.error('Error marking reminder:', error);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="text-gray-500">Ładowanie...</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">
+            Witaj, {user?.username}!
+          </h1>
+          <p className="text-gray-600 mt-1">Przegląd Twojego ogrodu</p>
+        </div>
+      </div>
+
+      {/* Statistics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <div className="text-4xl">🌱</div>
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Poletka</p>
+              <p className="text-2xl font-semibold text-gray-900">{stats.totalPlots}</p>
+            </div>
+          </div>
+          <div className="mt-4">
+            <Link to="/plots" className="text-green-600 hover:text-green-700 text-sm font-medium">
+              Zobacz wszystkie →
+            </Link>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <div className="text-4xl">🌿</div>
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Aktywne opryski</p>
+              <p className="text-2xl font-semibold text-gray-900">{stats.activeSprays}</p>
+            </div>
+          </div>
+          <div className="mt-4">
+            <Link to="/sprays" className="text-green-600 hover:text-green-700 text-sm font-medium">
+              Zobacz historię →
+            </Link>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <div className="text-4xl">🔔</div>
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Przypomnienia</p>
+              <p className="text-2xl font-semibold text-gray-900">{reminders.length}</p>
+            </div>
+          </div>
+          <div className="mt-4">
+            <Link to="/reminders" className="text-green-600 hover:text-green-700 text-sm font-medium">
+              Zobacz wszystkie →
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* Reminders Section */}
+      {reminders.length > 0 && (
+        <div className="bg-white rounded-lg shadow">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h2 className="text-lg font-semibold text-gray-900">Aktywne przypomnienia</h2>
+          </div>
+          <div className="divide-y divide-gray-200">
+            {reminders.map((reminder) => (
+              <div key={reminder.id} className="px-6 py-4 hover:bg-gray-50">
+                <div className="flex justify-between items-start">
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-gray-900">{reminder.message}</p>
+                    <p className="text-sm text-gray-600 mt-1">
+                      {reminder.plot_name} - Rząd {reminder.row_number} ({reminder.plant_name})
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Data przypomnienia: {reminder.reminder_date}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => markReminderAsRead(reminder.id)}
+                    className="ml-4 text-sm text-green-600 hover:text-green-700"
+                  >
+                    Oznacz jako przeczytane
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Active Sprays Section */}
+      {activeSprays.length > 0 && (
+        <div className="bg-white rounded-lg shadow">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h2 className="text-lg font-semibold text-gray-900">Aktywne opryski (w okresie karencji)</h2>
+          </div>
+          <div className="divide-y divide-gray-200">
+            {activeSprays.map((spray) => (
+              <div key={spray.id} className="px-6 py-4 hover:bg-gray-50">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">{spray.spray_name}</p>
+                    <p className="text-sm text-gray-600 mt-1">
+                      {spray.plot_name} - Rząd {spray.row_number} ({spray.plant_name})
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Data oprysku: {spray.spray_date} | Bezpieczny zbiór: {spray.safe_harvest_date}
+                    </p>
+                  </div>
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                    Karencja: {spray.withdrawal_period} dni
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Quick Actions */}
+      <div className="bg-white rounded-lg shadow p-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Szybkie akcje</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Link
+            to="/plots/new"
+            className="flex items-center justify-center px-4 py-3 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+          >
+            + Nowe poletko
+          </Link>
+          <Link
+            to="/sprays"
+            className="flex items-center justify-center px-4 py-3 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+          >
+            📊 Historia oprysków
+          </Link>
+          <Link
+            to="/export"
+            className="flex items-center justify-center px-4 py-3 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+          >
+            💾 Eksport danych
+          </Link>
+          <Link
+            to="/plots"
+            className="flex items-center justify-center px-4 py-3 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+          >
+            🌱 Wszystkie poletka
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Dashboard;
