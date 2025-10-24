@@ -67,7 +67,16 @@ db.serialize(() => {
     FOREIGN KEY(bed_id) REFERENCES beds(id) ON DELETE CASCADE
   )`);
 
-  console.log('✅ Database tables created successfully');
+  // Create indexes for better query performance
+  db.run('CREATE INDEX IF NOT EXISTS idx_plots_user_id ON plots(user_id)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_beds_plot_id ON beds(plot_id)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_spray_bed_id ON spray_history(bed_id)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_reminders_user_id ON reminders(user_id)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_reminders_spray_id ON reminders(spray_id)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_spray_date ON spray_history(spray_date)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_safe_harvest_date ON spray_history(safe_harvest_date)');
+
+  console.log('✅ Database tables and indexes created successfully');
 });
 
 module.exports = db;
