@@ -269,6 +269,19 @@ update_application() {
     print_info "Przywracanie konfiguracji .env..."
     ssh_exec "cp /tmp/garden-app-env-backup /var/www/$APP_FOLDER/garden-app/backend/.env" 2>/dev/null || true
 
+    # Sprawdź czy .env ma nowe wymagane klucze (dla aktualizacji z v1 do v2)
+    print_info "Sprawdzanie nowych kluczy konfiguracyjnych..."
+    if ! ssh_exec "grep -q 'OPENWEATHER_API_KEY' /var/www/$APP_FOLDER/garden-app/backend/.env" 2>/dev/null; then
+        print_warning "Dodaję brakujący klucz OPENWEATHER_API_KEY do .env"
+        ssh_exec "cat >> /var/www/$APP_FOLDER/garden-app/backend/.env << 'ENVEOF'
+
+# OpenWeatherMap API Key (wymagane dla funkcji pogody - dodane w v2.1)
+# Uzyskaj darmowy klucz na: https://openweathermap.org/api
+# Instrukcja: zobacz OPENWEATHER_SETUP.md
+OPENWEATHER_API_KEY=
+ENVEOF"
+    fi
+
     print_success "Pliki aplikacji zaktualizowane"
 }
 
@@ -377,6 +390,11 @@ JWT_SECRET=$JWT_SECRET
 FRONTEND_URL=http://${APP_DOMAIN:-$VPS_HOST}
 DATABASE_PATH=./garden.db
 UPLOAD_DIR=./uploads
+
+# OpenWeatherMap API Key (wymagane dla funkcji pogody)
+# Uzyskaj darmowy klucz na: https://openweathermap.org/api
+# Instrukcja: zobacz OPENWEATHER_SETUP.md
+OPENWEATHER_API_KEY=
 ENVEOF"
 
         print_info "Tworzenie folderu uploads..."
@@ -643,6 +661,19 @@ show_summary() {
         print_success "Aplikacja zaktualizowana bez utraty danych"
     fi
 
+    echo ""
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "⚙️  NASTĘPNE KROKI - KONFIGURACJA:"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    print_warning "1. Skonfiguruj OpenWeatherMap API Key dla funkcji pogody:"
+    echo "   - Uzyskaj darmowy klucz: https://openweathermap.org/api"
+    echo "   - Edytuj plik: /var/www/$APP_FOLDER/garden-app/backend/.env"
+    echo "   - Dodaj klucz do OPENWEATHER_API_KEY="
+    echo "   - Restart backendu: pm2 restart garden-app-backend"
+    echo "   - Pełna instrukcja: OPENWEATHER_SETUP.md"
+    echo ""
+    print_info "2. Po pierwszym logowaniu ustaw lokalizację w profilu"
+    echo "   - Funkcja pogody wymaga lokalizacji użytkownika"
     echo ""
 }
 
