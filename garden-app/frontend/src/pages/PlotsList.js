@@ -65,7 +65,7 @@ const PlotsList = () => {
             <div key={plot.id} className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow">
               {plot.image_path && (
                 <img
-                  src={`http://localhost:3001/${plot.image_path}`}
+                  src={`/${plot.image_path}`}
                   alt={plot.name}
                   className="w-full h-48 object-cover rounded-t-lg"
                 />

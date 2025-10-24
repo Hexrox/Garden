@@ -33,6 +33,25 @@ export const AuthProvider = ({ children }) => {
         console.error('Invalid token:', error);
         logout();
       }
+
+      // Setup axios interceptor for 401 errors
+      const interceptor = axios.interceptors.response.use(
+        (response) => response,
+        (error) => {
+          if (error.response?.status === 401) {
+            console.log('Token expired or invalid, logging out...');
+            logout();
+          }
+          return Promise.reject(error);
+        }
+      );
+
+      // Cleanup interceptor on unmount or token change
+      return () => {
+        axios.interceptors.response.eject(interceptor);
+      };
+    } else {
+      delete axios.defaults.headers.common['Authorization'];
     }
     setLoading(false);
   }, [token]);

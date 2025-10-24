@@ -1,8 +1,31 @@
-import React from 'react';
+import React, { useState } from 'react';
+import axios from 'axios';
 
 const Export = () => {
-  const handleExport = (endpoint) => {
-    window.open(`http://localhost:3001/api/export/${endpoint}`, '_blank');
+  const [loading, setLoading] = useState(null);
+
+  const handleExport = async (endpoint, filename) => {
+    setLoading(endpoint);
+    try {
+      const response = await axios.get(`/api/export/${endpoint}`, {
+        responseType: 'blob'
+      });
+
+      // Create download link
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Export error:', error);
+      alert('Błąd podczas eksportu danych');
+    } finally {
+      setLoading(null);
+    }
   };
 
   return (
@@ -14,16 +37,18 @@ const Export = () => {
         <p className="text-gray-600 mb-4">Eksportuj wszystkie poletka do pliku</p>
         <div className="flex space-x-4">
           <button
-            onClick={() => handleExport('plots/json')}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            onClick={() => handleExport('plots/json', 'plots.json')}
+            disabled={loading === 'plots/json'}
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
           >
-            Pobierz JSON
+            {loading === 'plots/json' ? 'Pobieranie...' : 'Pobierz JSON'}
           </button>
           <button
-            onClick={() => handleExport('plots/csv')}
-            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+            onClick={() => handleExport('plots/csv', 'plots.csv')}
+            disabled={loading === 'plots/csv'}
+            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50"
           >
-            Pobierz CSV
+            {loading === 'plots/csv' ? 'Pobieranie...' : 'Pobierz CSV'}
           </button>
         </div>
       </div>
@@ -33,16 +58,18 @@ const Export = () => {
         <p className="text-gray-600 mb-4">Eksportuj całą historię oprysków</p>
         <div className="flex space-x-4">
           <button
-            onClick={() => handleExport('sprays/json')}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            onClick={() => handleExport('sprays/json', 'spray_history.json')}
+            disabled={loading === 'sprays/json'}
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
           >
-            Pobierz JSON
+            {loading === 'sprays/json' ? 'Pobieranie...' : 'Pobierz JSON'}
           </button>
           <button
-            onClick={() => handleExport('sprays/csv')}
-            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+            onClick={() => handleExport('sprays/csv', 'spray_history.csv')}
+            disabled={loading === 'sprays/csv'}
+            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50"
           >
-            Pobierz CSV
+            {loading === 'sprays/csv' ? 'Pobieranie...' : 'Pobierz CSV'}
           </button>
         </div>
       </div>
@@ -53,10 +80,11 @@ const Export = () => {
           Eksportuj wszystkie dane (poletka, grządki, opryski) do jednego pliku JSON
         </p>
         <button
-          onClick={() => handleExport('complete/json')}
-          className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
+          onClick={() => handleExport('complete/json', 'garden_complete_backup.json')}
+          disabled={loading === 'complete/json'}
+          className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:opacity-50"
         >
-          Pobierz pełny backup (JSON)
+          {loading === 'complete/json' ? 'Pobieranie...' : 'Pobierz pełny backup (JSON)'}
         </button>
       </div>
     </div>

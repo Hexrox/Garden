@@ -2,11 +2,14 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Layout from './components/Layout';
+import ErrorBoundary from './components/ErrorBoundary';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import PlotsList from './pages/PlotsList';
 import PlotDetail from './pages/PlotDetail';
+import PlotForm from './pages/PlotForm';
+import SprayForm from './pages/SprayForm';
 import SprayHistory from './pages/SprayHistory';
 import Reminders from './pages/Reminders';
 import Export from './pages/Export';
@@ -73,10 +76,34 @@ function AppRoutes() {
           }
         />
         <Route
+          path="/plots/new"
+          element={
+            <ProtectedRoute>
+              <PlotForm />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/plots/:id"
           element={
             <ProtectedRoute>
               <PlotDetail />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/plots/:id/edit"
+          element={
+            <ProtectedRoute>
+              <PlotForm />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/beds/:bedId/spray"
+          element={
+            <ProtectedRoute>
+              <SprayForm />
             </ProtectedRoute>
           }
         />
@@ -115,9 +142,11 @@ function AppRoutes() {
 
 function App() {
   return (
-    <AuthProvider>
-      <AppRoutes />
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <AppRoutes />
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }
 
