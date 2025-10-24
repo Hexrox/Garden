@@ -118,4 +118,22 @@ router.post('/login',
   }
 );
 
+// Update dark mode preference (requires auth middleware)
+const auth = require('../middleware/auth');
+router.put('/dark-mode', auth, (req, res) => {
+  const { dark_mode } = req.body;
+
+  db.run(
+    'UPDATE users SET dark_mode = ? WHERE id = ?',
+    [dark_mode ? 1 : 0, req.user.id],
+    function (err) {
+      if (err) {
+        return res.status(500).json({ error: 'Błąd podczas aktualizacji' });
+      }
+
+      res.json({ message: 'Preferencje zapisane', dark_mode });
+    }
+  );
+});
+
 module.exports = router;

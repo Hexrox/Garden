@@ -16,6 +16,9 @@ const exportRoutes = require('./routes/export');
 const weatherRoutes = require('./routes/weather');
 const taskRoutes = require('./routes/tasks');
 const harvestRoutes = require('./routes/harvest');
+const plantsRoutes = require('./routes/plants');
+const photosRoutes = require('./routes/photos');
+const successionRoutes = require('./routes/succession');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -71,6 +74,9 @@ app.use('/api', exportRoutes);
 app.use('/api/weather', weatherRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/harvest', harvestRoutes);
+app.use('/api/plants', plantsRoutes);
+app.use('/api', photosRoutes);
+app.use('/api/succession', successionRoutes);
 
 // 404 handler
 app.use((req, res) => {
