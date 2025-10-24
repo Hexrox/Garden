@@ -16,6 +16,7 @@ import Reminders from './pages/Reminders';
 import Export from './pages/Export';
 import Profile from './pages/Profile';
 import PlantManagement from './pages/PlantManagement';
+import SuccessionPlanting from './pages/SuccessionPlanting';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -135,8 +136,6 @@ function AppRoutes() {
           }
         />
         <Route
-          path="/profile"
-        <Route
           path="/plants"
           element={
             <ProtectedRoute>
@@ -144,6 +143,16 @@ function AppRoutes() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/succession"
+          element={
+            <ProtectedRoute>
+              <SuccessionPlanting />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile"
           element={
             <ProtectedRoute>
               <Profile />

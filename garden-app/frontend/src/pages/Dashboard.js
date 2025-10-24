@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import WeatherWidget from '../components/WeatherWidget';
 import TaskList from '../components/TaskList';
 import UpcomingHarvests from '../components/UpcomingHarvests';
+import SuccessionWidget from '../components/SuccessionWidget';
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -55,7 +56,7 @@ const Dashboard = () => {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="text-gray-500">Ładowanie...</div>
+        <div className="text-gray-500 dark:text-gray-400">Ładowanie...</div>
       </div>
     );
   }
@@ -64,10 +65,10 @@ const Dashboard = () => {
     <div className="space-y-4 md:space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
             Witaj, {user?.username}!
           </h1>
-          <p className="text-sm md:text-base text-gray-600 mt-1">Przegląd Twojego ogrodu</p>
+          <p className="text-sm md:text-base text-gray-600 dark:text-gray-400 mt-1">Przegląd Twojego ogrodu</p>
         </div>
       </div>
 
@@ -78,54 +79,57 @@ const Dashboard = () => {
         <UpcomingHarvests />
       </div>
 
+      {/* Succession Planting Widget */}
+      <SuccessionWidget />
+
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 transition-colors">
           <div className="flex items-center">
             <div className="flex-shrink-0">
               <div className="text-4xl">🌱</div>
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Poletka</p>
-              <p className="text-2xl font-semibold text-gray-900">{stats.totalPlots}</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Poletka</p>
+              <p className="text-2xl font-semibold text-gray-900 dark:text-white">{stats.totalPlots}</p>
             </div>
           </div>
           <div className="mt-4">
-            <Link to="/plots" className="text-green-600 hover:text-green-700 text-sm font-medium">
+            <Link to="/plots" className="text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 text-sm font-medium">
               Zobacz wszystkie →
             </Link>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 transition-colors">
           <div className="flex items-center">
             <div className="flex-shrink-0">
               <div className="text-4xl">🌿</div>
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Aktywne opryski</p>
-              <p className="text-2xl font-semibold text-gray-900">{stats.activeSprays}</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Aktywne opryski</p>
+              <p className="text-2xl font-semibold text-gray-900 dark:text-white">{stats.activeSprays}</p>
             </div>
           </div>
           <div className="mt-4">
-            <Link to="/sprays" className="text-green-600 hover:text-green-700 text-sm font-medium">
+            <Link to="/sprays" className="text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 text-sm font-medium">
               Zobacz historię →
             </Link>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 transition-colors">
           <div className="flex items-center">
             <div className="flex-shrink-0">
               <div className="text-4xl">🔔</div>
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Przypomnienia</p>
-              <p className="text-2xl font-semibold text-gray-900">{reminders.length}</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Przypomnienia</p>
+              <p className="text-2xl font-semibold text-gray-900 dark:text-white">{reminders.length}</p>
             </div>
           </div>
           <div className="mt-4">
-            <Link to="/reminders" className="text-green-600 hover:text-green-700 text-sm font-medium">
+            <Link to="/reminders" className="text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 text-sm font-medium">
               Zobacz wszystkie →
             </Link>
           </div>
@@ -134,26 +138,26 @@ const Dashboard = () => {
 
       {/* Reminders Section */}
       {reminders.length > 0 && (
-        <div className="bg-white rounded-lg shadow">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">Aktywne przypomnienia</h2>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow transition-colors">
+          <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Aktywne przypomnienia</h2>
           </div>
-          <div className="divide-y divide-gray-200">
+          <div className="divide-y divide-gray-200 dark:divide-gray-700">
             {reminders.map((reminder) => (
-              <div key={reminder.id} className="px-6 py-4 hover:bg-gray-50">
+              <div key={reminder.id} className="px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors">
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-900">{reminder.message}</p>
-                    <p className="text-sm text-gray-600 mt-1">
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">{reminder.message}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                       {reminder.plot_name} - Rząd {reminder.row_number} ({reminder.plant_name})
                     </p>
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
                       Data przypomnienia: {reminder.reminder_date}
                     </p>
                   </div>
                   <button
                     onClick={() => markReminderAsRead(reminder.id)}
-                    className="ml-4 text-sm text-green-600 hover:text-green-700"
+                    className="ml-4 text-sm text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300"
                   >
                     Oznacz jako przeczytane
                   </button>
@@ -166,24 +170,24 @@ const Dashboard = () => {
 
       {/* Active Sprays Section */}
       {activeSprays.length > 0 && (
-        <div className="bg-white rounded-lg shadow">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">Aktywne opryski (w okresie karencji)</h2>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow transition-colors">
+          <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Aktywne opryski (w okresie karencji)</h2>
           </div>
-          <div className="divide-y divide-gray-200">
+          <div className="divide-y divide-gray-200 dark:divide-gray-700">
             {activeSprays.map((spray) => (
-              <div key={spray.id} className="px-6 py-4 hover:bg-gray-50">
+              <div key={spray.id} className="px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors">
                 <div className="flex justify-between items-start">
                   <div>
-                    <p className="text-sm font-medium text-gray-900">{spray.spray_name}</p>
-                    <p className="text-sm text-gray-600 mt-1">
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">{spray.spray_name}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                       {spray.plot_name} - Rząd {spray.row_number} ({spray.plant_name})
                     </p>
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
                       Data oprysku: {spray.spray_date} | Bezpieczny zbiór: {spray.safe_harvest_date}
                     </p>
                   </div>
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200">
                     Karencja: {spray.withdrawal_period} dni
                   </span>
                 </div>
@@ -194,30 +198,30 @@ const Dashboard = () => {
       )}
 
       {/* Quick Actions */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Szybkie akcje</h2>
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 transition-colors">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Szybkie akcje</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Link
             to="/plots/new"
-            className="flex items-center justify-center px-4 py-3 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+            className="flex items-center justify-center px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
           >
             + Nowe poletko
           </Link>
           <Link
             to="/sprays"
-            className="flex items-center justify-center px-4 py-3 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+            className="flex items-center justify-center px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
           >
             📊 Historia oprysków
           </Link>
           <Link
             to="/export"
-            className="flex items-center justify-center px-4 py-3 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+            className="flex items-center justify-center px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
           >
             💾 Eksport danych
           </Link>
           <Link
             to="/plots"
-            className="flex items-center justify-center px-4 py-3 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+            className="flex items-center justify-center px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
           >
             🌱 Wszystkie poletka
           </Link>
