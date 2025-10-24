@@ -73,7 +73,7 @@ const PhotoGallery = ({ bedId }) => {
   };
 
   if (loading) {
-    return <div className="text-center py-4 text-gray-500">Ładowanie galerii...</div>;
+    return <div className="text-center py-4 text-gray-500 dark:text-gray-400">Ładowanie galerii...</div>;
   }
 
   return (
@@ -84,53 +84,57 @@ const PhotoGallery = ({ bedId }) => {
         </h3>
         <button
           onClick={() => setShowUploadForm(!showUploadForm)}
-          className="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700"
+          className="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
         >
           {showUploadForm ? 'Anuluj' : '+ Dodaj zdjęcie'}
         </button>
       </div>
 
       {message.text && (
-        <div className={`p-3 rounded text-sm ${message.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+        <div className={`p-3 rounded text-sm ${
+          message.type === 'success'
+            ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200'
+            : 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200'
+        }`}>
           {message.text}
         </div>
       )}
 
       {showUploadForm && (
-        <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+        <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 transition-colors">
           <form onSubmit={handleUpload} className="space-y-3">
             <div>
-              <label className="block text-sm font-medium mb-1">Zdjęcie</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Zdjęcie</label>
               <input
                 type="file"
                 accept="image/*"
                 onChange={handleFileChange}
-                className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-green-600 file:text-white hover:file:bg-green-700"
+                className="w-full text-sm text-gray-900 dark:text-gray-100 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-green-600 file:text-white hover:file:bg-green-700 file:transition-colors"
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Opis (opcjonalnie)</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Opis (opcjonalnie)</label>
               <input
                 type="text"
                 value={uploadForm.caption}
                 onChange={(e) => setUploadForm({ ...uploadForm, caption: e.target.value })}
-                className="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded dark:bg-gray-700 dark:text-white"
                 placeholder="Np. Po 30 dniach wzrostu"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Data zdjęcia</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Data zdjęcia</label>
               <input
                 type="date"
                 value={uploadForm.taken_date}
                 onChange={(e) => setUploadForm({ ...uploadForm, taken_date: e.target.value })}
-                className="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded dark:bg-gray-700 dark:text-white"
               />
             </div>
             <button
               type="submit"
-              className="w-full px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+              className="w-full px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
             >
               Dodaj zdjęcie
             </button>
@@ -164,7 +168,7 @@ const PhotoGallery = ({ bedId }) => {
               </div>
               <button
                 onClick={() => handleDelete(photo.id)}
-                className="absolute top-2 right-2 bg-red-600 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                className="absolute top-2 right-2 bg-red-600 hover:bg-red-700 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-all shadow-lg"
                 title="Usuń zdjęcie"
               >
                 🗑️

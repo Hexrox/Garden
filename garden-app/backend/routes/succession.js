@@ -4,10 +4,10 @@ const { body, validationResult } = require('express-validator');
 const db = require('../db');
 const auth = require('../middleware/auth');
 
-// Get all succession reminders for user
+// Get all succession reminders for user (including inactive)
 router.get('/', auth, (req, res) => {
   db.all(
-    `SELECT * FROM succession_reminders WHERE user_id = ? AND is_active = 1 ORDER BY next_planting_date ASC`,
+    `SELECT * FROM succession_reminders WHERE user_id = ? ORDER BY is_active DESC, next_planting_date ASC`,
     [req.user.id],
     (err, rows) => {
       if (err) {
@@ -63,7 +63,138 @@ router.post('/',
   }
 );
 
-// Update succession reminder (mark as completed and create next)
+// Update succession reminder (edit)
+router.put('/:id',
+  auth,
+  [
+    body('plant_name').optional().trim().notEmpty(),
+    body('interval_days').optional().isInt({ min: 1 }),
+    body('last_planted_date').optional().isDate(),
+    body('bed_id').optional(),
+    body('is_active').optional().isBoolean()
+  ],
+  (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { plant_name, interval_days, last_planted_date, bed_id, is_active } = req.body;
+
+    // If interval_days or last_planted_date changed, need to recalculate next_planting_date
+    const needsRecalculation = interval_days !== undefined || last_planted_date !== undefined;
+
+    if (needsRecalculation) {
+      // Get current values first
+      db.get(
+        `SELECT * FROM succession_reminders WHERE id = ? AND user_id = ?`,
+        [req.params.id, req.user.id],
+        (err, current) => {
+          if (err) {
+            return res.status(500).json({ error: 'Błąd serwera' });
+          }
+          if (!current) {
+            return res.status(404).json({ error: 'Przypomnienie nie znalezione' });
+          }
+
+          // Use new values if provided, otherwise use current
+          const finalLastDate = last_planted_date || current.last_planted_date;
+          const finalIntervalDays = interval_days !== undefined ? interval_days : current.interval_days;
+
+          // Calculate new next_planting_date
+          const lastDate = new Date(finalLastDate);
+          const nextDate = new Date(lastDate);
+          nextDate.setDate(nextDate.getDate() + parseInt(finalIntervalDays));
+
+          // Build update query
+          let updateFields = [];
+          let values = [];
+
+          if (plant_name !== undefined) {
+            updateFields.push('plant_name = ?');
+            values.push(plant_name);
+          }
+          if (interval_days !== undefined) {
+            updateFields.push('interval_days = ?');
+            values.push(interval_days);
+          }
+          if (last_planted_date !== undefined) {
+            updateFields.push('last_planted_date = ?');
+            values.push(last_planted_date);
+          }
+          if (bed_id !== undefined) {
+            updateFields.push('bed_id = ?');
+            values.push(bed_id || null);
+          }
+          if (is_active !== undefined) {
+            updateFields.push('is_active = ?');
+            values.push(is_active ? 1 : 0);
+          }
+
+          // Always update next_planting_date when recalculating
+          updateFields.push('next_planting_date = ?');
+          values.push(nextDate.toISOString().split('T')[0]);
+
+          values.push(req.params.id, req.user.id);
+
+          db.run(
+            `UPDATE succession_reminders SET ${updateFields.join(', ')}
+             WHERE id = ? AND user_id = ?`,
+            values,
+            function (err) {
+              if (err) {
+                return res.status(500).json({ error: 'Błąd podczas aktualizacji' });
+              }
+              res.json({ message: 'Przypomnienie zaktualizowane pomyślnie' });
+            }
+          );
+        }
+      );
+    } else {
+      // Simple update without recalculation
+      let updateFields = [];
+      let values = [];
+
+      if (plant_name !== undefined) {
+        updateFields.push('plant_name = ?');
+        values.push(plant_name);
+      }
+      if (bed_id !== undefined) {
+        updateFields.push('bed_id = ?');
+        values.push(bed_id || null);
+      }
+      if (is_active !== undefined) {
+        updateFields.push('is_active = ?');
+        values.push(is_active ? 1 : 0);
+      }
+
+      if (updateFields.length === 0) {
+        return res.status(400).json({ error: 'Brak danych do aktualizacji' });
+      }
+
+      values.push(req.params.id, req.user.id);
+
+      db.run(
+        `UPDATE succession_reminders SET ${updateFields.join(', ')}
+         WHERE id = ? AND user_id = ?`,
+        values,
+        function (err) {
+          if (err) {
+            return res.status(500).json({ error: 'Błąd podczas aktualizacji' });
+          }
+
+          if (this.changes === 0) {
+            return res.status(404).json({ error: 'Przypomnienie nie znalezione' });
+          }
+
+          res.json({ message: 'Przypomnienie zaktualizowane pomyślnie' });
+        }
+      );
+    }
+  }
+);
+
+// Mark as completed (update dates)
 router.post('/:id/complete', auth, (req, res) => {
   db.get(
     `SELECT * FROM succession_reminders WHERE id = ? AND user_id = ?`,
