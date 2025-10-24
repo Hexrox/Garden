@@ -1,0 +1,256 @@
+{
+  "vegetables": {
+    "pomidor": {
+      "name": "Pomidor",
+      "daysToHarvest": 70,
+      "rangeMin": 60,
+      "rangeMax": 85,
+      "notes": "Zależy od odmiany: wczesne 60-65 dni, późne 75-85 dni"
+    },
+    "pomidor cherry": {
+      "name": "Pomidor cherry",
+      "daysToHarvest": 65,
+      "rangeMin": 55,
+      "rangeMax": 75,
+      "notes": "Odmiany koktajlowe dojrzewają szybciej"
+    },
+    "ogórek": {
+      "name": "Ogórek",
+      "daysToHarvest": 55,
+      "rangeMin": 50,
+      "rangeMax": 65,
+      "notes": "Ogórki szklarniowe szybciej niż gruntowe"
+    },
+    "ogórek gruntowy": {
+      "name": "Ogórek gruntowy",
+      "daysToHarvest": 60,
+      "rangeMin": 55,
+      "rangeMax": 70,
+      "notes": "Zbierać regularnie dla ciągłych plonów"
+    },
+    "papryka": {
+      "name": "Papryka",
+      "daysToHarvest": 75,
+      "rangeMin": 65,
+      "rangeMax": 85,
+      "notes": "Zbiór zielonych wcześniej, dojrzałych później"
+    },
+    "cukinia": {
+      "name": "Cukinia",
+      "daysToHarvest": 50,
+      "rangeMin": 45,
+      "rangeMax": 60,
+      "notes": "Zbierać młode owoce (15-20 cm)"
+    },
+    "dynia": {
+      "name": "Dynia",
+      "daysToHarvest": 100,
+      "rangeMin": 85,
+      "rangeMax": 120,
+      "notes": "Zależy od odmiany i wielkości owoców"
+    },
+    "sałata": {
+      "name": "Sałata",
+      "daysToHarvest": 45,
+      "rangeMin": 35,
+      "rangeMax": 55,
+      "notes": "Sałaty liściowe szybciej, główkowe wolniej"
+    },
+    "sałata lodowa": {
+      "name": "Sałata lodowa",
+      "daysToHarvest": 50,
+      "rangeMin": 45,
+      "rangeMax": 60,
+      "notes": "Sałata główkowa, zbierać całą główkę"
+    },
+    "rukola": {
+      "name": "Rukola",
+      "daysToHarvest": 30,
+      "rangeMin": 25,
+      "rangeMax": 40,
+      "notes": "Bardzo szybka, zbierać liście na bieżąco"
+    },
+    "szpinak": {
+      "name": "Szpinak",
+      "daysToHarvest": 40,
+      "rangeMin": 35,
+      "rangeMax": 50,
+      "notes": "Zbierać zewnętrzne liście"
+    },
+    "marchew": {
+      "name": "Marchew",
+      "daysToHarvest": 75,
+      "rangeMin": 60,
+      "rangeMax": 90,
+      "notes": "Młoda marchewka 60 dni, duże korzenie 80-90 dni"
+    },
+    "burak": {
+      "name": "Burak",
+      "daysToHarvest": 60,
+      "rangeMin": 50,
+      "rangeMax": 70,
+      "notes": "Liście można zbierać wcześniej"
+    },
+    "rzodkiewka": {
+      "name": "Rzodkiewka",
+      "daysToHarvest": 25,
+      "rangeMin": 20,
+      "rangeMax": 30,
+      "notes": "Najszybsze warzywo, nie przetrzymywać"
+    },
+    "cebula": {
+      "name": "Cebula",
+      "daysToHarvest": 100,
+      "rangeMin": 90,
+      "rangeMax": 120,
+      "notes": "Z sadzonki krócej, z nasion dłużej"
+    },
+    "czosnek": {
+      "name": "Czosnek",
+      "daysToHarvest": 240,
+      "rangeMin": 210,
+      "rangeMax": 270,
+      "notes": "Sadzony jesienią, zbiór w lipcu"
+    },
+    "ziemniak": {
+      "name": "Ziemniak",
+      "daysToHarvest": 90,
+      "rangeMin": 75,
+      "rangeMax": 120,
+      "notes": "Wczesne 75-90, średnie 90-110, późne 110-120 dni"
+    },
+    "kapusta": {
+      "name": "Kapusta",
+      "daysToHarvest": 90,
+      "rangeMin": 70,
+      "rangeMax": 120,
+      "notes": "Zależy od odmiany i rozmiaru główki"
+    },
+    "kalafior": {
+      "name": "Kalafior",
+      "daysToHarvest": 75,
+      "rangeMin": 60,
+      "rangeMax": 85,
+      "notes": "Zbierać gdy główka zwarta i biała"
+    },
+    "brokuł": {
+      "name": "Brokuł",
+      "daysToHarvest": 70,
+      "rangeMin": 60,
+      "rangeMax": 80,
+      "notes": "Zbierać przed kwitnieniem"
+    },
+    "por": {
+      "name": "Por",
+      "daysToHarvest": 120,
+      "rangeMin": 100,
+      "rangeMax": 150,
+      "notes": "Można zbierać przez całą zimę"
+    },
+    "fasolka szparagowa": {
+      "name": "Fasolka szparagowa",
+      "daysToHarvest": 55,
+      "rangeMin": 50,
+      "rangeMax": 65,
+      "notes": "Zbierać młode strąki regularnie"
+    },
+    "groch": {
+      "name": "Groch",
+      "daysToHarvest": 65,
+      "rangeMin": 55,
+      "rangeMax": 75,
+      "notes": "Zbierać gdy strąki wypełnione"
+    },
+    "bób": {
+      "name": "Bób",
+      "daysToHarvest": 90,
+      "rangeMin": 75,
+      "rangeMax": 100,
+      "notes": "Odporny na mróz, wczesny zbiór"
+    },
+    "arbuz": {
+      "name": "Arbuz",
+      "daysToHarvest": 85,
+      "rangeMin": 75,
+      "rangeMax": 100,
+      "notes": "Dojrzałość: żółta plama, suchy wąs"
+    },
+    "melon": {
+      "name": "Melon",
+      "daysToHarvest": 80,
+      "rangeMin": 70,
+      "rangeMax": 95,
+      "notes": "Zapach i kolor wskazują dojrzałość"
+    },
+    "truskawka": {
+      "name": "Truskawka",
+      "daysToHarvest": 120,
+      "rangeMin": 100,
+      "rangeMax": 365,
+      "notes": "Pierwsze plony rok po sadzeniu"
+    },
+    "malina": {
+      "name": "Malina",
+      "daysToHarvest": 365,
+      "rangeMin": 365,
+      "rangeMax": 730,
+      "notes": "Plony od drugiego roku"
+    },
+    "bazylia": {
+      "name": "Bazylia",
+      "daysToHarvest": 40,
+      "rangeMin": 30,
+      "rangeMax": 50,
+      "notes": "Zbierać liście na bieżąco"
+    },
+    "pietruszka": {
+      "name": "Pietruszka",
+      "daysToHarvest": 75,
+      "rangeMin": 60,
+      "rangeMax": 90,
+      "notes": "Liściowa szybciej, korzeniowa wolniej"
+    },
+    "koper": {
+      "name": "Koper",
+      "daysToHarvest": 50,
+      "rangeMin": 40,
+      "rangeMax": 60,
+      "notes": "Liście na bieżąco, nasiona jesienią"
+    },
+    "szczypiorek": {
+      "name": "Szczypiorek",
+      "daysToHarvest": 60,
+      "rangeMin": 50,
+      "rangeMax": 80,
+      "notes": "Bylina, zbierać na bieżąco"
+    },
+    "mięta": {
+      "name": "Mięta",
+      "daysToHarvest": 60,
+      "rangeMin": 50,
+      "rangeMax": 90,
+      "notes": "Bylina, bardzo ekspansywna"
+    },
+    "tymianek": {
+      "name": "Tymianek",
+      "daysToHarvest": 70,
+      "rangeMin": 60,
+      "rangeMax": 90,
+      "notes": "Bylina, zbierać przed kwitnieniem"
+    },
+    "rozmaryn": {
+      "name": "Rozmaryn",
+      "daysToHarvest": 85,
+      "rangeMin": 75,
+      "rangeMax": 100,
+      "notes": "Krzew, zbierać pędy na bieżąco"
+    },
+    "oregano": {
+      "name": "Oregano",
+      "daysToHarvest": 60,
+      "rangeMin": 50,
+      "rangeMax": 75,
+      "notes": "Bylina, zbierać przed kwitnieniem"
+    }
+  }
+}

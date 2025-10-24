@@ -4,6 +4,7 @@ import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import WeatherWidget from '../components/WeatherWidget';
 import TaskList from '../components/TaskList';
+import UpcomingHarvests from '../components/UpcomingHarvests';
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -70,10 +71,11 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Weather & Tasks - Mobile First */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+      {/* Widgets Row - Weather, Tasks, Harvests */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
         <WeatherWidget />
         <TaskList />
+        <UpcomingHarvests />
       </div>
 
       {/* Statistics Cards */}

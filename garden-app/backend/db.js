@@ -102,6 +102,37 @@ db.serialize(() => {
     }
   });
 
+  // Add harvest prediction columns to beds table
+  db.run(`ALTER TABLE beds ADD COLUMN expected_harvest_date DATE`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding expected_harvest_date column:', err.message);
+    }
+  });
+
+  db.run(`ALTER TABLE beds ADD COLUMN actual_harvest_date DATE`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding actual_harvest_date column:', err.message);
+    }
+  });
+
+  db.run(`ALTER TABLE beds ADD COLUMN yield_amount REAL`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding yield_amount column:', err.message);
+    }
+  });
+
+  db.run(`ALTER TABLE beds ADD COLUMN yield_unit TEXT`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding yield_unit column:', err.message);
+    }
+  });
+
+  db.run(`ALTER TABLE beds ADD COLUMN notes TEXT`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding notes column:', err.message);
+    }
+  });
+
   // Create indexes for better query performance
   db.run('CREATE INDEX IF NOT EXISTS idx_plots_user_id ON plots(user_id)');
   db.run('CREATE INDEX IF NOT EXISTS idx_beds_plot_id ON beds(plot_id)');
