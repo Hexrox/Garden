@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
 import Layout from './components/Layout';
 import ErrorBoundary from './components/ErrorBoundary';
 import Login from './pages/Login';
@@ -14,6 +15,7 @@ import SprayHistory from './pages/SprayHistory';
 import Reminders from './pages/Reminders';
 import Export from './pages/Export';
 import Profile from './pages/Profile';
+import PlantManagement from './pages/PlantManagement';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -134,6 +136,14 @@ function AppRoutes() {
         />
         <Route
           path="/profile"
+        <Route
+          path="/plants"
+          element={
+            <ProtectedRoute>
+              <PlantManagement />
+            </ProtectedRoute>
+          }
+        />
           element={
             <ProtectedRoute>
               <Profile />
@@ -152,9 +162,11 @@ function AppRoutes() {
 function App() {
   return (
     <ErrorBoundary>
-      <AuthProvider>
-        <AppRoutes />
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <AppRoutes />
+        </AuthProvider>
+      </ThemeProvider>
     </ErrorBoundary>
   );
 }
