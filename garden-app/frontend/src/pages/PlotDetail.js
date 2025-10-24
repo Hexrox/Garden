@@ -178,6 +178,20 @@ const PlotDetail = () => {
                     {bed.planted_date && (
                       <p className="text-sm text-gray-600">Posadzone: {bed.planted_date}</p>
                     )}
+                    {bed.expected_harvest_date && !bed.actual_harvest_date && (
+                      <p className="text-sm text-green-700 font-medium mt-1">
+                        🌾 Przewidywany zbiór: {new Date(bed.expected_harvest_date).toLocaleDateString('pl-PL', { day: 'numeric', month: 'long', year: 'numeric' })}
+                      </p>
+                    )}
+                    {bed.actual_harvest_date && (
+                      <p className="text-sm text-blue-700 font-medium mt-1">
+                        ✅ Zebrane: {new Date(bed.actual_harvest_date).toLocaleDateString('pl-PL', { day: 'numeric', month: 'long', year: 'numeric' })}
+                        {bed.yield_amount && ` • ${bed.yield_amount} ${bed.yield_unit || 'kg'}`}
+                      </p>
+                    )}
+                    {bed.notes && (
+                      <p className="text-sm text-gray-600 mt-1">{bed.notes}</p>
+                    )}
                     {bed.note && (
                       <p className="text-sm text-gray-600 mt-1">{bed.note}</p>
                     )}
