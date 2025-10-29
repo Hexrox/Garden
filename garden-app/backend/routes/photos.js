@@ -4,6 +4,7 @@ const { body, validationResult } = require('express-validator');
 const db = require('../db');
 const auth = require('../middleware/auth');
 const upload = require('../middleware/upload');
+const { imageValidationMiddleware } = require('../utils/imageValidator');
 
 // Get all photos for a bed
 router.get('/beds/:bedId/photos', auth, (req, res) => {
@@ -39,6 +40,7 @@ router.get('/beds/:bedId/photos', auth, (req, res) => {
 router.post('/beds/:bedId/photos',
   auth,
   upload.single('photo'),
+  imageValidationMiddleware,
   [
     body('caption').optional().trim(),
     body('taken_date').optional().isDate()

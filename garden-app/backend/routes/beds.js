@@ -4,6 +4,7 @@ const { body, validationResult } = require('express-validator');
 const db = require('../db');
 const auth = require('../middleware/auth');
 const upload = require('../middleware/upload');
+const { imageValidationMiddleware } = require('../utils/imageValidator');
 const { calculateHarvestDate } = require('../utils/harvestPredictor');
 
 // Get all beds for a plot
@@ -49,6 +50,7 @@ router.get('/beds/:id', auth, (req, res) => {
 router.post('/plots/:plotId/beds',
   auth,
   upload.single('image'),
+  imageValidationMiddleware,
   [
     body('row_number').isInt({ min: 1 }).withMessage('Numer rzędu musi być liczbą większą od 0'),
     body('plant_name').optional().trim(),
@@ -116,6 +118,7 @@ router.post('/plots/:plotId/beds',
 router.put('/beds/:id',
   auth,
   upload.single('image'),
+  imageValidationMiddleware,
   [
     body('row_number').optional().isInt({ min: 1 }).withMessage('Numer rzędu musi być liczbą większą od 0'),
     body('plant_name').optional().trim(),

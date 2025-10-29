@@ -2,15 +2,20 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { body, validationResult } = require('express-validator');
+const { validationResult } = require('express-validator');
 const db = require('../db');
+const {
+  strongPasswordValidator,
+  usernameValidator,
+  emailValidator
+} = require('../middleware/validators');
 
 // Register new user
 router.post('/register',
   [
-    body('username').trim().isLength({ min: 3 }).withMessage('Username musi mieć minimum 3 znaki'),
-    body('email').isEmail().normalizeEmail().withMessage('Nieprawidłowy email'),
-    body('password').isLength({ min: 6 }).withMessage('Hasło musi mieć minimum 6 znaków')
+    usernameValidator,
+    emailValidator,
+    strongPasswordValidator
   ],
   async (req, res) => {
     try {
@@ -67,8 +72,8 @@ router.post('/register',
 // Login user
 router.post('/login',
   [
-    body('email').isEmail().normalizeEmail().withMessage('Nieprawidłowy email'),
-    body('password').notEmpty().withMessage('Hasło jest wymagane')
+    emailValidator,
+    require('express-validator').body('password').notEmpty().withMessage('Hasło jest wymagane')
   ],
   async (req, res) => {
     try {

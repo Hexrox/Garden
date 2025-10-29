@@ -4,6 +4,7 @@ const { body, validationResult } = require('express-validator');
 const db = require('../db');
 const auth = require('../middleware/auth');
 const upload = require('../middleware/upload');
+const { imageValidationMiddleware } = require('../utils/imageValidator');
 const { deleteFile } = require('../utils/fileCleanup');
 
 // Get all plots for logged-in user
@@ -132,6 +133,7 @@ router.get('/plots/:id/details', auth, (req, res) => {
 router.post('/plots',
   auth,
   upload.single('image'),
+  imageValidationMiddleware,
   [
     body('name').trim().notEmpty().withMessage('Nazwa jest wymagana'),
     body('description').optional()
@@ -172,6 +174,7 @@ router.post('/plots',
 router.put('/plots/:id',
   auth,
   upload.single('image'),
+  imageValidationMiddleware,
   [
     body('name').optional().trim().notEmpty().withMessage('Nazwa nie może być pusta'),
     body('description').optional()

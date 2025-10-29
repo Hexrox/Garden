@@ -1,4 +1,9 @@
 require('dotenv').config();
+
+// Validate environment variables before starting
+const { validateOrExit } = require('./utils/envValidator');
+validateOrExit();
+
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -23,9 +28,31 @@ const successionRoutes = require('./routes/succession');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Security middleware
+// HTTPS enforcement (production only)
+const httpsRedirect = require('./middleware/httpsRedirect');
+app.use(httpsRedirect);
+
+// Security middleware with CSP
 app.use(helmet({
-  crossOriginResourcePolicy: { policy: "cross-origin" }
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"], // Allow inline styles for Tailwind
+      scriptSrc: ["'self'"],
+      imgSrc: ["'self'", "data:", "https:", "blob:"], // Allow images from various sources
+      connectSrc: ["'self'", process.env.FRONTEND_URL || "http://localhost:3000"],
+      fontSrc: ["'self'", "data:"],
+      objectSrc: ["'none'"],
+      mediaSrc: ["'self'"],
+      frameSrc: ["'none'"]
+    }
+  },
+  hsts: {
+    maxAge: 31536000, // 1 year
+    includeSubDomains: true,
+    preload: true
+  }
 }));
 
 // Compression middleware
@@ -46,7 +73,18 @@ app.use(express.urlencoded({ extended: true }));
 // Static files for uploads
 app.use('/uploads', express.static('uploads'));
 
-// Rate limiting for auth endpoints
+// Rate limiters configuration
+// General API rate limiter (per IP)
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 200, // 200 requests per window per IP
+  message: { error: 'Zbyt wiele żądań. Spróbuj ponownie za 15 minut.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => req.path === '/api/health' // Skip health check
+});
+
+// Stricter rate limiting for auth endpoints
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 5, // 5 requests per window
@@ -54,6 +92,20 @@ const authLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false
 });
+
+// Moderate rate limiting for mutations (POST, PUT, DELETE)
+const mutationLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // 100 mutations per window
+  message: { error: 'Zbyt wiele operacji. Spróbuj ponownie za chwilę.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => req.method === 'GET' // Only apply to mutations
+});
+
+// Apply rate limiting to all /api routes
+app.use('/api', apiLimiter);
+app.use('/api', mutationLimiter);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
