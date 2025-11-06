@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { Sprout, Droplets, Bell, Plus, BarChart3, Save, Layout } from 'lucide-react';
 import axios from '../config/axios';
 import { useAuth } from '../context/AuthContext';
 import WeatherWidget from '../components/WeatherWidget';
@@ -87,7 +88,9 @@ const Dashboard = () => {
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 transition-colors">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <div className="text-4xl">🌱</div>
+              <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
+                <Sprout className="w-6 h-6 text-green-600 dark:text-green-400" />
+              </div>
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Poletka</p>
@@ -104,7 +107,9 @@ const Dashboard = () => {
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 transition-colors">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <div className="text-4xl">🌿</div>
+              <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+                <Droplets className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+              </div>
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Aktywne opryski</p>
@@ -121,7 +126,9 @@ const Dashboard = () => {
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 transition-colors">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <div className="text-4xl">🔔</div>
+              <div className="w-12 h-12 bg-amber-100 dark:bg-amber-900/30 rounded-lg flex items-center justify-center">
+                <Bell className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+              </div>
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Przypomnienia</p>
@@ -203,27 +210,31 @@ const Dashboard = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Link
             to="/plots/new"
-            className="flex items-center justify-center px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+            className="flex items-center justify-center gap-2 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
           >
-            + Nowe poletko
+            <Plus size={18} />
+            Nowe poletko
           </Link>
           <Link
             to="/sprays"
-            className="flex items-center justify-center px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+            className="flex items-center justify-center gap-2 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
           >
-            📊 Historia oprysków
+            <BarChart3 size={18} />
+            Historia oprysków
           </Link>
           <Link
             to="/export"
-            className="flex items-center justify-center px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+            className="flex items-center justify-center gap-2 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
           >
-            💾 Eksport danych
+            <Save size={18} />
+            Eksport danych
           </Link>
           <Link
             to="/plots"
-            className="flex items-center justify-center px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+            className="flex items-center justify-center gap-2 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
           >
-            🌱 Wszystkie poletka
+            <Layout size={18} />
+            Wszystkie poletka
           </Link>
         </div>
       </div>

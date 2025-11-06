@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import axios from '../config/axios';
 import PhotoGallery from '../components/PhotoGallery';
+import GrowthProgressCard from '../features/growth-tracking/GrowthProgressCard';
+import CompanionSuggestions from '../features/companion-planting/CompanionSuggestions';
 
 const PlotDetail = () => {
   const { id } = useParams();
@@ -193,6 +195,24 @@ const PlotDetail = () => {
                     {bed.note && (
                       <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{bed.note}</p>
                     )}
+
+                    {/* Growth Progress - NEW FEATURE! */}
+                    {bed.plant_name && bed.planted_date && (
+                      <div className="mt-4">
+                        <GrowthProgressCard bed={bed} />
+                      </div>
+                    )}
+
+                    {/* Companion Planting Suggestions - NEW FEATURE! */}
+                    {bed.plant_name && (
+                      <div className="mt-4">
+                        <CompanionSuggestions
+                          plantName={bed.plant_name}
+                          nearbyBeds={plot.beds.filter(b => b.id !== bed.id)}
+                        />
+                      </div>
+                    )}
+
                     {bed.sprays && bed.sprays.length > 0 && (
                       <div className="mt-2">
                         <p className="text-xs font-medium text-gray-700 dark:text-gray-300">
