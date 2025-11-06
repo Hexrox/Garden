@@ -190,9 +190,6 @@ const PlotDetail = () => {
                         {bed.yield_amount && ` • ${bed.yield_amount} ${bed.yield_unit || 'kg'}`}
                       </p>
                     )}
-                    {bed.notes && (
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{bed.notes}</p>
-                    )}
                     {bed.note && (
                       <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{bed.note}</p>
                     )}

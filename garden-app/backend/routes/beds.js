@@ -185,7 +185,7 @@ router.put('/beds/:id',
             values.push(planted_date);
           }
           if (note !== undefined) {
-            updateFields.push('notes = ?');
+            updateFields.push('note = ?');
             values.push(note);
           }
           if (imagePath !== undefined) {
@@ -242,7 +242,7 @@ router.put('/beds/:id',
         values.push(plant_variety);
       }
       if (note !== undefined) {
-        updateFields.push('notes = ?');
+        updateFields.push('note = ?');
         values.push(note);
       }
       if (imagePath !== undefined) {

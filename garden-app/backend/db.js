@@ -168,11 +168,12 @@ db.serialize(() => {
     }
   });
 
-  db.run(`ALTER TABLE beds ADD COLUMN notes TEXT`, (err) => {
-    if (err && !err.message.includes('duplicate column')) {
-      console.error('Error adding notes column:', err.message);
-    }
-  });
+  // REMOVED: Duplicate 'notes' column - we use 'note' column from the original schema
+  // db.run(`ALTER TABLE beds ADD COLUMN notes TEXT`, (err) => {
+  //   if (err && !err.message.includes('duplicate column')) {
+  //     console.error('Error adding notes column:', err.message);
+  //   }
+  // });
 
   // Add dark_mode preference to users table
   db.run(`ALTER TABLE users ADD COLUMN dark_mode BOOLEAN DEFAULT 0`, (err) => {
