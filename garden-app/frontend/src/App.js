@@ -1,26 +1,209 @@
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
+import Layout from './components/Layout';
+import ErrorBoundary from './components/ErrorBoundary';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import Dashboard from './pages/Dashboard';
+import PlotsList from './pages/PlotsList';
+import PlotDetail from './pages/PlotDetail';
+import PlotForm from './pages/PlotForm';
+import SprayForm from './pages/SprayForm';
+import SprayHistory from './pages/SprayHistory';
+import Reminders from './pages/Reminders';
+import Export from './pages/Export';
+import Profile from './pages/Profile';
+import PlantManagement from './pages/PlantManagement';
+import SuccessionPlanting from './pages/SuccessionPlanting';
+import Tasks from './pages/Tasks';
+import Calendar from './pages/Calendar';
+import Analytics from './pages/Analytics';
 
-import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+// Protected Route Component
+const ProtectedRoute = ({ children }) => {
+  const { isAuthenticated, loading } = useAuth();
+
+  if (loading) {
+    return <div className="flex items-center justify-center min-h-screen">Ładowanie...</div>;
+  }
+
+  return isAuthenticated ? <Layout>{children}</Layout> : <Navigate to="/login" />;
+};
+
+// Public Route Component (redirect to dashboard if already logged in)
+const PublicRoute = ({ children }) => {
+  const { isAuthenticated, loading } = useAuth();
+
+  if (loading) {
+    return <div className="flex items-center justify-center min-h-screen">Ładowanie...</div>;
+  }
+
+  return !isAuthenticated ? children : <Navigate to="/dashboard" />;
+};
+
+function AppRoutes() {
+  return (
+    <Router>
+      <Routes>
+        {/* Public Routes */}
+        <Route
+          path="/login"
+          element={
+            <PublicRoute>
+              <Login />
+            </PublicRoute>
+          }
+        />
+        <Route
+          path="/register"
+          element={
+            <PublicRoute>
+              <Register />
+            </PublicRoute>
+          }
+        />
+
+        {/* Protected Routes */}
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/plots"
+          element={
+            <ProtectedRoute>
+              <PlotsList />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/plots/new"
+          element={
+            <ProtectedRoute>
+              <PlotForm />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/plots/:id"
+          element={
+            <ProtectedRoute>
+              <PlotDetail />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/plots/:id/edit"
+          element={
+            <ProtectedRoute>
+              <PlotForm />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/beds/:bedId/spray"
+          element={
+            <ProtectedRoute>
+              <SprayForm />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/sprays"
+          element={
+            <ProtectedRoute>
+              <SprayHistory />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/reminders"
+          element={
+            <ProtectedRoute>
+              <Reminders />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/export"
+          element={
+            <ProtectedRoute>
+              <Export />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/plants"
+          element={
+            <ProtectedRoute>
+              <PlantManagement />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/succession"
+          element={
+            <ProtectedRoute>
+              <SuccessionPlanting />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/tasks"
+          element={
+            <ProtectedRoute>
+              <Tasks />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/calendar"
+          element={
+            <ProtectedRoute>
+              <Calendar />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/analytics"
+          element={
+            <ProtectedRoute>
+              <Analytics />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <Profile />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Default redirect */}
+        <Route path="/" element={<Navigate to="/dashboard" />} />
+        <Route path="*" element={<Navigate to="/dashboard" />} />
+      </Routes>
+    </Router>
+  );
+}
 
 function App() {
-  const [plots, setPlots] = useState([]);
-
-  useEffect(() => {
-    axios.get('http://localhost:3001/api/plots').then(res => setPlots(res.data));
-  }, []);
-
   return (
-    <div className="p-4">
-      <h1 className="text-2xl font-bold mb-4">Poletka</h1>
-      <ul>
-        {plots.map(plot => (
-          <li key={plot.id} className="border p-2 rounded mb-2">
-            <strong>{plot.name}</strong><br />
-            {plot.description}
-          </li>
-        ))}
-      </ul>
-    </div>
+    <ErrorBoundary>
+      <ThemeProvider>
+        <AuthProvider>
+          <AppRoutes />
+        </AuthProvider>
+      </ThemeProvider>
+    </ErrorBoundary>
   );
 }
 
