@@ -200,7 +200,130 @@ const PlantManagement = () => {
                   />
                 </div>
               </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Kategoria</label>
+                <select
+                  value={form.category}
+                  onChange={(e) => setForm({ ...form, category: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+                >
+                  <option value="">Wybierz kategorię</option>
+                  <option value="Warzywa owocowe">Warzywa owocowe</option>
+                  <option value="Warzywa korzeniowe">Warzywa korzeniowe</option>
+                  <option value="Warzywa cebulowe">Warzywa cebulowe</option>
+                  <option value="Warzywa kapustne">Warzywa kapustne</option>
+                  <option value="Warzywa liściowe">Warzywa liściowe</option>
+                  <option value="Warzywa strączkowe">Warzywa strączkowe</option>
+                  <option value="Zioła">Zioła</option>
+                  <option value="Owoce">Owoce</option>
+                  <option value="Kwiaty jednoroczne">Kwiaty jednoroczne</option>
+                  <option value="Kwiaty wieloletnie">Kwiaty wieloletnie</option>
+                  <option value="Kwiaty cebulowe">Kwiaty cebulowe</option>
+                </select>
+              </div>
             </div>
+
+            {/* Flower-specific fields */}
+            {(form.category?.includes('Kwiaty') || form.flower_color) && (
+              <div className="border-t pt-4 mt-4">
+                <h3 className="text-md font-semibold mb-3 text-gray-900 dark:text-white">Właściwości kwiatów</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Kolor kwiatu</label>
+                    <input
+                      type="text"
+                      value={form.flower_color}
+                      onChange={(e) => setForm({ ...form, flower_color: e.target.value })}
+                      className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+                      placeholder="np. Żółty, Różowy"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Pora kwitnienia</label>
+                    <input
+                      type="text"
+                      value={form.bloom_season}
+                      onChange={(e) => setForm({ ...form, bloom_season: e.target.value })}
+                      className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+                      placeholder="np. Wiosna, Lato, Jesień"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Wysokość</label>
+                    <input
+                      type="text"
+                      value={form.height}
+                      onChange={(e) => setForm({ ...form, height: e.target.value })}
+                      className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+                      placeholder="np. 30-60cm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Wymagania świetlne</label>
+                    <select
+                      value={form.sun_requirement}
+                      onChange={(e) => setForm({ ...form, sun_requirement: e.target.value })}
+                      className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+                    >
+                      <option value="">Wybierz</option>
+                      <option value="Pełne słońce">Pełne słońce</option>
+                      <option value="Pełne słońce do półcienia">Pełne słońce do półcienia</option>
+                      <option value="Półcień">Półcień</option>
+                      <option value="Cień do półcienia">Cień do półcienia</option>
+                      <option value="Cień">Cień</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Pora sadzenia</label>
+                    <select
+                      value={form.planting_time}
+                      onChange={(e) => setForm({ ...form, planting_time: e.target.value })}
+                      className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+                    >
+                      <option value="">Wybierz</option>
+                      <option value="Wiosna">Wiosna</option>
+                      <option value="Jesień">Jesień</option>
+                      <option value="Wiosna lub Jesień">Wiosna lub Jesień</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={form.is_perennial}
+                        onChange={(e) => setForm({ ...form, is_perennial: e.target.checked })}
+                        className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                      />
+                      <span className="text-sm font-medium">Roślina wieloletnia</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Bulb storage requirements (for Kwiaty cebulowe) */}
+            {form.category === 'Kwiaty cebulowe' && (
+              <div className="border-t pt-4 mt-4">
+                <h3 className="text-md font-semibold mb-3 text-gray-900 dark:text-white">Przechowywanie cebulek</h3>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Wymagania przechowywania</label>
+                  <select
+                    value={form.storage_requirement}
+                    onChange={(e) => setForm({ ...form, storage_requirement: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+                  >
+                    <option value="">Wybierz</option>
+                    <option value="Mrozoodporne - zostawić w ziemi">Mrozoodporne - zostawić w ziemi</option>
+                    <option value="Wykopać na zimę">Wykopać na zimę</option>
+                    <option value="Wykopać po przekwitnięciu">Wykopać po przekwitnięciu</option>
+                  </select>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    ⚠️ WAŻNE: Dalie, mieczyki - wykopać przed zimą. Tulipany, narcyzy - zostawić.
+                  </p>
+                </div>
+              </div>
+            )}
+
             <div>
               <label className="block text-sm font-medium mb-1">Notatki</label>
               <textarea
