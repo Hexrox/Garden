@@ -141,4 +141,67 @@ router.put('/dark-mode', auth, (req, res) => {
   );
 });
 
+// Update user profile (frost dates, hardiness zone, location)
+router.put('/profile', auth, (req, res) => {
+  const { hardiness_zone, first_frost_date, last_frost_date, location } = req.body;
+
+  let updateFields = [];
+  let values = [];
+
+  if (hardiness_zone !== undefined) {
+    updateFields.push('hardiness_zone = ?');
+    values.push(hardiness_zone);
+  }
+  if (first_frost_date !== undefined) {
+    updateFields.push('first_frost_date = ?');
+    values.push(first_frost_date);
+  }
+  if (last_frost_date !== undefined) {
+    updateFields.push('last_frost_date = ?');
+    values.push(last_frost_date);
+  }
+  if (location !== undefined) {
+    updateFields.push('location = ?');
+    values.push(location);
+  }
+
+  if (updateFields.length === 0) {
+    return res.status(400).json({ error: 'Brak danych do aktualizacji' });
+  }
+
+  values.push(req.user.id);
+
+  db.run(
+    `UPDATE users SET ${updateFields.join(', ')} WHERE id = ?`,
+    values,
+    function (err) {
+      if (err) {
+        console.error('Error updating profile:', err);
+        return res.status(500).json({ error: 'Błąd podczas aktualizacji profilu' });
+      }
+
+      res.json({ message: 'Profil zaktualizowany pomyślnie' });
+    }
+  );
+});
+
+// Get user profile
+router.get('/profile', auth, (req, res) => {
+  db.get(
+    'SELECT id, username, email, hardiness_zone, first_frost_date, last_frost_date, location FROM users WHERE id = ?',
+    [req.user.id],
+    (err, user) => {
+      if (err) {
+        return res.status(500).json({ error: 'Błąd serwera' });
+      }
+
+      if (!user) {
+        return res.status(404).json({ error: 'Użytkownik nie znaleziony' });
+      }
+
+      res.json(user);
+    }
+  );
+});
+
 module.exports = router;

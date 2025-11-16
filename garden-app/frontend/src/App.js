@@ -17,6 +17,8 @@ import Export from './pages/Export';
 import Profile from './pages/Profile';
 import PlantManagement from './pages/PlantManagement';
 import SuccessionPlanting from './pages/SuccessionPlanting';
+import Tasks from './pages/Tasks';
+import Calendar from './pages/Calendar';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -148,6 +150,22 @@ function AppRoutes() {
           element={
             <ProtectedRoute>
               <SuccessionPlanting />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/tasks"
+          element={
+            <ProtectedRoute>
+              <Tasks />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/calendar"
+          element={
+            <ProtectedRoute>
+              <Calendar />
             </ProtectedRoute>
           }
         />

@@ -110,6 +110,12 @@ db.serialize(() => {
   db.run(`ALTER TABLE plants ADD COLUMN planting_time TEXT`, (err) => {});
   db.run(`ALTER TABLE plants ADD COLUMN storage_requirement TEXT`, (err) => {});
 
+  // Add columns for frost dates and hardiness zones
+  db.run(`ALTER TABLE users ADD COLUMN hardiness_zone TEXT`, (err) => {});
+  db.run(`ALTER TABLE users ADD COLUMN first_frost_date TEXT`, (err) => {});
+  db.run(`ALTER TABLE users ADD COLUMN last_frost_date TEXT`, (err) => {});
+  db.run(`ALTER TABLE users ADD COLUMN location TEXT`, (err) => {});
+
   // Plant photos table
   db.run(`CREATE TABLE IF NOT EXISTS plant_photos (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
