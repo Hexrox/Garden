@@ -8,10 +8,18 @@ const PlantManagement = () => {
   const [form, setForm] = useState({
     name: '',
     display_name: '',
+    category: '',
     days_to_harvest: '',
     range_min: '',
     range_max: '',
-    notes: ''
+    notes: '',
+    flower_color: '',
+    bloom_season: '',
+    height: '',
+    sun_requirement: '',
+    is_perennial: false,
+    planting_time: '',
+    storage_requirement: ''
   });
   const [message, setMessage] = useState({ type: '', text: '' });
   const [loading, setLoading] = useState(true);
@@ -53,10 +61,18 @@ const PlantManagement = () => {
     setForm({
       name: plant.name,
       display_name: plant.display_name,
+      category: plant.category || '',
       days_to_harvest: plant.days_to_harvest,
       range_min: plant.range_min || '',
       range_max: plant.range_max || '',
-      notes: plant.notes || ''
+      notes: plant.notes || '',
+      flower_color: plant.flower_color || '',
+      bloom_season: plant.bloom_season || '',
+      height: plant.height || '',
+      sun_requirement: plant.sun_requirement || '',
+      is_perennial: plant.is_perennial || false,
+      planting_time: plant.planting_time || '',
+      storage_requirement: plant.storage_requirement || ''
     });
     setShowForm(true);
   };
@@ -76,10 +92,18 @@ const PlantManagement = () => {
     setForm({
       name: '',
       display_name: '',
+      category: '',
       days_to_harvest: '',
       range_min: '',
       range_max: '',
-      notes: ''
+      notes: '',
+      flower_color: '',
+      bloom_season: '',
+      height: '',
+      sun_requirement: '',
+      is_perennial: false,
+      planting_time: '',
+      storage_requirement: ''
     });
     setEditingPlant(null);
     setShowForm(false);

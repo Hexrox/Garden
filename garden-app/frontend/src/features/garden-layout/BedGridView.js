@@ -112,7 +112,7 @@ const BedGridView = ({ beds = [], onBedClick }) => {
       </div>
 
       {/* Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
         {sortedBeds.map((bed) => {
           const status = getBedStatus(bed);
           const config = statusConfig[status];

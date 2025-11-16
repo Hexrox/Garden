@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import axios from '../config/axios';
 import PhotoGallery from '../components/PhotoGallery';
+import PlantSelector from '../components/PlantSelector';
 import GrowthProgressCard from '../features/growth-tracking/GrowthProgressCard';
 import CompanionSuggestions from '../features/companion-planting/CompanionSuggestions';
 import BedGridView from '../features/garden-layout/BedGridView';
@@ -17,6 +18,7 @@ const PlotDetail = () => {
     plant_name: '',
     plant_variety: '',
     planted_date: '',
+    expected_harvest_date: '',
     note: ''
   });
 
@@ -44,6 +46,7 @@ const PlotDetail = () => {
         plant_name: '',
         plant_variety: '',
         planted_date: '',
+        expected_harvest_date: '',
         note: ''
       });
       setShowBedForm(false);
@@ -84,7 +87,7 @@ const PlotDetail = () => {
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 transition-colors">
           <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Nowa grządka</h3>
           <form onSubmit={handleAddBed} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Numer rzędu *
@@ -97,15 +100,20 @@ const PlotDetail = () => {
                   onChange={(e) => setBedForm({ ...bedForm, row_number: e.target.value })}
                 />
               </div>
-              <div>
+              <div className="col-span-2">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Nazwa rośliny
                 </label>
-                <input
-                  type="text"
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white"
+                <PlantSelector
                   value={bedForm.plant_name}
-                  onChange={(e) => setBedForm({ ...bedForm, plant_name: e.target.value })}
+                  onChange={(plantName) => setBedForm({ ...bedForm, plant_name: plantName })}
+                  plantedDate={bedForm.planted_date}
+                  onHarvestDateCalculated={(harvestDate, days) => {
+                    setBedForm({
+                      ...bedForm,
+                      expected_harvest_date: harvestDate
+                    });
+                  }}
                 />
               </div>
               <div>
@@ -129,6 +137,23 @@ const PlotDetail = () => {
                   value={bedForm.planted_date}
                   onChange={(e) => setBedForm({ ...bedForm, planted_date: e.target.value })}
                 />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Przewidywany zbiór
+                </label>
+                <input
+                  type="date"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white"
+                  value={bedForm.expected_harvest_date}
+                  onChange={(e) => setBedForm({ ...bedForm, expected_harvest_date: e.target.value })}
+                  placeholder="Automatycznie po wyborze rośliny"
+                />
+                {bedForm.expected_harvest_date && (
+                  <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                    ✓ Data została obliczona automatycznie
+                  </p>
+                )}
               </div>
             </div>
             <div>

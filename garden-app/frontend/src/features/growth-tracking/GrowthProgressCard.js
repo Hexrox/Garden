@@ -92,7 +92,7 @@ const GrowthProgressCard = ({ bed }) => {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="text-center p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg">
           <div className="flex items-center justify-center gap-1 text-gray-500 dark:text-gray-400 mb-1">
             <Calendar size={14} />

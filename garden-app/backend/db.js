@@ -98,6 +98,18 @@ db.serialize(() => {
     FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
   )`);
 
+  // Add columns for flower properties if they don't exist
+  db.run(`ALTER TABLE plants ADD COLUMN category TEXT`, (err) => {
+    // Ignore if column already exists
+  });
+  db.run(`ALTER TABLE plants ADD COLUMN flower_color TEXT`, (err) => {});
+  db.run(`ALTER TABLE plants ADD COLUMN bloom_season TEXT`, (err) => {});
+  db.run(`ALTER TABLE plants ADD COLUMN height TEXT`, (err) => {});
+  db.run(`ALTER TABLE plants ADD COLUMN sun_requirement TEXT`, (err) => {});
+  db.run(`ALTER TABLE plants ADD COLUMN is_perennial BOOLEAN DEFAULT 0`, (err) => {});
+  db.run(`ALTER TABLE plants ADD COLUMN planting_time TEXT`, (err) => {});
+  db.run(`ALTER TABLE plants ADD COLUMN storage_requirement TEXT`, (err) => {});
+
   // Plant photos table
   db.run(`CREATE TABLE IF NOT EXISTS plant_photos (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
