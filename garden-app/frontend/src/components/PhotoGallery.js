@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from '../config/axios';
+import PhotoTimeline from '../features/photo-timeline/PhotoTimeline';
+import { Upload, Camera } from 'lucide-react';
 
 const PhotoGallery = ({ bedId }) => {
   const [photos, setPhotos] = useState([]);
@@ -76,17 +78,30 @@ const PhotoGallery = ({ bedId }) => {
     return <div className="text-center py-4 text-gray-500 dark:text-gray-400">Ładowanie galerii...</div>;
   }
 
+  // Format photos for PhotoTimeline component
+  const formattedPhotos = photos.map(photo => ({
+    ...photo,
+    url: `/${photo.photo_path}`,
+    description: photo.caption
+  }));
+
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-          📸 Galeria ({photos.length})
-        </h3>
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
+            <Camera className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+          </div>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+            Galeria ({photos.length})
+          </h3>
+        </div>
         <button
           onClick={() => setShowUploadForm(!showUploadForm)}
-          className="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+          className="flex items-center gap-2 px-3 py-2 text-sm bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors"
         >
-          {showUploadForm ? 'Anuluj' : '+ Dodaj zdjęcie'}
+          <Upload size={16} />
+          <span>{showUploadForm ? 'Anuluj' : 'Dodaj zdjęcie'}</span>
         </button>
       </div>
 
@@ -142,41 +157,11 @@ const PhotoGallery = ({ bedId }) => {
         </div>
       )}
 
-      {photos.length === 0 ? (
-        <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-          <p className="text-4xl mb-2">📷</p>
-          <p className="text-sm">Brak zdjęć. Dodaj pierwsze!</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {photos.map((photo) => (
-            <div key={photo.id} className="relative group">
-              <div className="aspect-square overflow-hidden rounded-lg bg-gray-200 dark:bg-gray-700">
-                <img
-                  src={`/${photo.photo_path}`}
-                  alt={photo.caption || 'Plant photo'}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div className="mt-2">
-                {photo.caption && (
-                  <p className="text-sm text-gray-700 dark:text-gray-300">{photo.caption}</p>
-                )}
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {new Date(photo.taken_date).toLocaleDateString('pl-PL')}
-                </p>
-              </div>
-              <button
-                onClick={() => handleDelete(photo.id)}
-                className="absolute top-2 right-2 bg-red-600 hover:bg-red-700 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-all shadow-lg"
-                title="Usuń zdjęcie"
-              >
-                🗑️
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
+      {/* Photo Timeline Display */}
+      <PhotoTimeline
+        photos={formattedPhotos}
+        onPhotoDelete={handleDelete}
+      />
     </div>
   );
 };

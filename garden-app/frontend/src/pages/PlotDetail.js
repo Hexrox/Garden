@@ -4,6 +4,7 @@ import axios from '../config/axios';
 import PhotoGallery from '../components/PhotoGallery';
 import GrowthProgressCard from '../features/growth-tracking/GrowthProgressCard';
 import CompanionSuggestions from '../features/companion-planting/CompanionSuggestions';
+import BedGridView from '../features/garden-layout/BedGridView';
 
 const PlotDetail = () => {
   const { id } = useParams();
@@ -160,10 +161,20 @@ const PlotDetail = () => {
         </div>
       )}
 
+      {/* Visual Grid Overview - NEW FEATURE! */}
+      {plot.beds && plot.beds.length > 0 && (
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 transition-colors">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            Przegląd wizualny
+          </h2>
+          <BedGridView beds={plot.beds} />
+        </div>
+      )}
+
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow transition-colors">
         <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-            Grządki ({plot.beds?.length || 0})
+            Grządki - szczegóły ({plot.beds?.length || 0})
           </h2>
         </div>
         {plot.beds && plot.beds.length > 0 ? (
