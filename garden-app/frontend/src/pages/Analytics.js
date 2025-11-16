@@ -3,13 +3,13 @@ import axios from '../config/axios';
 import { TrendingUp, Sprout, CheckCircle, Trophy, Droplets, Calendar } from 'lucide-react';
 
 /**
- * Analytics Page
+ * Strona Analityki
  *
- * Beautiful statistics dashboard with:
- * - Key metrics cards
- * - Top plants leaderboard
- * - Growth insights
- * - Mobile-optimized layout
+ * Piękny panel statystyk z:
+ * - Kartami kluczowych metryk
+ * - Rankingiem najpopularniejszych roślin
+ * - Wizualizacją wzrostu
+ * - Układem zoptymalizowanym na urządzenia mobilne
  */
 const Analytics = () => {
   const [stats, setStats] = useState(null);

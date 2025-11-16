@@ -364,7 +364,7 @@ router.post('/generate', auth, async (req, res) => {
       }
     }
 
-    // 3. Smart Watering System - rośliny wymagające podlania
+    // 3. Inteligentny System Podlewania - rośliny wymagające podlania
     const needsWatering = await new Promise((resolve, reject) => {
       db.all(
         `SELECT b.*, p.name as plot_name
