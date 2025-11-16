@@ -200,6 +200,13 @@ db.serialize(() => {
     }
   });
 
+  // Add last_watered_date for smart watering system
+  db.run(`ALTER TABLE beds ADD COLUMN last_watered_date DATE`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding last_watered_date column:', err.message);
+    }
+  });
+
   // Create indexes for better query performance
   db.run('CREATE INDEX IF NOT EXISTS idx_plots_user_id ON plots(user_id)');
   db.run('CREATE INDEX IF NOT EXISTS idx_beds_plot_id ON beds(plot_id)');

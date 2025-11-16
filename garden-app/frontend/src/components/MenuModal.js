@@ -9,7 +9,8 @@ import {
   Download,
   Repeat,
   Droplets,
-  LayoutGrid
+  LayoutGrid,
+  TrendingUp
 } from 'lucide-react';
 
 /**
@@ -29,6 +30,15 @@ const MenuModal = ({ isOpen, onClose }) => {
       label: 'Kalendarz',
       description: 'Ogrodnika',
       color: 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400',
+      badge: 'NOWY'
+    },
+    {
+      id: 'analytics',
+      path: '/analytics',
+      icon: TrendingUp,
+      label: 'Statystyki',
+      description: 'Ogrodu',
+      color: 'bg-pink-100 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400',
       badge: 'NOWY'
     },
     {
@@ -146,7 +156,7 @@ const MenuModal = ({ isOpen, onClose }) => {
               </span>
               <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
                 <LayoutGrid size={16} />
-                <span className="font-medium">6 modułów</span>
+                <span className="font-medium">7 modułów</span>
               </div>
             </div>
           </div>

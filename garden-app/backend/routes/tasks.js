@@ -144,6 +144,21 @@ router.put('/:id', auth, (req, res) => {
             return res.status(500).json({ error: err.message });
           }
 
+          // Jeśli oznaczono zadanie podlewania jako completed, zaktualizuj last_watered_date
+          if (completed && task.task_type === 'water' && task.bed_id) {
+            db.run(
+              `UPDATE beds
+               SET last_watered_date = ?
+               WHERE id = ?`,
+              [new Date().toISOString().split('T')[0], task.bed_id],
+              (updateErr) => {
+                if (updateErr) {
+                  console.error('Błąd aktualizacji last_watered_date:', updateErr);
+                }
+              }
+            );
+          }
+
           db.get('SELECT * FROM tasks WHERE id = ?', [req.params.id], (err, updated) => {
             if (err) {
               return res.status(500).json({ error: err.message });
@@ -161,25 +176,52 @@ router.put('/:id', auth, (req, res) => {
  * Oznacz zadanie jako ukończone
  */
 router.post('/:id/complete', auth, (req, res) => {
-  db.run(
-    `UPDATE tasks
-     SET completed = 1, completed_at = ?
-     WHERE id = ? AND user_id = ?`,
-    [new Date().toISOString(), req.params.id, req.user.id],
-    function (err) {
+  // Najpierw pobierz zadanie aby sprawdzić typ
+  db.get(
+    'SELECT * FROM tasks WHERE id = ? AND user_id = ?',
+    [req.params.id, req.user.id],
+    (err, task) => {
       if (err) {
         return res.status(500).json({ error: err.message });
       }
-      if (this.changes === 0) {
+      if (!task) {
         return res.status(404).json({ error: 'Zadanie nie znalezione' });
       }
 
-      db.get('SELECT * FROM tasks WHERE id = ?', [req.params.id], (err, task) => {
-        if (err) {
-          return res.status(500).json({ error: err.message });
+      // Zaktualizuj zadanie jako ukończone
+      db.run(
+        `UPDATE tasks
+         SET completed = 1, completed_at = ?
+         WHERE id = ?`,
+        [new Date().toISOString(), req.params.id],
+        function (err) {
+          if (err) {
+            return res.status(500).json({ error: err.message });
+          }
+
+          // Jeśli to zadanie podlewania, zaktualizuj last_watered_date w beds
+          if (task.task_type === 'water' && task.bed_id) {
+            db.run(
+              `UPDATE beds
+               SET last_watered_date = ?
+               WHERE id = ?`,
+              [new Date().toISOString().split('T')[0], task.bed_id],
+              (updateErr) => {
+                if (updateErr) {
+                  console.error('Błąd aktualizacji last_watered_date:', updateErr);
+                }
+              }
+            );
+          }
+
+          db.get('SELECT * FROM tasks WHERE id = ?', [req.params.id], (err, updatedTask) => {
+            if (err) {
+              return res.status(500).json({ error: err.message });
+            }
+            res.json(updatedTask);
+          });
         }
-        res.json(task);
-      });
+      );
     }
   );
 });
@@ -314,6 +356,81 @@ router.post('/generate', auth, async (req, res) => {
               if (err) reject(err);
               else {
                 generatedTasks.push({ id: this.lastID, type: 'harvest' });
+                resolve();
+              }
+            }
+          );
+        });
+      }
+    }
+
+    // 3. Smart Watering System - rośliny wymagające podlania
+    const needsWatering = await new Promise((resolve, reject) => {
+      db.all(
+        `SELECT b.*, p.name as plot_name
+         FROM beds b
+         JOIN plots p ON b.plot_id = p.id
+         WHERE p.user_id = ?
+         AND b.plant_name IS NOT NULL
+         AND (
+           b.last_watered_date IS NULL
+           OR julianday('now') - julianday(b.last_watered_date) >= 3
+         )`,
+        [req.user.id],
+        (err, rows) => {
+          if (err) reject(err);
+          else resolve(rows || []);
+        }
+      );
+    });
+
+    for (const bed of needsWatering) {
+      const existing = await new Promise((resolve, reject) => {
+        db.get(
+          `SELECT id FROM tasks
+           WHERE user_id = ? AND task_type = 'water' AND bed_id = ? AND completed = 0`,
+          [req.user.id, bed.id],
+          (err, row) => {
+            if (err) reject(err);
+            else resolve(row);
+          }
+        );
+      });
+
+      if (!existing) {
+        let daysAgo = 'nigdy nie podlewano';
+        let priority = 2;
+
+        if (bed.last_watered_date) {
+          const daysSinceWatered = Math.floor(
+            (Date.now() - new Date(bed.last_watered_date)) / (1000 * 60 * 60 * 24)
+          );
+          daysAgo = `${daysSinceWatered} dni temu`;
+
+          // Wysokie priority jeśli 5+ dni bez podlewania
+          if (daysSinceWatered >= 5) {
+            priority = 3;
+          }
+        } else {
+          // Wysokie priority jeśli nigdy nie podlewano
+          priority = 3;
+        }
+
+        await new Promise((resolve, reject) => {
+          db.run(
+            `INSERT INTO tasks (user_id, task_type, description, due_date, priority, bed_id)
+             VALUES (?, 'water', ?, ?, ?, ?)`,
+            [
+              req.user.id,
+              `Podlać ${bed.plant_name} (ostatnio: ${daysAgo})`,
+              new Date().toISOString().split('T')[0],
+              priority,
+              bed.id
+            ],
+            function (err) {
+              if (err) reject(err);
+              else {
+                generatedTasks.push({ id: this.lastID, type: 'water' });
                 resolve();
               }
             }

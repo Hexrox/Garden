@@ -19,6 +19,7 @@ import PlantManagement from './pages/PlantManagement';
 import SuccessionPlanting from './pages/SuccessionPlanting';
 import Tasks from './pages/Tasks';
 import Calendar from './pages/Calendar';
+import Analytics from './pages/Analytics';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -166,6 +167,14 @@ function AppRoutes() {
           element={
             <ProtectedRoute>
               <Calendar />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/analytics"
+          element={
+            <ProtectedRoute>
+              <Analytics />
             </ProtectedRoute>
           }
         />
