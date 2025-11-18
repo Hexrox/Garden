@@ -14,10 +14,10 @@ import {
 } from 'lucide-react';
 
 /**
- * MenuModal Component
+ * Komponent MenuModal
  *
- * Elegant modal menu providing access to all app features
- * Grid layout, mobile-optimized, clear categories
+ * Eleganckie menu modalne zapewniające dostęp do wszystkich funkcji aplikacji
+ * Układ siatki, zoptymalizowany na urządzenia mobilne, przejrzyste kategorie
  */
 const MenuModal = ({ isOpen, onClose }) => {
   if (!isOpen) return null;

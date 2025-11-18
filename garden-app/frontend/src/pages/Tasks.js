@@ -3,13 +3,13 @@ import axios from '../config/axios';
 import { CheckSquare, Plus, Calendar, AlertCircle, Sparkles, Trash2, Check } from 'lucide-react';
 
 /**
- * Tasks Page
+ * Strona Zadań
  *
- * Full-featured task management with:
- * - Auto-generated smart tasks
- * - Manual task creation
- * - Filtering by status
- * - Priority management
+ * Pełne zarządzanie zadaniami z:
+ * - Automatycznie generowanymi inteligentnymi zadaniami
+ * - Ręcznym tworzeniem zadań
+ * - Filtrowaniem według statusu
+ * - Zarządzaniem priorytetami
  */
 const Tasks = () => {
   const [tasks, setTasks] = useState([]);

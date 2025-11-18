@@ -3,13 +3,13 @@ import axios from '../config/axios';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, X } from 'lucide-react';
 
 /**
- * Calendar Page
+ * Strona Kalendarza
  *
- * Beautiful garden calendar with:
- * - Month view with color-coded events
- * - Integration with tasks, reminders, succession, sprays
- * - Click to see day details
- * - Mobile-optimized grid layout
+ * Piękny kalendarz ogrodowy z:
+ * - Widokiem miesiąca z kolorowymi wydarzeniami
+ * - Integracją z zadaniami, przypomnieniami, sadzeniem sukcesywnym, opryskimi
+ * - Kliknięciem aby zobaczyć szczegóły dnia
+ * - Układem siatki zoptymalizowanym na urządzenia mobilne
  */
 const Calendar = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
