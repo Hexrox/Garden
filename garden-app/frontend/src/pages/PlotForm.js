@@ -13,6 +13,7 @@ const PlotForm = () => {
   });
   const [image, setImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
+  const [deleteImage, setDeleteImage] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [loadingPlot, setLoadingPlot] = useState(isEditMode);
@@ -65,6 +66,7 @@ const PlotForm = () => {
       }
 
       setImage(file);
+      setDeleteImage(false);
       setError('');
 
       // Create preview
@@ -94,6 +96,9 @@ const PlotForm = () => {
       data.append('description', formData.description.trim());
       if (image) {
         data.append('image', image);
+      }
+      if (deleteImage) {
+        data.append('deleteImage', 'true');
       }
 
       if (isEditMode) {
@@ -222,6 +227,7 @@ const PlotForm = () => {
                   onClick={() => {
                     setImage(null);
                     setImagePreview(null);
+                    setDeleteImage(true);
                   }}
                   className="absolute top-2 right-2 bg-red-600 text-white rounded-full p-2 hover:bg-red-700 shadow"
                 >
