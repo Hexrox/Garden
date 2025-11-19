@@ -1,7 +1,8 @@
 import axios from 'axios';
 
 // Configure axios defaults
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+// Use empty string for relative URLs (works with nginx proxy)
+const API_URL = process.env.REACT_APP_API_URL || '';
 
 axios.defaults.baseURL = API_URL;
 axios.defaults.headers.common['Content-Type'] = 'application/json';

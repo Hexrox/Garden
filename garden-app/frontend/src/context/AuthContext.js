@@ -91,6 +91,15 @@ export const AuthProvider = ({ children }) => {
 
       return { success: true };
     } catch (error) {
+      // Handle validation errors array
+      if (error.response?.data?.errors && Array.isArray(error.response.data.errors)) {
+        const errorMessages = error.response.data.errors.map(err => err.msg).join(', ');
+        return {
+          success: false,
+          error: errorMessages
+        };
+      }
+
       return {
         success: false,
         error: error.response?.data?.error || 'Błąd rejestracji'

@@ -54,6 +54,12 @@ const Layout = ({ children }) => {
                 >
                   Przypomnienia
                 </Link>
+                <Link
+                  to="/profile"
+                  className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-900 dark:text-gray-100 hover:text-green-600 dark:hover:text-green-400 transition"
+                >
+                  Profil
+                </Link>
               </div>
             </div>
             <div className="flex items-center gap-3">
