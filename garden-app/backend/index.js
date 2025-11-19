@@ -30,8 +30,8 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 // HTTPS enforcement (production only)
-const httpsRedirect = require('./middleware/httpsRedirect');
-app.use(httpsRedirect);
+// const httpsRedirect = require('./middleware/httpsRedirect');
+// app.use(httpsRedirect);
 
 // Security middleware with CSP
 app.use(helmet({
