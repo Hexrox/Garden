@@ -29,6 +29,10 @@ const analyticsRoutes = require('./routes/analytics');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// Trust proxy - needed for rate limiting behind nginx/reverse proxy
+// Set to true when behind nginx to properly read X-Forwarded-For header
+app.set('trust proxy', true);
+
 // HTTPS enforcement (production only)
 // const httpsRedirect = require('./middleware/httpsRedirect');
 // app.use(httpsRedirect);
