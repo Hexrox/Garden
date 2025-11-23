@@ -45,8 +45,14 @@ app.use(helmet({
       defaultSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'"], // Allow inline styles for Tailwind
       scriptSrc: ["'self'"],
-      imgSrc: ["'self'", "data:", "https:", "blob:"], // Allow images from various sources
-      connectSrc: ["'self'", process.env.FRONTEND_URL || "http://localhost:3000"],
+      // SECURITY: Restricted to trusted domains only (was: all HTTPS)
+      imgSrc: [
+        "'self'",
+        "data:",
+        "blob:",
+        "https://openweathermap.org"  // Weather API images
+      ],
+      connectSrc: ["'self'", process.env.FRONTEND_URL || "http://localhost:3000", "https://api.openweathermap.org"],
       fontSrc: ["'self'", "data:"],
       objectSrc: ["'none'"],
       mediaSrc: ["'self'"],

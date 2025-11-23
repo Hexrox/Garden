@@ -6,6 +6,7 @@ const auth = require('../middleware/auth');
 const upload = require('../middleware/upload');
 const { imageValidationMiddleware } = require('../utils/imageValidator');
 const { deleteFile } = require('../utils/fileCleanup');
+const { nameValidator, descriptionValidator } = require('../middleware/validators');
 
 // Get all plots for logged-in user
 router.get('/plots', auth, (req, res) => {
@@ -136,7 +137,8 @@ router.post('/plots',
   imageValidationMiddleware,
   [
     body('name').trim().notEmpty().withMessage('Nazwa jest wymagana'),
-    body('description').optional()
+    nameValidator,
+    descriptionValidator
   ],
   (req, res) => {
     const errors = validationResult(req);
@@ -177,7 +179,8 @@ router.put('/plots/:id',
   imageValidationMiddleware,
   [
     body('name').optional().trim().notEmpty().withMessage('Nazwa nie może być pusta'),
-    body('description').optional()
+    nameValidator,
+    descriptionValidator
   ],
   (req, res) => {
     const errors = validationResult(req);
@@ -197,22 +200,17 @@ router.put('/plots/:id',
       });
     }
 
-    // Build update query dynamically
-    let updateFields = [];
-    let values = [];
+    // SECURITY: Explicit whitelist - build update query dynamically
+    const ALLOWED_FIELDS = { name, description, image_path: imagePath };
+    const updateFields = [];
+    const values = [];
 
-    if (name !== undefined) {
-      updateFields.push('name = ?');
-      values.push(name);
-    }
-    if (description !== undefined) {
-      updateFields.push('description = ?');
-      values.push(description);
-    }
-    if (imagePath !== undefined) {
-      updateFields.push('image_path = ?');
-      values.push(imagePath);
-    }
+    Object.entries(ALLOWED_FIELDS).forEach(([field, value]) => {
+      if (value !== undefined) {
+        updateFields.push(`${field} = ?`);
+        values.push(value);
+      }
+    });
 
     if (updateFields.length === 0) {
       return res.status(400).json({ error: 'Brak danych do aktualizacji' });

@@ -39,8 +39,39 @@ const emailValidator = body('email')
   .normalizeEmail()
   .withMessage('Nieprawidłowy adres email');
 
+/**
+ * Text field validators with max length (SECURITY: prevent DoS)
+ */
+const nameValidator = body('name')
+  .optional()
+  .trim()
+  .isLength({ max: 200 })
+  .withMessage('Nazwa nie może przekraczać 200 znaków');
+
+const descriptionValidator = body('description')
+  .optional()
+  .trim()
+  .isLength({ max: 5000 })
+  .withMessage('Opis nie może przekraczać 5000 znaków');
+
+const noteValidator = body('note')
+  .optional()
+  .trim()
+  .isLength({ max: 2000 })
+  .withMessage('Notatka nie może przekraczać 2000 znaków');
+
+const captionValidator = body('caption')
+  .optional()
+  .trim()
+  .isLength({ max: 500 })
+  .withMessage('Podpis nie może przekraczać 500 znaków');
+
 module.exports = {
   strongPasswordValidator,
   usernameValidator,
-  emailValidator
+  emailValidator,
+  nameValidator,
+  descriptionValidator,
+  noteValidator,
+  captionValidator
 };

@@ -143,27 +143,19 @@ router.put('/dark-mode', auth, (req, res) => {
 
 // Update user profile (frost dates, hardiness zone, location)
 router.put('/profile', auth, (req, res) => {
-  const { hardiness_zone, first_frost_date, last_frost_date, location } = req.body;
+  // SECURITY: Explicit whitelist of allowed fields
+  const ALLOWED_FIELDS = ['hardiness_zone', 'first_frost_date', 'last_frost_date', 'location'];
 
-  let updateFields = [];
-  let values = [];
+  const updateFields = [];
+  const values = [];
 
-  if (hardiness_zone !== undefined) {
-    updateFields.push('hardiness_zone = ?');
-    values.push(hardiness_zone);
-  }
-  if (first_frost_date !== undefined) {
-    updateFields.push('first_frost_date = ?');
-    values.push(first_frost_date);
-  }
-  if (last_frost_date !== undefined) {
-    updateFields.push('last_frost_date = ?');
-    values.push(last_frost_date);
-  }
-  if (location !== undefined) {
-    updateFields.push('location = ?');
-    values.push(location);
-  }
+  // Only process whitelisted fields
+  ALLOWED_FIELDS.forEach(field => {
+    if (req.body[field] !== undefined) {
+      updateFields.push(`${field} = ?`);
+      values.push(req.body[field]);
+    }
+  });
 
   if (updateFields.length === 0) {
     return res.status(400).json({ error: 'Brak danych do aktualizacji' });
