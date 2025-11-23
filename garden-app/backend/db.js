@@ -207,6 +207,30 @@ db.serialize(() => {
     }
   });
 
+  // Weather history table (for monthly statistics)
+  db.run(`CREATE TABLE IF NOT EXISTS weather_history (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    date DATE NOT NULL,
+    city TEXT,
+    temp_min REAL,
+    temp_max REAL,
+    temp_avg REAL,
+    feels_like_avg REAL,
+    humidity_avg INTEGER,
+    pressure_avg INTEGER,
+    wind_speed_avg REAL,
+    wind_speed_max REAL,
+    total_rain REAL DEFAULT 0,
+    total_snow REAL DEFAULT 0,
+    clouds_avg INTEGER,
+    description TEXT,
+    icon TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
+    UNIQUE(user_id, date)
+  )`);
+
   // Create indexes for better query performance
   db.run('CREATE INDEX IF NOT EXISTS idx_plots_user_id ON plots(user_id)');
   db.run('CREATE INDEX IF NOT EXISTS idx_beds_plot_id ON beds(plot_id)');
@@ -222,6 +246,8 @@ db.serialize(() => {
   db.run('CREATE INDEX IF NOT EXISTS idx_plant_photos_bed_id ON plant_photos(bed_id)');
   db.run('CREATE INDEX IF NOT EXISTS idx_succession_user_id ON succession_reminders(user_id)');
   db.run('CREATE INDEX IF NOT EXISTS idx_succession_next_date ON succession_reminders(next_planting_date)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_weather_history_user_date ON weather_history(user_id, date)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_weather_history_date ON weather_history(date)');
 
   console.log('✅ Database tables and indexes created successfully');
 });

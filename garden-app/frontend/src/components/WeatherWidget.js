@@ -3,6 +3,7 @@ import axios from '../config/axios';
 
 const WeatherWidget = () => {
   const [weather, setWeather] = useState(null);
+  const [location, setLocation] = useState(null);
   const [recommendations, setRecommendations] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -17,6 +18,7 @@ const WeatherWidget = () => {
       setLoading(true);
       const response = await axios.get('/api/weather/recommendations');
       setWeather(response.data.currentWeather);
+      setLocation(response.data.location);
       setRecommendations(response.data.recommendations);
       setLocationSet(true);
       setError(null);
@@ -123,7 +125,15 @@ const WeatherWidget = () => {
       {/* Aktualna pogoda */}
       <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg shadow-md p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-800">Pogoda</h3>
+          <div>
+            <h3 className="text-lg font-semibold text-gray-800">Pogoda</h3>
+            {location && location.city && (
+              <p className="text-sm text-gray-600 flex items-center mt-1">
+                <span className="mr-1">📍</span>
+                {location.city}
+              </p>
+            )}
+          </div>
           <button
             onClick={fetchWeather}
             className="text-sm text-blue-600 hover:text-blue-800"

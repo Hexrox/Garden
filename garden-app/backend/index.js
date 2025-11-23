@@ -25,6 +25,7 @@ const plantsRoutes = require('./routes/plants');
 const photosRoutes = require('./routes/photos');
 const successionRoutes = require('./routes/succession');
 const analyticsRoutes = require('./routes/analytics');
+const calendarRoutes = require('./routes/calendar');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -141,6 +142,7 @@ app.use('/api/plants', plantsRoutes);
 app.use('/api', photosRoutes);
 app.use('/api/succession', successionRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/calendar', calendarRoutes);
 
 // 404 handler
 app.use((req, res) => {

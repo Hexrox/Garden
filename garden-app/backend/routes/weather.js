@@ -84,7 +84,7 @@ router.get('/recommendations', auth, async (req, res) => {
   try {
     const user = await new Promise((resolve, reject) => {
       db.get(
-        'SELECT latitude, longitude FROM users WHERE id = ?',
+        'SELECT latitude, longitude, city FROM users WHERE id = ?',
         [req.user.id],
         (err, row) => {
           if (err) reject(err);
@@ -107,6 +107,11 @@ router.get('/recommendations', auth, async (req, res) => {
     const recommendations = weatherService.getGardenRecommendations(currentWeather, forecast);
 
     res.json({
+      location: {
+        city: user.city || forecast.city,
+        latitude: user.latitude,
+        longitude: user.longitude
+      },
       currentWeather,
       recommendations
     });

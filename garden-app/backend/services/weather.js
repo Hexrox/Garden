@@ -114,23 +114,93 @@ class WeatherService {
   }
 
   /**
-   * Formatuj prognozę 5-dniową (co 3h)
+   * Formatuj prognozę 5-dniową (co 3h) + daily summaries
    */
   formatForecast(data) {
+    const allForecasts = data.list.map(item => ({
+      timestamp: item.dt,
+      date: new Date(item.dt * 1000).toLocaleDateString('pl-PL'),
+      time: new Date(item.dt * 1000).toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' }),
+      temperature: Math.round(item.main.temp),
+      tempMin: Math.round(item.main.temp_min),
+      tempMax: Math.round(item.main.temp_max),
+      description: item.weather[0].description,
+      icon: item.weather[0].icon,
+      rain: item.rain ? item.rain['3h'] || 0 : 0,
+      windSpeed: Math.round(item.wind.speed * 3.6),
+      humidity: item.main.humidity,
+      clouds: item.clouds.all,
+      pop: Math.round((item.pop || 0) * 100) // Probability of precipitation
+    }));
+
+    // Agreguj do daily summaries
+    const dailySummaries = this.aggregateDailySummaries(allForecasts);
+
     return {
       city: data.city.name,
-      forecast: data.list.slice(0, 16).map(item => ({ // Pierwsze 48h (16 pomiarów co 3h)
-        timestamp: item.dt,
-        date: new Date(item.dt * 1000).toLocaleDateString('pl-PL'),
-        time: new Date(item.dt * 1000).toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' }),
-        temperature: Math.round(item.main.temp),
-        description: item.weather[0].description,
-        icon: item.weather[0].icon,
-        rain: item.rain ? item.rain['3h'] || 0 : 0,
-        windSpeed: Math.round(item.wind.speed * 3.6),
-        humidity: item.main.humidity
-      }))
+      hourly: allForecasts.slice(0, 24), // Pierwsze 72h (24 pomiary co 3h)
+      daily: dailySummaries,
+      forecast: allForecasts.slice(0, 16) // Backward compatibility
     };
+  }
+
+  /**
+   * Agreguj prognozy godzinowe do dziennych podsumowań
+   */
+  aggregateDailySummaries(forecasts) {
+    const dailyMap = new Map();
+
+    forecasts.forEach(f => {
+      const date = f.date;
+      if (!dailyMap.has(date)) {
+        dailyMap.set(date, {
+          date,
+          temps: [],
+          rains: [],
+          winds: [],
+          humidities: [],
+          pops: [],
+          icons: [],
+          descriptions: []
+        });
+      }
+
+      const day = dailyMap.get(date);
+      day.temps.push(f.temperature);
+      day.rains.push(f.rain);
+      day.winds.push(f.windSpeed);
+      day.humidities.push(f.humidity);
+      day.pops.push(f.pop);
+      day.icons.push(f.icon);
+      day.descriptions.push(f.description);
+    });
+
+    return Array.from(dailyMap.values()).map(day => ({
+      date: day.date,
+      tempMin: Math.min(...day.temps),
+      tempMax: Math.max(...day.temps),
+      tempAvg: Math.round(day.temps.reduce((a, b) => a + b, 0) / day.temps.length),
+      totalRain: day.rains.reduce((a, b) => a + b, 0).toFixed(1),
+      avgWind: Math.round(day.winds.reduce((a, b) => a + b, 0) / day.winds.length),
+      maxWind: Math.max(...day.winds),
+      avgHumidity: Math.round(day.humidities.reduce((a, b) => a + b, 0) / day.humidities.length),
+      precipProbability: Math.max(...day.pops),
+      // Wybierz najbardziej reprezentatywną ikonę (środek dnia)
+      icon: day.icons[Math.floor(day.icons.length / 2)],
+      description: this.getMostCommonDescription(day.descriptions)
+    }));
+  }
+
+  /**
+   * Znajdź najczęstszy opis pogody
+   */
+  getMostCommonDescription(descriptions) {
+    const counts = descriptions.reduce((acc, desc) => {
+      acc[desc] = (acc[desc] || 0) + 1;
+      return acc;
+    }, {});
+
+    return Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0];
   }
 
   /**
