@@ -6,6 +6,8 @@ const TaskList = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filter, setFilter] = useState('today'); // 'today', 'all', 'completed'
+  const [generating, setGenerating] = useState(false);
+  const [message, setMessage] = useState({ type: '', text: '' });
 
   useEffect(() => {
     fetchTasks();
@@ -35,10 +37,24 @@ const TaskList = () => {
 
   const generateTasks = async () => {
     try {
-      await axios.post('/api/tasks/generate');
+      setGenerating(true);
+      setMessage({ type: '', text: '' });
+      const response = await axios.post('/api/tasks/generate');
+      setMessage({
+        type: 'success',
+        text: response.data.message || `Wygenerowano ${response.data.tasks?.length || 0} zadań`
+      });
       fetchTasks();
+      // Clear message after 5 seconds
+      setTimeout(() => setMessage({ type: '', text: '' }), 5000);
     } catch (err) {
       console.error('Error generating tasks:', err);
+      setMessage({
+        type: 'error',
+        text: err.response?.data?.error || 'Błąd podczas generowania zadań'
+      });
+    } finally {
+      setGenerating(false);
     }
   };
 
@@ -107,11 +123,29 @@ const TaskList = () => {
           <h3 className="text-lg font-semibold text-gray-800">Zadania</h3>
           <button
             onClick={generateTasks}
-            className="text-sm bg-green-600 text-white px-3 py-1 rounded-lg hover:bg-green-700 transition"
+            disabled={generating}
+            className={`text-sm px-3 py-1 rounded-lg transition ${
+              generating
+                ? 'bg-gray-400 cursor-not-allowed'
+                : 'bg-green-600 hover:bg-green-700'
+            } text-white`}
           >
-            Generuj zadania
+            {generating ? 'Generowanie...' : 'Generuj zadania'}
           </button>
         </div>
+
+        {/* Success/Error Message */}
+        {message.text && (
+          <div
+            className={`mb-3 p-3 rounded-lg text-sm ${
+              message.type === 'success'
+                ? 'bg-green-100 text-green-800'
+                : 'bg-red-100 text-red-800'
+            }`}
+          >
+            {message.text}
+          </div>
+        )}
 
         {/* Filtry */}
         <div className="flex space-x-2">
