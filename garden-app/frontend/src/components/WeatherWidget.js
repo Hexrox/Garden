@@ -33,8 +33,14 @@ const WeatherWidget = () => {
         setForecast(forecastRes.data);
       }
 
-      if (moonRes) {
-        setMoonPhase(moonRes.data);
+      if (moonRes && moonRes.data) {
+        // API returns {date, dateFormatted, moon: {...}, gardening: {...}}
+        // Restructure to flat format for easier access
+        const moonData = {
+          ...moonRes.data.moon,
+          gardening: moonRes.data.gardening?.favorable || []
+        };
+        setMoonPhase(moonData);
       }
 
       setLocationSet(true);
@@ -233,7 +239,7 @@ const WeatherWidget = () => {
       {moonPhase && (
         <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-lg shadow-md p-4 border-2 border-indigo-200">
           <h4 className="font-semibold text-gray-800 mb-3 flex items-center">
-            <span className="text-2xl mr-2">{moonPhase.icon}</span>
+            <span className="text-2xl mr-2">{moonPhase.emoji}</span>
             Kalendarz Księżycowy
           </h4>
           <div className="space-y-2">

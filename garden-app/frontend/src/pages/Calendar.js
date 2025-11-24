@@ -38,8 +38,8 @@ const Calendar = () => {
       ]);
 
       // Store moon phases separately
-      if (moon && moon.data) {
-        setMoonPhases(moon.data);
+      if (moon && moon.data && moon.data.days) {
+        setMoonPhases(moon.data.days);
       }
 
       // Combine and format events
@@ -110,7 +110,7 @@ const Calendar = () => {
   };
 
   const getMoonPhaseForDay = (day) => {
-    return moonPhases.find(mp => mp.day === day);
+    return moonPhases.find(mp => mp.dayOfMonth === day);
   };
 
   const isToday = (day) => {
@@ -225,7 +225,7 @@ const Calendar = () => {
                     </div>
                     {moonPhase && (
                       <span className="text-xs" title={moonPhase.phaseName}>
-                        {moonPhase.icon}
+                        {moonPhase.emoji}
                       </span>
                     )}
                   </div>
@@ -282,7 +282,7 @@ const Calendar = () => {
               {selectedDay.moonPhase && (
                 <div className="px-6 pt-2 pb-3 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20">
                   <div className="flex items-center gap-3">
-                    <span className="text-3xl">{selectedDay.moonPhase.icon}</span>
+                    <span className="text-3xl">{selectedDay.moonPhase.emoji}</span>
                     <div className="flex-1">
                       <p className="font-semibold text-gray-900 dark:text-white">
                         {selectedDay.moonPhase.phaseName}
@@ -292,10 +292,10 @@ const Calendar = () => {
                       </p>
                     </div>
                   </div>
-                  {selectedDay.moonPhase.gardening && selectedDay.moonPhase.gardening.length > 0 && (
+                  {selectedDay.moonPhase.recommendations && selectedDay.moonPhase.recommendations.favorable && selectedDay.moonPhase.recommendations.favorable.length > 0 && (
                     <div className="mt-2 pt-2 border-t border-indigo-200 dark:border-indigo-700">
                       <div className="space-y-1">
-                        {selectedDay.moonPhase.gardening.slice(0, 2).map((tip, idx) => (
+                        {selectedDay.moonPhase.recommendations.favorable.slice(0, 2).map((tip, idx) => (
                           <p key={idx} className="text-xs text-gray-700 dark:text-gray-300 flex items-start">
                             <span className="mr-1">🌱</span>
                             <span>{tip}</span>

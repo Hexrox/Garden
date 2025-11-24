@@ -213,31 +213,24 @@ class WeatherService {
 
     // FAZA 1: ZAGROŻENIA KRYTYCZNE (mogą blokować rekomendacje)
 
-    // 1. Ekstremalne temperatury (blokują oprysk i podlewanie)
-    const tempAlert = this.checkTemperatureAlerts(currentWeather);
-    if (tempAlert) {
-      alerts.push(tempAlert);
-      if (tempAlert.type === 'cold') {
+    // 1. Mróz i zimno - NOWA inteligentna funkcja (TERAZ + PRZYSZŁOŚĆ)
+    const frostAlert = this.checkFrostAndColdAlerts(currentWeather, forecast);
+    if (frostAlert) {
+      alerts.push(frostAlert);
+      // Mróz blokuje oprysk i podlewanie
+      if (frostAlert.type === 'frost' || frostAlert.type === 'frost-warning') {
         blockedTypes.add('spraying');
         blockedTypes.add('watering');
       }
-      if (tempAlert.type === 'heat') {
-        blockedTypes.add('spraying'); // Tylko w południe, ale dla uproszczenia blokujemy
-      }
     }
 
-    // 2. Ostrzeżenia przymrozków
-    const frostAlert = this.checkFrostRisk(forecast);
-    if (frostAlert) {
-      alerts.push({
-        type: 'frost',
-        priority: 'critical',
-        icon: '🧊',
-        message: 'UWAGA: Ryzyko przymrozków!',
-        details: frostAlert
-      });
-      blockedTypes.add('spraying');
-      blockedTypes.add('watering');
+    // 2. Upał (blokuje oprysk)
+    const heatAlert = this.checkTemperatureAlerts(currentWeather);
+    if (heatAlert) {
+      alerts.push(heatAlert);
+      if (heatAlert.type === 'heat') {
+        blockedTypes.add('spraying');
+      }
     }
 
     // 3. Silny wiatr (blokuje oprysk i podlewanie)
@@ -352,20 +345,71 @@ class WeatherService {
   }
 
   /**
-   * Sprawdź ryzyko przymrozków
+   * Inteligentny system alertów mrozowych (TERAZ + PRZYSZŁOŚĆ)
+   * Zastępuje checkFrostRisk() i część checkTemperatureAlerts()
    */
-  checkFrostRisk(forecast) {
-    const nextNight = forecast.forecast.find(f => {
-      const hour = new Date(f.timestamp * 1000).getHours();
-      return hour >= 22 || hour <= 6; // Noc
-    });
+  checkFrostAndColdAlerts(currentWeather, forecast) {
+    const tempNow = currentWeather.temperature;
+    const now = Date.now() / 1000; // Unix timestamp
 
-    if (nextNight && nextNight.temperature < 3) {
-      if (nextNight.temperature < 0) {
-        return `Przymrozki dziś w nocy (${nextNight.temperature}°C)! Przykryj wrażliwe rośliny NATYCHMIAST`;
+    // Znajdź MIN temp w PRZYSZŁEJ nocy (następne 24h, tylko godziny nocne)
+    const upcomingNightTemps = forecast.forecast
+      .filter(f => {
+        const hour = new Date(f.timestamp * 1000).getHours();
+        const isNightHour = hour >= 22 || hour <= 6;
+        const isFuture = f.timestamp > now; // KLUCZOWE: tylko przyszłość!
+        const isNext24h = f.timestamp < (now + 24 * 60 * 60);
+        return isNightHour && isFuture && isNext24h;
+      })
+      .map(f => f.temperature);
+
+    const minNightTemp = upcomingNightTemps.length > 0
+      ? Math.min(...upcomingNightTemps)
+      : null;
+
+    // PRZYPADEK 1: Mróz JUŻ JEST
+    if (tempNow < 0) {
+      if (minNightTemp !== null && minNightTemp < tempNow - 1) {
+        // Będzie jeszcze zimniej (różnica >1°C)
+        return {
+          type: 'frost',
+          priority: 'critical',
+          icon: '❄️',
+          message: `Mróz! ${tempNow}°C, w nocy ${minNightTemp}°C`,
+          details: 'Przykryj wszystkie wrażliwe rośliny NATYCHMIAST. Nie podlewaj - woda zamarznie'
+        };
       } else {
-        return `Niska temperatura w nocy (${nextNight.temperature}°C). Rozważ przykrycie młodych roślin`;
+        // Stały mróz lub ocieplenie
+        return {
+          type: 'frost',
+          priority: 'critical',
+          icon: '❄️',
+          message: `Mróz! ${tempNow}°C`,
+          details: 'Przykryj wszystkie wrażliwe rośliny. Nie podlewaj'
+        };
       }
+    }
+
+    // PRZYPADEK 2: OK teraz, ale BĘDZIE mróz w nocy
+    if (minNightTemp !== null && minNightTemp < 0) {
+      return {
+        type: 'frost-warning',
+        priority: 'critical',
+        icon: '🧊',
+        message: `UWAGA: Przymrozki dziś w nocy (${minNightTemp}°C)`,
+        details: 'Przykryj rośliny PRZED WIECZOREM. Nie podlewaj wieczorem'
+      };
+    }
+
+    // PRZYPADEK 3: Zimno teraz (0-3°C), będzie jeszcze zimniej
+    if (tempNow >= 0 && tempNow < 3 && minNightTemp !== null && minNightTemp < tempNow - 1) {
+      return {
+        type: 'cold-warning',
+        priority: 'high',
+        icon: '🌡️',
+        message: `Niska temperatura ${tempNow}°C, w nocy ${minNightTemp}°C`,
+        details: 'Rozważ przykrycie młodych i wrażliwych roślin'
+      };
     }
 
     return null;
@@ -450,7 +494,7 @@ class WeatherService {
   }
 
   /**
-   * Alerty temperaturowe
+   * Alerty temperaturowe (TYLKO UPAŁ - mróz obsługuje checkFrostAndColdAlerts)
    */
   checkTemperatureAlerts(weather) {
     if (weather.temperature > 35) {
@@ -460,15 +504,6 @@ class WeatherService {
         icon: '🌡️',
         message: `Upał! ${weather.temperature}°C`,
         details: 'Podlej rośliny rano i wieczorem. Unikaj oprysku w południe'
-      };
-    }
-    if (weather.temperature < 0) {
-      return {
-        type: 'cold',
-        priority: 'critical',
-        icon: '❄️',
-        message: `Mróz! ${weather.temperature}°C`,
-        details: 'Przykryj wszystkie wrażliwe rośliny. Nie podlewaj'
       };
     }
     return null;
