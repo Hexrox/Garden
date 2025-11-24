@@ -265,8 +265,8 @@ class WeatherService {
       alerts.push(tempSwingAlert);
     }
 
-    // 7. Susza
-    const droughtAlert = this.checkDroughtConditions(forecast);
+    // 7. Susza (tylko w sezonie wegetacyjnym, nie w zimie)
+    const droughtAlert = this.checkDroughtConditions(currentWeather, forecast);
     if (droughtAlert) {
       alerts.push(droughtAlert);
     }
@@ -686,14 +686,22 @@ class WeatherService {
   /**
    * Sprawdź suszę (brak deszczu >7 dni)
    */
-  checkDroughtConditions(forecast) {
+  checkDroughtConditions(currentWeather, forecast) {
+    const temp = currentWeather.temperature;
+
+    // ZIMA/MRÓZ: Nie pokazuj alertu suszowego gdy jest zimno (temp < 5°C)
+    // W zimie nie należy podlewać - rośliny są w spoczynku, woda może zamarzać
+    if (temp < 5) {
+      return null;
+    }
+
     // Sprawdź sumę opadów z ostatnich 5 dni (16 pomiarów co 3h = ~2 dni realnych danych)
     const recentRain = forecast.forecast.slice(0, 16).reduce((sum, f) => sum + f.rain, 0);
 
     // Sprawdź czy będzie deszcz w najbliższych 2 dniach
     const upcomingRain = forecast.forecast.slice(0, 16).reduce((sum, f) => sum + f.rain, 0);
 
-    // SUSZA: brak deszczu (< 2mm łącznie) przez długi czas
+    // SUSZA: brak deszczu (< 2mm łącznie) przez długi czas (tylko w sezonie wegetacyjnym)
     if (recentRain < 2 && upcomingRain < 2) {
       return {
         type: 'drought',

@@ -23,12 +23,14 @@ const WeatherWidget = () => {
       // Fazy księżyca NIE wymagają lokalizacji - pobieraj zawsze
       const moonRes = await axios.get('/api/calendar/moon/current').catch(() => null);
       if (moonRes && moonRes.data) {
+        console.log('Moon API Response:', moonRes.data);
         // API returns {date, dateFormatted, moon: {...}, gardening: {...}}
         // Restructure to flat format for easier access
         const moonData = {
           ...moonRes.data.moon,
           gardening: moonRes.data.gardening?.favorable || []
         };
+        console.log('Processed moonData:', moonData);
         setMoonPhase(moonData);
       }
 

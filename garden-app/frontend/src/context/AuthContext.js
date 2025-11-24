@@ -17,6 +17,14 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Fallback timeout to prevent infinite loading (max 3 seconds)
+    const fallbackTimeout = setTimeout(() => {
+      if (loading) {
+        console.warn('Auth loading timeout - forcing loading to false');
+        setLoading(false);
+      }
+    }, 3000);
+
     if (token) {
       // Set default authorization header
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
@@ -31,7 +39,9 @@ export const AuthProvider = ({ children }) => {
         });
       } catch (error) {
         console.error('Invalid token:', error);
+        clearTimeout(fallbackTimeout);
         logout();
+        return; // Exit early, don't set loading to false yet (logout will trigger re-render)
       }
 
       // Setup axios interceptor for 401 errors
@@ -46,14 +56,19 @@ export const AuthProvider = ({ children }) => {
         }
       );
 
+      setLoading(false);
+      clearTimeout(fallbackTimeout);
+
       // Cleanup interceptor on unmount or token change
       return () => {
         axios.interceptors.response.eject(interceptor);
+        clearTimeout(fallbackTimeout);
       };
     } else {
       delete axios.defaults.headers.common['Authorization'];
+      setLoading(false);
+      clearTimeout(fallbackTimeout);
     }
-    setLoading(false);
   }, [token]);
 
   const login = async (email, password) => {

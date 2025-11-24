@@ -21,14 +21,34 @@ const Dashboard = () => {
 
   useEffect(() => {
     loadDashboardData();
+
+    // Fallback timeout to prevent infinite loading (max 5 seconds)
+    const fallbackTimeout = setTimeout(() => {
+      if (loading) {
+        console.warn('Dashboard loading timeout - forcing loading to false');
+        setLoading(false);
+      }
+    }, 5000);
+
+    return () => clearTimeout(fallbackTimeout);
   }, []);
 
   const loadDashboardData = async () => {
     try {
+      // Add individual .catch() handlers to prevent total failure
       const [plotsRes, remindersRes, spraysRes] = await Promise.all([
-        axios.get('/api/plots'),
-        axios.get('/api/reminders'),
-        axios.get('/api/sprays/active')
+        axios.get('/api/plots').catch(err => {
+          console.error('Error loading plots:', err);
+          return { data: [] };
+        }),
+        axios.get('/api/reminders').catch(err => {
+          console.error('Error loading reminders:', err);
+          return { data: [] };
+        }),
+        axios.get('/api/sprays/active').catch(err => {
+          console.error('Error loading sprays:', err);
+          return { data: [] };
+        })
       ]);
 
       setStats({
@@ -40,6 +60,10 @@ const Dashboard = () => {
       setActiveSprays(spraysRes.data.slice(0, 5));
     } catch (error) {
       console.error('Error loading dashboard:', error);
+      // Even on error, set empty data rather than hanging
+      setStats({ totalPlots: 0, totalBeds: 0, activeSprays: 0 });
+      setReminders([]);
+      setActiveSprays([]);
     } finally {
       setLoading(false);
     }
