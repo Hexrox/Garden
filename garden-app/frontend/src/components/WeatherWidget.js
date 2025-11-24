@@ -21,17 +21,28 @@ const WeatherWidget = () => {
       setLoading(true);
 
       // Fazy księżyca NIE wymagają lokalizacji - pobieraj zawsze
-      const moonRes = await axios.get('/api/calendar/moon/current').catch(() => null);
-      if (moonRes && moonRes.data) {
+      const moonRes = await axios.get('/api/calendar/moon/current').catch((err) => {
+        console.error('Error fetching moon phase:', err);
+        return null;
+      });
+
+      if (moonRes && moonRes.data && moonRes.data.moon) {
         console.log('Moon API Response:', moonRes.data);
         // API returns {date, dateFormatted, moon: {...}, gardening: {...}}
-        // Restructure to flat format for easier access
-        const moonData = {
-          ...moonRes.data.moon,
-          gardening: moonRes.data.gardening?.favorable || []
-        };
-        console.log('Processed moonData:', moonData);
-        setMoonPhase(moonData);
+        // Validate that moon object has required fields
+        if (moonRes.data.moon.phaseName && moonRes.data.moon.illumination !== undefined) {
+          // Restructure to flat format for easier access
+          const moonData = {
+            ...moonRes.data.moon,
+            gardening: moonRes.data.gardening?.favorable || []
+          };
+          console.log('Processed moonData:', moonData);
+          setMoonPhase(moonData);
+        } else {
+          console.error('Moon data incomplete:', moonRes.data.moon);
+        }
+      } else {
+        console.error('Invalid moon API response:', moonRes?.data);
       }
 
       // Pogoda WYMAGA lokalizacji
@@ -135,7 +146,7 @@ const WeatherWidget = () => {
         </div>
 
         {/* Faza księżyca - NIE wymaga lokalizacji */}
-        {moonPhase && (
+        {moonPhase && moonPhase.phaseName && (
           <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-lg shadow-md p-4 border-2 border-indigo-200">
             <h4 className="font-semibold text-gray-800 mb-3 flex items-center">
               <span className="text-2xl mr-2">{moonPhase.emoji}</span>
@@ -277,7 +288,7 @@ const WeatherWidget = () => {
       )}
 
       {/* Faza księżyca */}
-      {moonPhase && (
+      {moonPhase && moonPhase.phaseName && (
         <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-lg shadow-md p-4 border-2 border-indigo-200">
           <h4 className="font-semibold text-gray-800 mb-3 flex items-center">
             <span className="text-2xl mr-2">{moonPhase.emoji}</span>
