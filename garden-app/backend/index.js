@@ -32,8 +32,8 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 // Trust proxy - needed for rate limiting behind nginx/reverse proxy
-// Set to true when behind nginx to properly read X-Forwarded-For header
-app.set('trust proxy', true);
+// Set to 1 to trust first proxy (nginx) for X-Forwarded-For header
+app.set('trust proxy', 1);
 
 // HTTPS enforcement (production only)
 // const httpsRedirect = require('./middleware/httpsRedirect');
