@@ -13,7 +13,7 @@ router.get('/moon/current', auth, (req, res) => {
     const moonPhase = moonPhases.getMoonPhase(today);
     const recommendations = moonPhases.getGardeningRecommendations(moonPhase);
 
-    res.json({
+    const response = {
       date: today.toISOString().split('T')[0],
       dateFormatted: today.toLocaleDateString('pl-PL', {
         weekday: 'long',
@@ -23,7 +23,10 @@ router.get('/moon/current', auth, (req, res) => {
       }),
       moon: moonPhase,
       gardening: recommendations
-    });
+    };
+
+    console.log('🌙 Moon API Response:', JSON.stringify(response, null, 2));
+    res.json(response);
   } catch (error) {
     console.error('Błąd pobierania fazy księżyca:', error);
     res.status(500).json({ error: 'Błąd pobierania fazy księżyca' });
