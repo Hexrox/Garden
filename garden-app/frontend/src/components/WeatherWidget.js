@@ -19,20 +19,9 @@ const WeatherWidget = () => {
   const fetchWeather = async () => {
     try {
       setLoading(true);
-      const [weatherRes, forecastRes, moonRes] = await Promise.all([
-        axios.get('/api/weather/recommendations'),
-        axios.get('/api/weather/forecast').catch(() => null),
-        axios.get('/api/calendar/moon/current').catch(() => null)
-      ]);
 
-      setWeather(weatherRes.data.currentWeather);
-      setLocation(weatherRes.data.location);
-      setRecommendations(weatherRes.data.recommendations);
-
-      if (forecastRes) {
-        setForecast(forecastRes.data);
-      }
-
+      // Fazy księżyca NIE wymagają lokalizacji - pobieraj zawsze
+      const moonRes = await axios.get('/api/calendar/moon/current').catch(() => null);
       if (moonRes && moonRes.data) {
         // API returns {date, dateFormatted, moon: {...}, gardening: {...}}
         // Restructure to flat format for easier access
@@ -41,6 +30,20 @@ const WeatherWidget = () => {
           gardening: moonRes.data.gardening?.favorable || []
         };
         setMoonPhase(moonData);
+      }
+
+      // Pogoda WYMAGA lokalizacji
+      const [weatherRes, forecastRes] = await Promise.all([
+        axios.get('/api/weather/recommendations'),
+        axios.get('/api/weather/forecast').catch(() => null)
+      ]);
+
+      setWeather(weatherRes.data.currentWeather);
+      setLocation(weatherRes.data.location);
+      setRecommendations(weatherRes.data.recommendations);
+
+      if (forecastRes) {
+        setForecast(forecastRes.data);
       }
 
       setLocationSet(true);
@@ -106,25 +109,61 @@ const WeatherWidget = () => {
   }
 
   if (!locationSet) {
+    // Jeśli nie ma lokalizacji, pokaż komunikat + kalendarz księżycowy (który nie wymaga lokalizacji)
     return (
-      <div className="bg-yellow-50 rounded-lg border-2 border-yellow-200 p-6">
-        <div className="flex items-start">
-          <span className="text-3xl mr-3">📍</span>
-          <div>
-            <h3 className="font-semibold text-yellow-900 mb-2">
-              Ustaw lokalizację
-            </h3>
-            <p className="text-yellow-800 mb-3">
-              Aby zobaczyć pogodę i rekomendacje, ustaw swoją lokalizację w profilu
-            </p>
-            <a
-              href="/profile"
-              className="inline-block bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 transition"
-            >
-              Przejdź do profilu
-            </a>
+      <div className="space-y-4">
+        <div className="bg-yellow-50 rounded-lg border-2 border-yellow-200 p-6">
+          <div className="flex items-start">
+            <span className="text-3xl mr-3">📍</span>
+            <div>
+              <h3 className="font-semibold text-yellow-900 mb-2">
+                Ustaw lokalizację
+              </h3>
+              <p className="text-yellow-800 mb-3">
+                Aby zobaczyć pogodę i rekomendacje, ustaw swoją lokalizację w profilu
+              </p>
+              <a
+                href="/profile"
+                className="inline-block bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 transition"
+              >
+                Przejdź do profilu
+              </a>
+            </div>
           </div>
         </div>
+
+        {/* Faza księżyca - NIE wymaga lokalizacji */}
+        {moonPhase && (
+          <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-lg shadow-md p-4 border-2 border-indigo-200">
+            <h4 className="font-semibold text-gray-800 mb-3 flex items-center">
+              <span className="text-2xl mr-2">{moonPhase.emoji}</span>
+              Kalendarz Księżycowy
+            </h4>
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-700">Faza:</span>
+                <span className="font-semibold text-indigo-900">{moonPhase.phaseName}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-700">Oświetlenie:</span>
+                <span className="font-semibold text-indigo-900">{moonPhase.illumination}%</span>
+              </div>
+              {moonPhase.gardening && moonPhase.gardening.length > 0 && (
+                <div className="mt-3 pt-3 border-t border-indigo-200">
+                  <p className="text-xs font-semibold text-gray-700 mb-2">Rekomendacje:</p>
+                  <div className="space-y-1">
+                    {moonPhase.gardening.map((tip, idx) => (
+                      <div key={idx} className="text-xs text-gray-600 flex items-start">
+                        <span className="mr-1">🌱</span>
+                        <span>{tip}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     );
   }
