@@ -204,30 +204,26 @@ class WeatherService {
   }
 
   /**
-   * Smart recommendations dla ogrodu
+   * Smart recommendations dla ogrodu (z systemem blokerów)
    */
   getGardenRecommendations(currentWeather, forecast) {
     const recommendations = [];
     const alerts = [];
+    const blockedTypes = new Set(); // Które typy rekomendacji są zablokowane
 
-    // 1. Rekomendacje oprysku
-    const sprayConditions = this.checkSprayConditions(currentWeather, forecast);
-    if (sprayConditions.suitable) {
-      recommendations.push({
-        type: 'spray',
-        priority: 'high',
-        icon: '🌿',
-        message: 'Dobre warunki do oprysku',
-        details: sprayConditions.reason
-      });
-    } else {
-      recommendations.push({
-        type: 'spray',
-        priority: 'warning',
-        icon: '⚠️',
-        message: 'Niekorzystne warunki do oprysku',
-        details: sprayConditions.reason
-      });
+    // FAZA 1: ZAGROŻENIA KRYTYCZNE (mogą blokować rekomendacje)
+
+    // 1. Ekstremalne temperatury (blokują oprysk i podlewanie)
+    const tempAlert = this.checkTemperatureAlerts(currentWeather);
+    if (tempAlert) {
+      alerts.push(tempAlert);
+      if (tempAlert.type === 'cold') {
+        blockedTypes.add('spraying');
+        blockedTypes.add('watering');
+      }
+      if (tempAlert.type === 'heat') {
+        blockedTypes.add('spraying'); // Tylko w południe, ale dla uproszczenia blokujemy
+      }
     }
 
     // 2. Ostrzeżenia przymrozków
@@ -240,27 +236,11 @@ class WeatherService {
         message: 'UWAGA: Ryzyko przymrozków!',
         details: frostAlert
       });
+      blockedTypes.add('spraying');
+      blockedTypes.add('watering');
     }
 
-    // 3. Rekomendacje podlewania
-    const wateringNeeded = this.checkWateringNeeds(currentWeather, forecast);
-    if (wateringNeeded) {
-      recommendations.push({
-        type: 'watering',
-        priority: 'medium',
-        icon: '💧',
-        message: wateringNeeded.message,
-        details: wateringNeeded.details
-      });
-    }
-
-    // 4. Ekstremalne temperatury
-    const tempAlert = this.checkTemperatureAlerts(currentWeather);
-    if (tempAlert) {
-      alerts.push(tempAlert);
-    }
-
-    // 5. Silny wiatr
+    // 3. Silny wiatr (blokuje oprysk i podlewanie)
     if (currentWeather.windSpeed > 25) {
       alerts.push({
         type: 'wind',
@@ -269,6 +249,55 @@ class WeatherService {
         message: `Silny wiatr (${currentWeather.windSpeed} km/h)`,
         details: 'Nie opryskuj, nie podlewaj - woda i środki ochrony będą zdmuchiwane'
       });
+      blockedTypes.add('spraying');
+      blockedTypes.add('watering');
+    }
+
+    // FAZA 2: REKOMENDACJE (tylko jeśli nie zablokowane)
+
+    // 4. Rekomendacje oprysku (jeśli nie zablokowane)
+    if (!blockedTypes.has('spraying')) {
+      const sprayConditions = this.checkSprayConditions(currentWeather, forecast);
+      if (sprayConditions.suitable && sprayConditions.today) {
+        recommendations.push({
+          type: 'spray',
+          priority: 'high',
+          icon: '🌿',
+          message: 'Dobre warunki do oprysku DZIŚ',
+          details: sprayConditions.reason
+        });
+      } else {
+        // Dziś nie można, ale pokaż kiedy będzie można
+        let message = 'Dziś nie opryskuj';
+        let details = sprayConditions.reason;
+
+        if (sprayConditions.bestDay) {
+          message = `Dziś nie opryskuj - ${sprayConditions.reason}`;
+          details = `→ Najlepszy dzień: ${sprayConditions.bestDay.dayName} (${sprayConditions.bestDay.date}) - ${sprayConditions.bestDay.conditions}`;
+        }
+
+        recommendations.push({
+          type: 'spray',
+          priority: 'warning',
+          icon: '⚠️',
+          message,
+          details
+        });
+      }
+    }
+
+    // 5. Rekomendacje podlewania (jeśli nie zablokowane)
+    if (!blockedTypes.has('watering')) {
+      const wateringNeeded = this.checkWateringNeeds(currentWeather, forecast);
+      if (wateringNeeded && !wateringNeeded.blocks) {
+        recommendations.push({
+          type: 'watering',
+          priority: wateringNeeded.priority || 'medium',
+          icon: '💧',
+          message: wateringNeeded.message,
+          details: wateringNeeded.details
+        });
+      }
     }
 
     return {
@@ -279,7 +308,7 @@ class WeatherService {
   }
 
   /**
-   * Sprawdź warunki do oprysku
+   * Sprawdź warunki do oprysku (z kontekstem prognozy)
    */
   checkSprayConditions(weather, forecast) {
     // Idealne warunki: 10-25°C, wiatr <15km/h, brak deszczu przez 2h
@@ -287,25 +316,38 @@ class WeatherService {
     const wind = weather.windSpeed;
     const rainSoon = this.checkRainInNextHours(forecast, 2);
 
+    // Sprawdź czy dziś nadaje się do oprysku
+    const todaySuitable = temp >= 10 && temp <= 25 && wind <= 15 && !rainSoon && weather.rain === 0;
+
+    if (todaySuitable) {
+      return {
+        suitable: true,
+        today: true,
+        reason: `Optymalne warunki: ${temp}°C, wiatr ${wind} km/h, brak opadów`,
+        bestDay: null
+      };
+    }
+
+    // Jeśli dziś nie jest odpowiednie, znajdź najlepszy dzień w prognozie
+    const bestDay = this.findBestSprayDayInForecast(forecast);
+
+    // Ustal powód dlaczego dziś nie można
+    let reason = '';
     if (temp < 10) {
-      return { suitable: false, reason: `Za zimno (${temp}°C). Optymalna temp: 10-25°C` };
-    }
-    if (temp > 25) {
-      return { suitable: false, reason: `Za gorąco (${temp}°C). Optymalna temp: 10-25°C` };
-    }
-    if (wind > 15) {
-      return { suitable: false, reason: `Za wietrznie (${wind} km/h). Max: 15 km/h` };
-    }
-    if (rainSoon) {
-      return { suitable: false, reason: 'Deszcz w ciągu 2h zmyje środek ochrony' };
-    }
-    if (weather.rain > 0) {
-      return { suitable: false, reason: 'Pada deszcz - poczekaj na przerwę' };
+      reason = `Za zimno dziś (${temp}°C)`;
+    } else if (temp > 25) {
+      reason = `Za gorąco dziś (${temp}°C)`;
+    } else if (wind > 15) {
+      reason = `Za wietrznie dziś (${wind} km/h)`;
+    } else if (rainSoon || weather.rain > 0) {
+      reason = 'Deszcz w prognozie lub pada';
     }
 
     return {
-      suitable: true,
-      reason: `Optymalne warunki: ${temp}°C, wiatr ${wind} km/h, brak opadów`
+      suitable: false,
+      today: false,
+      reason,
+      bestDay
     };
   }
 
@@ -330,32 +372,70 @@ class WeatherService {
   }
 
   /**
-   * Sprawdź potrzebę podlewania
+   * Sprawdź potrzebę podlewania (NAJPIERW temperatura, potem deszcz)
    */
   checkWateringNeeds(weather, forecast) {
-    // Sprawdź czy był deszcz w ostatnich 48h
-    const recentRain = forecast.forecast.slice(0, 16).reduce((sum, f) => sum + f.rain, 0);
-    const upcomingRain = this.checkRainInNextHours(forecast, 24);
+    const temp = weather.temperature;
 
-    if (recentRain < 5 && !upcomingRain) {
-      if (weather.temperature > 25) {
+    // PRIORYTET 1: Sprawdź temperaturę (zagrożenia)
+    if (temp < 0) {
+      return {
+        message: 'NIE PODLEWAJ - mróz zniszczy rośliny',
+        details: `Woda zamarznie i uszkodzi korzenie (${temp}°C)`,
+        priority: 'critical',
+        blocks: true // Blokuje inne rekomendacje podlewania
+      };
+    }
+
+    if (temp >= 0 && temp < 5) {
+      // Sprawdź czy będzie cieplej w prognozie
+      const warmerDay = this.findWarmerDayInForecast(forecast, 10);
+      if (warmerDay) {
         return {
-          message: 'Podlej rośliny - gorąco i brak deszczu',
-          details: `Temperatura ${weather.temperature}°C, brak opadów. Rośliny potrzebują wody`
+          message: `Za zimno na podlewanie (${temp}°C)`,
+          details: `Poczekaj do ${warmerDay.dayName} gdy będzie ${warmerDay.temp}°C`,
+          priority: 'medium',
+          blocks: false
         };
       } else {
         return {
-          message: 'Rozważ podlewanie - brak deszczu',
-          details: 'Brak opadów w prognozie. Sprawdź wilgotność gleby'
+          message: `Zimno (${temp}°C) - podlewaj tylko jeśli konieczne`,
+          details: 'Rośliny potrzebują mniej wody w niskich temperaturach',
+          priority: 'low',
+          blocks: false
         };
       }
     }
 
+    // PRIORYTET 2: Sprawdź deszcz i wilgotność (tylko gdy temp OK)
+    const recentRain = forecast.forecast.slice(0, 16).reduce((sum, f) => sum + f.rain, 0);
+    const upcomingRain = this.checkRainInNextHours(forecast, 24);
+
     if (upcomingRain) {
       return {
         message: 'Nie podlewaj - będzie padać',
-        details: 'Deszcz w prognozie, rośliny same się napoją'
+        details: 'Deszcz w prognozie, rośliny same się napoją',
+        priority: 'medium',
+        blocks: false
       };
+    }
+
+    if (recentRain < 5 && !upcomingRain) {
+      if (temp > 25) {
+        return {
+          message: 'Podlej rośliny - gorąco i brak deszczu',
+          details: `Temperatura ${temp}°C, brak opadów. Rośliny potrzebują wody`,
+          priority: 'high',
+          blocks: false
+        };
+      } else if (temp > 15) {
+        return {
+          message: 'Rozważ podlewanie - brak deszczu',
+          details: 'Brak opadów w prognozie. Sprawdź wilgotność gleby',
+          priority: 'medium',
+          blocks: false
+        };
+      }
     }
 
     return null;
@@ -405,6 +485,122 @@ class WeatherService {
       return recommendations[0].message;
     }
     return `${weather.temperature}°C, ${weather.description}`;
+  }
+
+  /**
+   * Znajdź najlepszy dzień do oprysku w prognozie 5-dniowej
+   */
+  findBestSprayDayInForecast(forecast) {
+    if (!forecast.daily || forecast.daily.length === 0) {
+      return null;
+    }
+
+    const dayNames = ['Niedziela', 'Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota'];
+
+    // Szukaj pierwszego dnia z optymalnymi warunkami
+    for (let i = 1; i < forecast.daily.length; i++) { // Zaczynamy od 1 (jutro)
+      const day = forecast.daily[i];
+      const temp = day.tempAvg;
+      const wind = day.avgWind;
+      const rain = day.totalRain;
+
+      // Optymalne warunki: 12-20°C, wiatr <10 km/h, brak opadów
+      const isOptimal = temp >= 12 && temp <= 20 && wind < 10 && rain < 0.5;
+      // Dopuszczalne warunki: 10-25°C, wiatr <15 km/h, niewielkie opady
+      const isGood = temp >= 10 && temp <= 25 && wind < 15 && rain < 2;
+
+      if (isOptimal || isGood) {
+        const date = new Date(day.date.split('.').reverse().join('-'));
+        const dayName = dayNames[date.getDay()];
+        const quality = isOptimal ? 'optymalne' : 'dobre';
+
+        return {
+          date: day.date,
+          dayName,
+          temp: day.tempAvg,
+          wind: day.avgWind,
+          conditions: `${quality} warunki: ${day.tempAvg}°C, wiatr ${day.avgWind} km/h, ${rain}mm deszczu`
+        };
+      }
+    }
+
+    // Jeśli nie ma idealnych warunków, znajdź najmniej zły dzień
+    const bestAvailable = forecast.daily
+      .slice(1)
+      .map((day, index) => ({
+        day,
+        index: index + 1,
+        score: this.calculateSprayScore(day)
+      }))
+      .sort((a, b) => b.score - a.score)[0];
+
+    if (bestAvailable && bestAvailable.score > 0) {
+      const day = bestAvailable.day;
+      const date = new Date(day.date.split('.').reverse().join('-'));
+      const dayName = dayNames[date.getDay()];
+
+      return {
+        date: day.date,
+        dayName,
+        temp: day.tempAvg,
+        wind: day.avgWind,
+        conditions: `możliwe warunki: ${day.tempAvg}°C, wiatr ${day.avgWind} km/h`
+      };
+    }
+
+    return null;
+  }
+
+  /**
+   * Oblicz score dla dnia do oprysku (im wyższy tym lepiej)
+   */
+  calculateSprayScore(day) {
+    let score = 100;
+
+    // Temperatura
+    if (day.tempAvg < 10) score -= 50;
+    else if (day.tempAvg > 25) score -= 40;
+    else if (day.tempAvg >= 12 && day.tempAvg <= 20) score += 20;
+
+    // Wiatr
+    if (day.avgWind > 20) score -= 50;
+    else if (day.avgWind > 15) score -= 30;
+    else if (day.avgWind < 10) score += 20;
+
+    // Deszcz
+    if (day.totalRain > 5) score -= 50;
+    else if (day.totalRain > 2) score -= 20;
+    else if (day.totalRain < 0.5) score += 10;
+
+    return score;
+  }
+
+  /**
+   * Znajdź cieplejszy dzień w prognozie
+   */
+  findWarmerDayInForecast(forecast, minTemp) {
+    if (!forecast.daily || forecast.daily.length === 0) {
+      return null;
+    }
+
+    const dayNames = ['Niedziela', 'Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota'];
+
+    // Szukaj pierwszego dnia z temperaturą >= minTemp
+    for (let i = 1; i < forecast.daily.length; i++) {
+      const day = forecast.daily[i];
+      if (day.tempAvg >= minTemp) {
+        const date = new Date(day.date.split('.').reverse().join('-'));
+        const dayName = dayNames[date.getDay()];
+
+        return {
+          date: day.date,
+          dayName,
+          temp: day.tempAvg
+        };
+      }
+    }
+
+    return null;
   }
 
   /**

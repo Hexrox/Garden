@@ -5,6 +5,7 @@ const { validateOrExit } = require('./utils/envValidator');
 validateOrExit();
 
 const express = require('express');
+const path = require('path');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
@@ -82,8 +83,8 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Static files for uploads
-app.use('/uploads', express.static('uploads'));
+// Static files for uploads (use absolute path)
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Rate limiters configuration
 // General API rate limiter (per IP)

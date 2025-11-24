@@ -14,6 +14,7 @@ import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, X } from 'lucide-r
 const Calendar = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [events, setEvents] = useState([]);
+  const [moonPhases, setMoonPhases] = useState([]);
   const [selectedDay, setSelectedDay] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -27,13 +28,19 @@ const Calendar = () => {
       const year = currentDate.getFullYear();
       const month = currentDate.getMonth() + 1;
 
-      // Fetch all event types for the month
-      const [tasks, reminders, succession, sprays] = await Promise.all([
+      // Fetch all event types for the month including moon phases
+      const [tasks, reminders, succession, sprays, moon] = await Promise.all([
         axios.get(`/api/tasks`).catch(() => ({ data: [] })),
         axios.get(`/api/reminders`).catch(() => ({ data: [] })),
         axios.get(`/api/succession/reminders`).catch(() => ({ data: [] })),
-        axios.get(`/api/spray-history`).catch(() => ({ data: [] }))
+        axios.get(`/api/spray-history`).catch(() => ({ data: [] })),
+        axios.get(`/api/calendar/moon/month/${year}/${month}`).catch(() => ({ data: [] }))
       ]);
+
+      // Store moon phases separately
+      if (moon && moon.data) {
+        setMoonPhases(moon.data);
+      }
 
       // Combine and format events
       const allEvents = [
@@ -100,6 +107,10 @@ const Calendar = () => {
   const getEventsForDay = (day) => {
     const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     return events.filter(e => e.date === dateStr);
+  };
+
+  const getMoonPhaseForDay = (day) => {
+    return moonPhases.find(mp => mp.day === day);
   };
 
   const isToday = (day) => {
@@ -197,18 +208,26 @@ const Calendar = () => {
               }
 
               const dayEvents = getEventsForDay(day);
+              const moonPhase = getMoonPhaseForDay(day);
               const isTodayDay = isToday(day);
 
               return (
                 <button
                   key={day}
-                  onClick={() => setSelectedDay({ day, events: dayEvents })}
+                  onClick={() => setSelectedDay({ day, events: dayEvents, moonPhase })}
                   className={`bg-white dark:bg-gray-800 p-2 aspect-square hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors relative ${
                     isTodayDay ? 'ring-2 ring-purple-500 ring-inset' : ''
                   }`}
                 >
-                  <div className="text-sm font-medium text-gray-900 dark:text-white mb-1">
-                    {day}
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="text-sm font-medium text-gray-900 dark:text-white">
+                      {day}
+                    </div>
+                    {moonPhase && (
+                      <span className="text-xs" title={moonPhase.phaseName}>
+                        {moonPhase.icon}
+                      </span>
+                    )}
                   </div>
 
                   {/* Event dots */}
@@ -259,11 +278,44 @@ const Calendar = () => {
                 </button>
               </div>
 
+              {/* Moon Phase Info */}
+              {selectedDay.moonPhase && (
+                <div className="px-6 pt-2 pb-3 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20">
+                  <div className="flex items-center gap-3">
+                    <span className="text-3xl">{selectedDay.moonPhase.icon}</span>
+                    <div className="flex-1">
+                      <p className="font-semibold text-gray-900 dark:text-white">
+                        {selectedDay.moonPhase.phaseName}
+                      </p>
+                      <p className="text-xs text-gray-600 dark:text-gray-400">
+                        Oświetlenie: {selectedDay.moonPhase.illumination}%
+                      </p>
+                    </div>
+                  </div>
+                  {selectedDay.moonPhase.gardening && selectedDay.moonPhase.gardening.length > 0 && (
+                    <div className="mt-2 pt-2 border-t border-indigo-200 dark:border-indigo-700">
+                      <div className="space-y-1">
+                        {selectedDay.moonPhase.gardening.slice(0, 2).map((tip, idx) => (
+                          <p key={idx} className="text-xs text-gray-700 dark:text-gray-300 flex items-start">
+                            <span className="mr-1">🌱</span>
+                            <span>{tip}</span>
+                          </p>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Events List */}
               <div className="p-6 space-y-3">
-                {selectedDay.events.length === 0 ? (
+                {selectedDay.events.length === 0 && !selectedDay.moonPhase ? (
                   <p className="text-center text-gray-500 dark:text-gray-400 py-4">
                     Brak wydarzeń tego dnia
+                  </p>
+                ) : selectedDay.events.length === 0 ? (
+                  <p className="text-center text-gray-500 dark:text-gray-400 py-4">
+                    Brak innych wydarzeń
                   </p>
                 ) : (
                   selectedDay.events.map((event, i) => (

@@ -5,9 +5,12 @@ const WeatherWidget = () => {
   const [weather, setWeather] = useState(null);
   const [location, setLocation] = useState(null);
   const [recommendations, setRecommendations] = useState(null);
+  const [forecast, setForecast] = useState(null);
+  const [moonPhase, setMoonPhase] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [locationSet, setLocationSet] = useState(false);
+  const [showForecast, setShowForecast] = useState(false);
 
   useEffect(() => {
     fetchWeather();
@@ -16,10 +19,24 @@ const WeatherWidget = () => {
   const fetchWeather = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('/api/weather/recommendations');
-      setWeather(response.data.currentWeather);
-      setLocation(response.data.location);
-      setRecommendations(response.data.recommendations);
+      const [weatherRes, forecastRes, moonRes] = await Promise.all([
+        axios.get('/api/weather/recommendations'),
+        axios.get('/api/weather/forecast').catch(() => null),
+        axios.get('/api/calendar/moon/current').catch(() => null)
+      ]);
+
+      setWeather(weatherRes.data.currentWeather);
+      setLocation(weatherRes.data.location);
+      setRecommendations(weatherRes.data.recommendations);
+
+      if (forecastRes) {
+        setForecast(forecastRes.data);
+      }
+
+      if (moonRes) {
+        setMoonPhase(moonRes.data);
+      }
+
       setLocationSet(true);
       setError(null);
     } catch (err) {
@@ -209,6 +226,79 @@ const WeatherWidget = () => {
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Faza księżyca */}
+      {moonPhase && (
+        <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-lg shadow-md p-4 border-2 border-indigo-200">
+          <h4 className="font-semibold text-gray-800 mb-3 flex items-center">
+            <span className="text-2xl mr-2">{moonPhase.icon}</span>
+            Kalendarz Księżycowy
+          </h4>
+          <div className="space-y-2">
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-700">Faza:</span>
+              <span className="font-semibold text-indigo-900">{moonPhase.phaseName}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-700">Oświetlenie:</span>
+              <span className="font-semibold text-indigo-900">{moonPhase.illumination}%</span>
+            </div>
+            {moonPhase.gardening && moonPhase.gardening.length > 0 && (
+              <div className="mt-3 pt-3 border-t border-indigo-200">
+                <p className="text-xs font-semibold text-gray-700 mb-2">Rekomendacje:</p>
+                <div className="space-y-1">
+                  {moonPhase.gardening.map((tip, idx) => (
+                    <div key={idx} className="text-xs text-gray-600 flex items-start">
+                      <span className="mr-1">🌱</span>
+                      <span>{tip}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Prognoza 5-dniowa */}
+      {forecast && forecast.daily && forecast.daily.length > 0 && (
+        <div className="bg-white rounded-lg shadow-md overflow-hidden">
+          <button
+            onClick={() => setShowForecast(!showForecast)}
+            className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-50 transition"
+          >
+            <h4 className="font-semibold text-gray-800">Prognoza 5-dniowa</h4>
+            <span className="text-gray-500">{showForecast ? '▲' : '▼'}</span>
+          </button>
+
+          {showForecast && (
+            <div className="p-4 pt-0 space-y-2">
+              {forecast.daily.slice(0, 5).map((day, index) => (
+                <div
+                  key={index}
+                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                >
+                  <div className="flex items-center space-x-3">
+                    <span className="text-3xl">{getWeatherIcon(day.icon)}</span>
+                    <div>
+                      <div className="font-medium text-gray-900">{day.date}</div>
+                      <div className="text-xs text-gray-600 capitalize">{day.description}</div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-semibold text-gray-900">
+                      {day.tempMin}° / {day.tempMax}°C
+                    </div>
+                    <div className="text-xs text-gray-600">
+                      💧 {day.precipProbability}% | 💨 {day.avgWind} km/h
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
