@@ -224,26 +224,51 @@ class WeatherService {
       }
     }
 
-    // 2. Upał (blokuje oprysk)
+    // 2. Upał (blokuje oprysk gdy >32°C)
     const heatAlert = this.checkTemperatureAlerts(currentWeather);
     if (heatAlert) {
       alerts.push(heatAlert);
-      if (heatAlert.type === 'heat') {
+      // Blokuj oprysk przy silnym upale (>32°C)
+      if (heatAlert.type === 'severe-heat' || heatAlert.type === 'extreme-heat') {
         blockedTypes.add('spraying');
       }
     }
 
-    // 3. Silny wiatr (blokuje oprysk i podlewanie)
-    if (currentWeather.windSpeed > 25) {
-      alerts.push({
-        type: 'wind',
-        priority: 'high',
-        icon: '💨',
-        message: `Silny wiatr (${currentWeather.windSpeed} km/h)`,
-        details: 'Nie opryskuj, nie podlewaj - woda i środki ochrony będą zdmuchiwane'
-      });
-      blockedTypes.add('spraying');
-      blockedTypes.add('watering');
+    // 3. Wiatr (3 poziomy: umiarkowany, silny, bardzo silny)
+    const windAlert = this.checkWindConditions(currentWeather);
+    if (windAlert) {
+      alerts.push(windAlert);
+      // Wiatr >14.4 km/h blokuje oprysk, >25 km/h blokuje też podlewanie
+      if (windAlert.type === 'moderate-wind') {
+        blockedTypes.add('spraying');
+      } else if (windAlert.type === 'strong-wind' || windAlert.type === 'extreme-wind') {
+        blockedTypes.add('spraying');
+        blockedTypes.add('watering');
+      }
+    }
+
+    // 4. Burze i grad
+    const stormAlert = this.checkStormAndHailRisk(currentWeather);
+    if (stormAlert) {
+      alerts.push(stormAlert);
+    }
+
+    // 5. Wilgotność i choroby grzybowe
+    const fungalAlert = this.checkHumidityAndFungalRisk(currentWeather, forecast);
+    if (fungalAlert) {
+      alerts.push(fungalAlert);
+    }
+
+    // 6. Gwałtowne zmiany temperatury
+    const tempSwingAlert = this.checkTemperatureSwing(currentWeather, forecast);
+    if (tempSwingAlert) {
+      alerts.push(tempSwingAlert);
+    }
+
+    // 7. Susza
+    const droughtAlert = this.checkDroughtConditions(forecast);
+    if (droughtAlert) {
+      alerts.push(droughtAlert);
     }
 
     // FAZA 2: REKOMENDACJE (tylko jeśli nie zablokowane)
@@ -304,19 +329,26 @@ class WeatherService {
    * Sprawdź warunki do oprysku (z kontekstem prognozy)
    */
   checkSprayConditions(weather, forecast) {
-    // Idealne warunki: 10-25°C, wiatr <15km/h, brak deszczu przez 2h
+    // OPTYMALNE: 12-25°C (najlepiej 12-20°C), wiatr <4 m/s (14.4 km/h), brak deszczu 2-12h
+    // PORA: rano (przed 10:00) lub wieczór (po 18:00)
     const temp = weather.temperature;
     const wind = weather.windSpeed;
     const rainSoon = this.checkRainInNextHours(forecast, 2);
 
     // Sprawdź czy dziś nadaje się do oprysku
-    const todaySuitable = temp >= 10 && temp <= 25 && wind <= 15 && !rainSoon && weather.rain === 0;
+    // Wiatr 14.4 km/h = 4 m/s (max dla oprysku)
+    const todaySuitable = temp >= 12 && temp <= 25 && wind < 14.4 && !rainSoon && weather.rain === 0;
 
     if (todaySuitable) {
+      // Optymalne warunki - dodaj poradę o porze
+      const timeAdvice = (temp >= 12 && temp <= 20)
+        ? 'Optymalna temp! Pryskaj rano (przed 10:00) lub wieczorem (po 18:00).'
+        : 'Pryskaj wieczorem (po 18:00) gdy temperatura spadnie.';
+
       return {
         suitable: true,
         today: true,
-        reason: `Optymalne warunki: ${temp}°C, wiatr ${wind} km/h, brak opadów`,
+        reason: `Dobre warunki: ${temp}°C, wiatr ${wind} km/h. ${timeAdvice}`,
         bestDay: null
       };
     }
@@ -324,16 +356,18 @@ class WeatherService {
     // Jeśli dziś nie jest odpowiednie, znajdź najlepszy dzień w prognozie
     const bestDay = this.findBestSprayDayInForecast(forecast);
 
-    // Ustal powód dlaczego dziś nie można
+    // Ustal szczegółowy powód dlaczego dziś nie można
     let reason = '';
     if (temp < 10) {
-      reason = `Za zimno dziś (${temp}°C)`;
+      reason = `Za zimno (${temp}°C) - środki nie działają, spowolniony metabolizm roślin`;
+    } else if (temp < 12) {
+      reason = `Niska temp (${temp}°C) - skuteczność obniżona. Poczekaj na ocieplenie`;
     } else if (temp > 25) {
-      reason = `Za gorąco dziś (${temp}°C)`;
-    } else if (wind > 15) {
-      reason = `Za wietrznie dziś (${wind} km/h)`;
+      reason = `Za gorąco (${temp}°C) - środki parują zanim dotrą do rośliny. Utrata skuteczności`;
+    } else if (wind >= 14.4) {
+      reason = `Za wietrznie (${wind} km/h, max 14 km/h) - znoszenie środków, ryzyko zanieczyszczenia`;
     } else if (rainSoon || weather.rain > 0) {
-      reason = 'Deszcz w prognozie lub pada';
+      reason = 'Deszcz w ciągu 2h lub pada - preparat zostanie zmyty';
     }
 
     return {
@@ -417,65 +451,101 @@ class WeatherService {
 
   /**
    * Sprawdź potrzebę podlewania (NAJPIERW temperatura, potem deszcz)
+   * KIEDY: Rano (5-8) lub wieczorem (po 19:00). NIGDY 10-16!
    */
   checkWateringNeeds(weather, forecast) {
     const temp = weather.temperature;
+    const now = Date.now() / 1000;
+
+    // Sprawdź przymrozki tej nocy
+    const nightFrost = forecast.forecast
+      .filter(f => {
+        const hour = new Date(f.timestamp * 1000).getHours();
+        const isNight = hour >= 22 || hour <= 6;
+        const isFuture = f.timestamp > now;
+        return isNight && isFuture;
+      })
+      .some(f => f.temperature < 0);
 
     // PRIORYTET 1: Sprawdź temperaturę (zagrożenia)
     if (temp < 0) {
       return {
         message: 'NIE PODLEWAJ - mróz zniszczy rośliny',
-        details: `Woda zamarznie i uszkodzi korzenie (${temp}°C)`,
+        details: `Woda zamarznie i uszkodzi korzenie (${temp}°C). Rośliny nie pobierają wody przy mrozie`,
         priority: 'critical',
-        blocks: true // Blokuje inne rekomendacje podlewania
+        blocks: true
       };
     }
 
     if (temp >= 0 && temp < 5) {
-      // Sprawdź czy będzie cieplej w prognozie
       const warmerDay = this.findWarmerDayInForecast(forecast, 10);
       if (warmerDay) {
         return {
           message: `Za zimno na podlewanie (${temp}°C)`,
-          details: `Poczekaj do ${warmerDay.dayName} gdy będzie ${warmerDay.temp}°C`,
+          details: `Poczekaj do ${warmerDay.dayName} gdy będzie ${warmerDay.temp}°C. Rośliny słabo pobierają wodę`,
           priority: 'medium',
           blocks: false
         };
       } else {
         return {
           message: `Zimno (${temp}°C) - podlewaj tylko jeśli konieczne`,
-          details: 'Rośliny potrzebują mniej wody w niskich temperaturach',
+          details: 'Rośliny potrzebują mniej wody w niskich temperaturach. Ograniąż podlewanie',
           priority: 'low',
           blocks: false
         };
       }
     }
 
-    // PRIORYTET 2: Sprawdź deszcz i wilgotność (tylko gdy temp OK)
+    // Ostrzeżenie przed wieczornym podlewaniem gdy przymrozki w nocy
+    if (nightFrost) {
+      return {
+        message: 'NIE PODLEWAJ WIECZOREM - przymrozki w nocy!',
+        details: 'Podlej tylko RANO (5-8). Wieczorne podlewanie = woda zamarznie w tkankach roślin',
+        priority: 'critical',
+        blocks: false
+      };
+    }
+
+    // PRIORYTET 2: Sprawdź deszcz
     const recentRain = forecast.forecast.slice(0, 16).reduce((sum, f) => sum + f.rain, 0);
     const upcomingRain = this.checkRainInNextHours(forecast, 24);
 
     if (upcomingRain) {
       return {
         message: 'Nie podlewaj - będzie padać',
-        details: 'Deszcz w prognozie, rośliny same się napoją',
+        details: 'Deszcz w prognozie (< 24h). Rośliny same się napoją. Oszczędź wodę',
         priority: 'medium',
         blocks: false
       };
     }
 
+    // PRIORYTET 3: Zalecenia podlewania (temp OK, bez deszczu)
     if (recentRain < 5 && !upcomingRain) {
+      // UPAŁ (>32°C) - 2x dziennie
+      if (temp > 32) {
+        return {
+          message: 'Podlewaj 2x dziennie - silny upał!',
+          details: `${temp}°C! Rano (5-8) + wieczór (po 19:00). OBFICIE. NIGDY 10-16 - oparzenia liści! Gleba piaszczysta: może codziennie`,
+          priority: 'critical',
+          blocks: false
+        };
+      }
+
+      // GORĄCO (25-32°C) - 1x dziennie
       if (temp > 25) {
         return {
           message: 'Podlej rośliny - gorąco i brak deszczu',
-          details: `Temperatura ${temp}°C, brak opadów. Rośliny potrzebują wody`,
+          details: `${temp}°C, brak opadów. Podlewaj RANO (5-8) lub WIECZOREM (po 19:00). Rzadziej ale OBFICIE (10-20L/m²). Mulczuj glebę!`,
           priority: 'high',
           blocks: false
         };
-      } else if (temp > 15) {
+      }
+
+      // CIEPŁO (15-25°C) - sprawdź glebę
+      if (temp > 15) {
         return {
           message: 'Rozważ podlewanie - brak deszczu',
-          details: 'Brak opadów w prognozie. Sprawdź wilgotność gleby',
+          details: 'Brak opadów w prognozie. Sprawdź wilgotność gleby. Gleba piaszczysta: częściej. Gleba gliniasta: rzadziej ale obficie (1-2x/tydz). RANO (5-8) najlepiej',
           priority: 'medium',
           blocks: false
         };
@@ -495,17 +565,194 @@ class WeatherService {
 
   /**
    * Alerty temperaturowe (TYLKO UPAŁ - mróz obsługuje checkFrostAndColdAlerts)
+   * Poziomy: 28-32°C (umiarkowany), 32-38°C (silny), >38°C (ekstremalny)
    */
   checkTemperatureAlerts(weather) {
-    if (weather.temperature > 35) {
+    const temp = weather.temperature;
+
+    // EKSTREMALNY UPAŁ (>38°C) - CRITICAL
+    if (temp > 38) {
       return {
-        type: 'heat',
+        type: 'extreme-heat',
         priority: 'critical',
-        icon: '🌡️',
-        message: `Upał! ${weather.temperature}°C`,
-        details: 'Podlej rośliny rano i wieczorem. Unikaj oprysku w południe'
+        icon: '🔥',
+        message: `EKSTREMALNY UPAŁ! ${temp}°C`,
+        details: 'Podlewaj OBFICIE rano (5-8) i wieczorem (po 19:00). Cieniuj rośliny agrowłókniną. ZAKAZ oprysku! Młode rośliny zagrożone!'
       };
     }
+
+    // SILNY UPAŁ (32-38°C) - CRITICAL
+    if (temp > 32) {
+      return {
+        type: 'severe-heat',
+        priority: 'critical',
+        icon: '☀️',
+        message: `Silny upał! ${temp}°C`,
+        details: 'Podlewaj 2x dziennie: rano (5-8) i wieczorem (po 19:00). NIGDY 10-16! Cieniuj rośliny doniczkowe. Zakaz oprysku (temp >25°C).'
+      };
+    }
+
+    // UMIARKOWANY UPAŁ (28-32°C) - HIGH
+    if (temp >= 28) {
+      return {
+        type: 'moderate-heat',
+        priority: 'high',
+        icon: '🌡️',
+        message: `Umiarkowany upał ${temp}°C`,
+        details: 'Podlewaj rano (5-8) LUB wieczorem (po 19:00). Unikaj 10-16! Mulczuj glebę (5-7cm słomy). Opryski odradzane (temp >25°C).'
+      };
+    }
+
+    return null;
+  }
+
+  /**
+   * Sprawdź warunki wiatru (3 poziomy)
+   * 15-25 km/h: umiarkowany
+   * 25-60 km/h: silny
+   * >60 km/h: bardzo silny
+   */
+  checkWindConditions(weather) {
+    const wind = weather.windSpeed;
+
+    // BARDZO SILNY WIATR (>60 km/h / >17 m/s) - CRITICAL
+    if (wind > 60) {
+      return {
+        type: 'extreme-wind',
+        priority: 'critical',
+        icon: '🌪️',
+        message: `Bardzo silny wiatr! ${wind} km/h`,
+        details: 'SZKODY: Łamanie gałęzi, uszkodzenia korzeni. Podepnij rośliny, zabezpiecz agrowłókniną. Po burzy: obetnij uszkodzone pędy'
+      };
+    }
+
+    // SILNY WIATR (25-60 km/h / 7-17 m/s) - HIGH
+    if (wind > 25) {
+      return {
+        type: 'strong-wind',
+        priority: 'high',
+        icon: '💨',
+        message: `Silny wiatr (${wind} km/h)`,
+        details: 'NIE opryskuj (znoszenie środków). NIE podlewaj (woda nie trafi do korzeni). Zabezpiecz donice - mogą się przewrócić'
+      };
+    }
+
+    // UMIARKOWANY WIATR (15-25 km/h) - MEDIUM
+    if (wind > 14.4) {
+      return {
+        type: 'moderate-wind',
+        priority: 'medium',
+        icon: '🍃',
+        message: `Umiarkowany wiatr (${wind} km/h)`,
+        details: 'Nie opryskuj - środki będą zdmuchnięte (max 14 km/h). Podepnij młode drzewka i wysokie rośliny'
+      };
+    }
+
+    return null;
+  }
+
+  /**
+   * Sprawdź ryzyko chorób grzybowych (wysoka wilgotność)
+   */
+  checkHumidityAndFungalRisk(weather, forecast) {
+    const humidity = weather.humidity;
+    const temp = weather.temperature;
+
+    // WYSOKIE RYZYKO: wilgotność >80%, temp 15-25°C
+    if (humidity > 80 && temp >= 15 && temp <= 25) {
+      return {
+        type: 'fungal-risk',
+        priority: 'high',
+        icon: '🍄',
+        message: `Wysokie ryzyko chorób grzybowych (${humidity}% wilg.)`,
+        details: 'NIE podlewaj późnym wieczorem! Podlewaj POD KORZEŃ (nie zwilżaj liści). Zwiększ odstępy między roślinami. Rozważ oprysk profilaktyczny'
+      };
+    }
+
+    // UMIARKOWANE RYZYKO: wilgotność >70%
+    if (humidity > 70) {
+      return {
+        type: 'fungal-warning',
+        priority: 'medium',
+        icon: '💧',
+        message: `Podwyższona wilgotność (${humidity}%)`,
+        details: 'Podlewaj rano (rośliny wyschną w ciągu dnia). Unikaj zwilżania liści. Obserwuj rośliny: rdza, szara pleśń, mączniak'
+      };
+    }
+
+    return null;
+  }
+
+  /**
+   * Sprawdź suszę (brak deszczu >7 dni)
+   */
+  checkDroughtConditions(forecast) {
+    // Sprawdź sumę opadów z ostatnich 5 dni (16 pomiarów co 3h = ~2 dni realnych danych)
+    const recentRain = forecast.forecast.slice(0, 16).reduce((sum, f) => sum + f.rain, 0);
+
+    // Sprawdź czy będzie deszcz w najbliższych 2 dniach
+    const upcomingRain = forecast.forecast.slice(0, 16).reduce((sum, f) => sum + f.rain, 0);
+
+    // SUSZA: brak deszczu (< 2mm łącznie) przez długi czas
+    if (recentRain < 2 && upcomingRain < 2) {
+      return {
+        type: 'drought',
+        priority: 'high',
+        icon: '🏜️',
+        message: 'Susza - brak deszczu w prognozie',
+        details: 'Podlewaj rośliny gruntowe 2-3x/tydzień OBFICIE. Rośliny w donicach: 1-2x dziennie. MULCZUJ glebę (5-7cm słomy/kory) - zatrzyma wilgoć'
+      };
+    }
+
+    return null;
+  }
+
+  /**
+   * Sprawdź gwałtowne zmiany temperatury (>10°C w ciągu doby)
+   */
+  checkTemperatureSwing(weather, forecast) {
+    const tempNow = weather.temperature;
+
+    // Znajdź min/max temp w najbliższych 24h
+    const next24h = forecast.forecast.slice(0, 8); // 8 * 3h = 24h
+    const temps = next24h.map(f => f.temperature);
+    const minTemp = Math.min(...temps);
+    const maxTemp = Math.max(...temps);
+    const swing = maxTemp - minTemp;
+
+    // GWAŁTOWNA ZMIANA (>10°C w ciągu doby)
+    if (swing > 10) {
+      return {
+        type: 'temp-swing',
+        priority: 'high',
+        icon: '🌡️',
+        message: `Gwałtowna zmiana temp: ${minTemp}°C → ${maxTemp}°C`,
+        details: 'STRES dla roślin! Młode rośliny najbardziej wrażliwe. Przykryj agrowłókniną na noc jeśli temp spadnie <5°C. Obserwuj więdnięcie'
+      };
+    }
+
+    return null;
+  }
+
+  /**
+   * Sprawdź ryzyko burz i gradu (mockup - brak realnych danych z API)
+   * W przyszłości: integracja z alertami pogodowymi
+   */
+  checkStormAndHailRisk(weather) {
+    // TODO: Integracja z API alertów pogodowych lub IMGW
+    // Na razie: heurystyka oparta na opisie pogody
+    const desc = weather.description.toLowerCase();
+
+    if (desc.includes('burz') || desc.includes('grzmot') || desc.includes('thunder')) {
+      return {
+        type: 'storm-warning',
+        priority: 'high',
+        icon: '⛈️',
+        message: 'OSTRZEŻENIE: Burze w prognozie!',
+        details: 'Przykryj młode rośliny agrowłókniną/siatkami. Podepnij wysokie rośliny (pomidory, fasola). Mulczuj glebę. Po burzy: usuń uszkodzone liście, nawóż aminokwasami'
+      };
+    }
+
     return null;
   }
 

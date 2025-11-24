@@ -17,7 +17,7 @@ export const companionData = {
       },
       {
         plant: 'marchew',
-        reason: 'Marchew poprawia strukturę gleby, pomidory odpędzają muszki marchewkowe',
+        reason: 'Pomidory poprawiają smak marchewki. Marchew luźni glebę, poprawia strukturę pod pomidorami',
         distance: '30cm',
       },
       {
@@ -96,12 +96,12 @@ export const companionData = {
     good: [
       {
         plant: 'cebula',
-        reason: 'Klasyczne połączenie - odpiędza muchy marchewkowe i cebulowe',
+        reason: 'Klasyczne połączenie - odpędza połyśnicę marchwiankową i śmietkę cebulankową',
         distance: '10-15cm (naprzemiennie)',
       },
       {
         plant: 'pomidor',
-        reason: 'Pomidory odpędzają muchy marchewkowe',
+        reason: 'Pomidory poprawiają smak marchewki. Marchew luźni glebę pod pomidorami',
         distance: '30cm',
       },
       {
@@ -123,7 +123,7 @@ export const companionData = {
     good: [
       {
         plant: 'marchew',
-        reason: 'Odpędza muchy cebulowe i marchewkowe',
+        reason: 'Odpędza połyśnicę marchwiankową i śmietkę cebulankową',
         distance: '10-15cm',
       },
       {
@@ -155,7 +155,7 @@ export const companionData = {
     good: [
       {
         plant: 'ogórek',
-        reason: 'Dobre współdzałanie, nie konkurują',
+        reason: 'Dobre współdziałanie, nie konkurują o składniki',
         distance: '40cm',
       },
       {
@@ -316,7 +316,7 @@ export const companionData = {
     good: [
       {
         plant: 'pomidor',
-        reason: 'Odpędza stonkę ziemniaczaną, mszyce, nicienie',
+        reason: 'Odpędza stonkę ziemniaczaną, mszyce, nicienie korzeniowe (nematody)',
         distance: '30cm',
       },
       {
@@ -401,7 +401,7 @@ export const companionData = {
       },
       {
         plant: 'marchew',
-        reason: 'Odpędza muszki marchewkowe',
+        reason: 'Odpędza połyśnicę marchwiankową (mucha marchewkowa)',
         distance: '20cm',
       },
       {
@@ -684,6 +684,227 @@ export const companionData = {
         distance: 'min 60cm',
       },
     ],
+  },
+
+  lawenda: {
+    good: [
+      {
+        plant: 'kapusta',
+        reason: 'Odpędza mszyce i motyle kapuściane, przyciąga zapylacze',
+        distance: '30-40cm',
+      },
+      {
+        plant: 'papryka',
+        reason: 'Odpędza mszyce i szkodniki',
+        distance: '30cm',
+      },
+      {
+        plant: 'pomidor',
+        reason: 'Silny zapach odpędza szkodniki, przyciąga pożyteczne owady',
+        distance: '30cm',
+      },
+    ],
+    bad: [],
+  },
+
+  rozmaryn: {
+    good: [
+      {
+        plant: 'papryka',
+        reason: 'Silny zapach odpędza owady (mszyce, stonkę)',
+        distance: '30cm',
+      },
+      {
+        plant: 'pomidor',
+        reason: 'Odpędza mszyce i szkodniki',
+        distance: '30cm',
+      },
+      {
+        plant: 'kapusta',
+        reason: 'Odpędza szkodniki kapusty (białka kapuściana)',
+        distance: '30cm',
+      },
+      {
+        plant: 'marchew',
+        reason: 'Odpędza połyśnicę marchwiankową',
+        distance: '25cm',
+      },
+    ],
+    bad: [
+      {
+        plant: 'bazylia',
+        reason: 'Konkurują o wodę, różne wymagania glebowe',
+        distance: 'min 50cm',
+      },
+    ],
+  },
+
+  tymianek: {
+    good: [
+      {
+        plant: 'kapusta',
+        reason: 'Odpędza szkodniki kapusty, chroni przed chorobami grzybowymi',
+        distance: '25cm',
+      },
+      {
+        plant: 'pomidor',
+        reason: 'Odpędza szkodniki, poprawia wzrost',
+        distance: '25cm',
+      },
+      {
+        plant: 'truskawka',
+        reason: 'Zapobiega chorobom, poprawia smak',
+        distance: '20cm',
+      },
+    ],
+    bad: [],
+  },
+
+  szałwia: {
+    good: [
+      {
+        plant: 'kapusta',
+        reason: 'Odpędza białkę kapuścianą, przyciąga zapylacze',
+        distance: '30cm',
+      },
+      {
+        plant: 'marchew',
+        reason: 'Odpędza połyśnicę marchwiankową',
+        distance: '25cm',
+      },
+      {
+        plant: 'truskawka',
+        reason: 'Poprawia wzrost, odpędza szkodniki',
+        distance: '25cm',
+      },
+    ],
+    bad: [],
+  },
+
+  oregano: {
+    good: [
+      {
+        plant: 'papryka',
+        reason: 'Odpędza mszyce i szkodniki',
+        distance: '25cm',
+      },
+      {
+        plant: 'ogórek',
+        reason: 'Odpędza szkodniki, poprawia wzrost',
+        distance: '25cm',
+      },
+      {
+        plant: 'kapusta',
+        reason: 'Odpędza szkodniki kapusty',
+        distance: '25cm',
+      },
+    ],
+    bad: [],
+  },
+
+  nasturcja: {
+    good: [
+      {
+        plant: 'kapusta',
+        reason: 'Roślina pułapkowa - przyciąga mszyce NA SIEBIE, chroniąc kapustę. Odpędza białkę kapuścianą',
+        distance: '30cm',
+      },
+      {
+        plant: 'pomidor',
+        reason: 'Roślina pułapkowa - przyciąga mszyce i szkodniki od pomidorów',
+        distance: '30cm',
+      },
+      {
+        plant: 'ogórek',
+        reason: 'Odpędza stonki, przyciąga szkodniki na siebie',
+        distance: '30cm',
+      },
+      {
+        plant: 'dynia',
+        reason: 'Odpędza szkodniki dyni',
+        distance: '40cm',
+      },
+    ],
+    bad: [],
+  },
+
+  aksamitka: {
+    good: [
+      {
+        plant: 'pomidor',
+        reason: 'Odpędza nicienie korzeniowe (nematody), mszyce, stonkę. Zapobiega chorobom',
+        distance: '30cm',
+      },
+      {
+        plant: 'ogórek',
+        reason: 'Odpędza nematody korzeniowe, mszyce',
+        distance: '30cm',
+      },
+      {
+        plant: 'kapusta',
+        reason: 'Odpędza pchełki ziemne, gąsienice, mszyce',
+        distance: '30cm',
+      },
+      {
+        plant: 'marchew',
+        reason: 'Odpędza nematody korzeniowe',
+        distance: '30cm',
+      },
+      {
+        plant: 'ziemniak',
+        reason: 'Odpędza nematody, chroni przed chorobami glebowymi',
+        distance: '30cm',
+      },
+    ],
+    bad: [],
+  },
+
+  koperek: {
+    good: [
+      {
+        plant: 'ogórek',
+        reason: 'Przyciąga pożyteczne owady (biedronki, złotoki)',
+        distance: '30cm',
+      },
+      {
+        plant: 'kapusta',
+        reason: 'Przyciąga zapylacze i drapieżniki szkodników',
+        distance: '30cm',
+      },
+      {
+        plant: 'sałata',
+        reason: 'Dobre współdziałanie, przyciąga owady pożyteczne',
+        distance: '25cm',
+      },
+    ],
+    bad: [
+      {
+        plant: 'marchew',
+        reason: 'Hamuje wzrost marchewki, przyciąga te same szkodniki',
+        distance: 'min 50cm',
+      },
+    ],
+  },
+
+  koniczyna: {
+    good: [
+      {
+        plant: 'pomidor',
+        reason: 'Wzbogaca glebę w azot, tłumi chwasty, chroni przed erozją',
+        distance: 'jako okrywa międzyrzędzi',
+      },
+      {
+        plant: 'ogórek',
+        reason: 'Dostarcza azot, pokrywa glebę, zatrzymuje wilgoć',
+        distance: 'jako okrywa międzyrzędzi',
+      },
+      {
+        plant: 'marchew',
+        reason: 'Wzbogaca glebę w azot, mulczuje glebę',
+        distance: 'jako okrywa międzyrzędzi',
+      },
+    ],
+    bad: [],
   },
 };
 
