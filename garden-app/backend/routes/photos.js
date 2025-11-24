@@ -5,6 +5,8 @@ const db = require('../db');
 const auth = require('../middleware/auth');
 const upload = require('../middleware/upload');
 const { imageValidationMiddleware } = require('../utils/imageValidator');
+const fs = require('fs');
+const path = require('path');
 
 // Get all photos for a bed
 router.get('/beds/:bedId/photos', auth, (req, res) => {
@@ -70,7 +72,9 @@ router.post('/beds/:bedId/photos',
         }
 
         const { caption, taken_date } = req.body;
-        const photoPath = req.file.path;
+        // Use relative path for proper URL serving
+        // Express.static serves '/uploads' -> 'backend/uploads/'
+        const photoPath = `uploads/${req.file.filename}`;
 
         db.run(
           `INSERT INTO plant_photos (bed_id, photo_path, caption, taken_date)
@@ -115,17 +119,27 @@ router.delete('/photos/:id', auth, (req, res) => {
         return res.status(404).json({ error: 'Zdjęcie nie znalezione' });
       }
 
-      db.run(
-        `DELETE FROM plant_photos WHERE id = ?`,
-        [req.params.id],
-        function (err) {
-          if (err) {
-            return res.status(500).json({ error: 'Błąd podczas usuwania' });
-          }
-
-          res.json({ message: 'Zdjęcie usunięte pomyślnie' });
+      // Delete physical file first
+      const filePath = path.join(__dirname, '..', photo.photo_path);
+      fs.unlink(filePath, (unlinkErr) => {
+        if (unlinkErr) {
+          console.error('Error deleting file:', unlinkErr);
+          // Continue anyway - file might not exist
         }
-      );
+
+        // Delete database record
+        db.run(
+          `DELETE FROM plant_photos WHERE id = ?`,
+          [req.params.id],
+          function (err) {
+            if (err) {
+              return res.status(500).json({ error: 'Błąd podczas usuwania' });
+            }
+
+            res.json({ message: 'Zdjęcie usunięte pomyślnie' });
+          }
+        );
+      });
     }
   );
 });
