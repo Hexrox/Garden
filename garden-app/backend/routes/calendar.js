@@ -6,8 +6,9 @@ const moonPhases = require('../utils/moonPhases');
 /**
  * GET /api/calendar/moon/current
  * Pobierz aktualną fazę księżyca i rekomendacje
+ * PUBLIC - nie wymaga autoryzacji (dane astronomiczne uniwersalne)
  */
-router.get('/moon/current', auth, (req, res) => {
+router.get('/moon/current', (req, res) => {
   try {
     const today = new Date();
     const moonPhase = moonPhases.getMoonPhase(today);
@@ -36,8 +37,9 @@ router.get('/moon/current', auth, (req, res) => {
 /**
  * GET /api/calendar/moon/month/:year/:month
  * Pobierz fazy księżyca dla całego miesiąca
+ * PUBLIC - nie wymaga autoryzacji (dane astronomiczne uniwersalne)
  */
-router.get('/moon/month/:year/:month', auth, (req, res) => {
+router.get('/moon/month/:year/:month', (req, res) => {
   try {
     const year = parseInt(req.params.year);
     const month = parseInt(req.params.month);
