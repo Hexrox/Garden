@@ -232,6 +232,7 @@ db.serialize(() => {
   )`);
 
   // Create indexes for better query performance
+  db.run('CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)');
   db.run('CREATE INDEX IF NOT EXISTS idx_plots_user_id ON plots(user_id)');
   db.run('CREATE INDEX IF NOT EXISTS idx_beds_plot_id ON beds(plot_id)');
   db.run('CREATE INDEX IF NOT EXISTS idx_spray_bed_id ON spray_history(bed_id)');
@@ -241,6 +242,7 @@ db.serialize(() => {
   db.run('CREATE INDEX IF NOT EXISTS idx_safe_harvest_date ON spray_history(safe_harvest_date)');
   db.run('CREATE INDEX IF NOT EXISTS idx_tasks_user_id ON tasks(user_id)');
   db.run('CREATE INDEX IF NOT EXISTS idx_tasks_due_date ON tasks(due_date)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_tasks_completed ON tasks(completed)');
   db.run('CREATE INDEX IF NOT EXISTS idx_plants_user_id ON plants(user_id)');
   db.run('CREATE INDEX IF NOT EXISTS idx_plants_name ON plants(name)');
   db.run('CREATE INDEX IF NOT EXISTS idx_plant_photos_bed_id ON plant_photos(bed_id)');

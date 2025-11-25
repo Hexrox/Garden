@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import BottomNav from './BottomNav';
 import DarkModeToggle from './DarkModeToggle';
@@ -7,6 +7,11 @@ import DarkModeToggle from './DarkModeToggle';
 const Layout = ({ children }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const isActive = (path) => {
+    return location.pathname === path || location.pathname.startsWith(path + '/');
+  };
 
   const handleLogout = () => {
     logout();
@@ -26,37 +31,61 @@ const Layout = ({ children }) => {
               <div className="hidden lg:ml-8 lg:flex lg:space-x-8">
                 <Link
                   to="/dashboard"
-                  className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-900 dark:text-gray-100 hover:text-green-600 dark:hover:text-green-400 transition whitespace-nowrap"
+                  className={`inline-flex items-center px-1 pt-1 text-sm font-medium transition whitespace-nowrap border-b-2 ${
+                    isActive('/dashboard')
+                      ? 'border-green-600 text-green-600 dark:text-green-400'
+                      : 'border-transparent text-gray-900 dark:text-gray-100 hover:text-green-600 dark:hover:text-green-400 hover:border-gray-300'
+                  }`}
                 >
                   Dashboard
                 </Link>
                 <Link
                   to="/plots"
-                  className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-900 dark:text-gray-100 hover:text-green-600 dark:hover:text-green-400 transition whitespace-nowrap"
+                  className={`inline-flex items-center px-1 pt-1 text-sm font-medium transition whitespace-nowrap border-b-2 ${
+                    isActive('/plots')
+                      ? 'border-green-600 text-green-600 dark:text-green-400'
+                      : 'border-transparent text-gray-900 dark:text-gray-100 hover:text-green-600 dark:hover:text-green-400 hover:border-gray-300'
+                  }`}
                 >
                   Działki
                 </Link>
                 <Link
                   to="/plants"
-                  className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-900 dark:text-gray-100 hover:text-green-600 dark:hover:text-green-400 transition whitespace-nowrap"
+                  className={`inline-flex items-center px-1 pt-1 text-sm font-medium transition whitespace-nowrap border-b-2 ${
+                    isActive('/plants')
+                      ? 'border-green-600 text-green-600 dark:text-green-400'
+                      : 'border-transparent text-gray-900 dark:text-gray-100 hover:text-green-600 dark:hover:text-green-400 hover:border-gray-300'
+                  }`}
                 >
                   Rośliny
                 </Link>
                 <Link
                   to="/sprays"
-                  className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-900 dark:text-gray-100 hover:text-green-600 dark:hover:text-green-400 transition whitespace-nowrap"
+                  className={`inline-flex items-center px-1 pt-1 text-sm font-medium transition whitespace-nowrap border-b-2 ${
+                    isActive('/sprays')
+                      ? 'border-green-600 text-green-600 dark:text-green-400'
+                      : 'border-transparent text-gray-900 dark:text-gray-100 hover:text-green-600 dark:hover:text-green-400 hover:border-gray-300'
+                  }`}
                 >
                   Opryski
                 </Link>
                 <Link
                   to="/reminders"
-                  className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-900 dark:text-gray-100 hover:text-green-600 dark:hover:text-green-400 transition whitespace-nowrap"
+                  className={`inline-flex items-center px-1 pt-1 text-sm font-medium transition whitespace-nowrap border-b-2 ${
+                    isActive('/reminders')
+                      ? 'border-green-600 text-green-600 dark:text-green-400'
+                      : 'border-transparent text-gray-900 dark:text-gray-100 hover:text-green-600 dark:hover:text-green-400 hover:border-gray-300'
+                  }`}
                 >
                   Przypomnienia
                 </Link>
                 <Link
                   to="/profile"
-                  className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-900 dark:text-gray-100 hover:text-green-600 dark:hover:text-green-400 transition whitespace-nowrap"
+                  className={`inline-flex items-center px-1 pt-1 text-sm font-medium transition whitespace-nowrap border-b-2 ${
+                    isActive('/profile')
+                      ? 'border-green-600 text-green-600 dark:text-green-400'
+                      : 'border-transparent text-gray-900 dark:text-gray-100 hover:text-green-600 dark:hover:text-green-400 hover:border-gray-300'
+                  }`}
                 >
                   Profil
                 </Link>

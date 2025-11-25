@@ -27,7 +27,6 @@ const WeatherWidget = () => {
       });
 
       if (moonRes && moonRes.data && moonRes.data.moon) {
-        console.log('Moon API Response:', moonRes.data);
         // API returns {date, dateFormatted, moon: {...}, gardening: {...}}
         // Validate that moon object has required fields
         if (moonRes.data.moon.phaseName && moonRes.data.moon.illumination !== undefined) {
@@ -36,7 +35,6 @@ const WeatherWidget = () => {
             ...moonRes.data.moon,
             gardening: moonRes.data.gardening?.favorable || []
           };
-          console.log('Processed moonData:', moonData);
           setMoonPhase(moonData);
         } else {
           console.error('Moon data incomplete:', moonRes.data.moon);

@@ -36,8 +36,12 @@ const PORT = process.env.PORT || 3001;
 app.set('trust proxy', 1);
 
 // HTTPS enforcement (production only)
-// const httpsRedirect = require('./middleware/httpsRedirect');
-// app.use(httpsRedirect);
+app.use((req, res, next) => {
+  if (req.header('x-forwarded-proto') !== 'https' && process.env.NODE_ENV === 'production') {
+    return res.redirect(301, `https://${req.header('host')}${req.url}`);
+  }
+  next();
+});
 
 // Security middleware with CSP
 app.use(helmet({

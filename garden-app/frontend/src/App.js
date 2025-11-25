@@ -20,6 +20,7 @@ import SuccessionPlanting from './pages/SuccessionPlanting';
 import Tasks from './pages/Tasks';
 import Calendar from './pages/Calendar';
 import Analytics from './pages/Analytics';
+import NotFound from './pages/NotFound';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -188,8 +189,10 @@ function AppRoutes() {
         />
 
         {/* Default redirect */}
-        <Route path="/" element={<Navigate to="/dashboard" />} />
-        <Route path="*" element={<Navigate to="/dashboard" />} />
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+
+        {/* 404 - Must be last */}
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </Router>
   );

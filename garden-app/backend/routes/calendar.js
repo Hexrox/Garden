@@ -26,7 +26,6 @@ router.get('/moon/current', (req, res) => {
       gardening: recommendations
     };
 
-    console.log('🌙 Moon API Response:', JSON.stringify(response, null, 2));
     res.json(response);
   } catch (error) {
     console.error('Błąd pobierania fazy księżyca:', error);
