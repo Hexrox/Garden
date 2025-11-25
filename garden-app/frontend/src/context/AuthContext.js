@@ -20,7 +20,21 @@ export const AuthProvider = ({ children }) => {
     // Fallback timeout to prevent infinite loading (max 3 seconds)
     const fallbackTimeout = setTimeout(() => {
       if (loading) {
-        console.warn('Auth loading timeout - forcing loading to false');
+        console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.error('⚠️  AUTH LOADING TIMEOUT');
+        console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.error('Problem: Autentykacja nie zakończyła się w ciągu 3 sekund');
+        console.error('');
+        console.error('Możliwe przyczyny:');
+        console.error('1. Backend nie odpowiada (sprawdź Network tab)');
+        console.error('2. CORS blokuje requesty (sprawdź błędy w Console)');
+        console.error('3. Brak połączenia z API');
+        console.error('');
+        console.error('Sprawdź:');
+        console.error('- Network tab (F12) → filtr "XHR"');
+        console.error('- Console tab → szukaj błędów CORS');
+        console.error('- Backend: czy pm2 status pokazuje "online"?');
+        console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
         setLoading(false);
       }
     }, 3000);

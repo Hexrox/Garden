@@ -76,8 +76,25 @@ app.use(helmet({
 app.use(compression());
 
 // CORS configuration
+// Support multiple domains (comma-separated in FRONTEND_URL)
+// Example: FRONTEND_URL=https://gardenapp.pl,https://www.gardenapp.pl
+const allowedOrigins = process.env.FRONTEND_URL
+  ? process.env.FRONTEND_URL.split(',').map(url => url.trim())
+  : ['http://localhost:3000'];
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps, curl, Postman)
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      console.warn(`CORS: Blocked request from origin: ${origin}`);
+      console.warn(`CORS: Allowed origins: ${allowedOrigins.join(', ')}`);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -170,6 +187,7 @@ app.listen(PORT, () => {
   console.log('🌱 =======================================');
   console.log(`🌱 Server running on http://localhost:${PORT}`);
   console.log(`🌱 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`🌱 CORS allowed origins: ${allowedOrigins.join(', ')}`);
   console.log('🌱 =======================================');
   console.log('');
 });

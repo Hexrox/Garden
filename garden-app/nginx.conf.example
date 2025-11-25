@@ -1,0 +1,154 @@
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# Garden App - Nginx Configuration Example
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#
+# This is an example nginx configuration for Garden App.
+# Copy this file to /etc/nginx/sites-available/garden-app
+# Then create a symlink: ln -s /etc/nginx/sites-available/garden-app /etc/nginx/sites-enabled/
+#
+# IMPORTANT: Replace the following placeholders:
+#   - gardenapp.pl → your actual domain
+#   - /var/www/garden → your actual installation path
+#   - 3001 → your backend port (if different)
+#
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+server {
+    listen 80;
+    listen [::]:80;
+
+    # Replace with your domain(s)
+    server_name gardenapp.pl www.gardenapp.pl;
+
+    # Security headers
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+
+    # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    # Frontend (React build)
+    # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    location / {
+        # Replace with your installation path
+        root /var/www/garden/frontend/build;
+        index index.html;
+
+        # IMPORTANT: This enables React Router (client-side routing)
+        # Without this, refreshing pages will give 404 errors
+        try_files $uri $uri/ /index.html;
+
+        # Security: Prevent access to hidden files
+        location ~ /\. {
+            deny all;
+        }
+    }
+
+    # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    # Backend API Proxy
+    # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    # CRITICAL: This proxies /api/* requests to the Node.js backend
+    # Without this section, the app will show "Ładowanie..." forever!
+    location /api {
+        # Replace 3001 with your backend port
+        proxy_pass http://localhost:3001;
+
+        # Proxy headers (required for proper request handling)
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+
+        # Timeout settings (increase if you have slow API endpoints)
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+    }
+
+    # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    # Static Files - Uploaded Images
+    # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    location /uploads {
+        alias /var/www/garden/backend/uploads;
+        expires 30d;
+        add_header Cache-Control "public, immutable";
+
+        # Security: Only allow image files
+        location ~ \.(jpg|jpeg|png|gif|webp|svg)$ {
+            expires 30d;
+            add_header Cache-Control "public, immutable";
+        }
+
+        # Deny access to other file types
+        location ~ \..* {
+            deny all;
+        }
+    }
+
+    # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    # Static Files Cache (CSS, JS, Images from build)
+    # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
+        root /var/www/garden/frontend/build;
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+        access_log off;
+    }
+
+    # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    # Logs
+    # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    access_log /var/log/nginx/garden-access.log;
+    error_log /var/log/nginx/garden-error.log;
+}
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# SSL/HTTPS Configuration (optional but recommended)
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#
+# To enable HTTPS with Let's Encrypt (free SSL certificate):
+#
+# 1. Install Certbot:
+#    apt-get update
+#    apt-get install -y certbot python3-certbot-nginx
+#
+# 2. Get SSL certificate (replace gardenapp.pl with your domain):
+#    certbot --nginx -d gardenapp.pl -d www.gardenapp.pl
+#
+# 3. Certbot will automatically update this configuration to enable HTTPS
+#
+# 4. Auto-renewal is configured automatically by Certbot
+#
+# After running certbot, this file will have an additional server block
+# for port 443 (HTTPS) with SSL configuration.
+#
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# Installation Instructions
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#
+# 1. Copy this file to nginx sites-available:
+#    cp nginx.conf.example /etc/nginx/sites-available/garden-app
+#
+# 2. Edit the file and replace:
+#    - gardenapp.pl → your domain
+#    - /var/www/garden → your installation path
+#    - 3001 → your backend port
+#
+# 3. Create symlink to enable the site:
+#    ln -s /etc/nginx/sites-available/garden-app /etc/nginx/sites-enabled/
+#
+# 4. Test nginx configuration:
+#    nginx -t
+#
+# 5. If test passes, reload nginx:
+#    systemctl reload nginx
+#
+# 6. (Optional) Enable HTTPS with Certbot:
+#    certbot --nginx -d gardenapp.pl -d www.gardenapp.pl
+#
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
