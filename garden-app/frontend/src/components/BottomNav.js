@@ -40,7 +40,7 @@ const BottomNav = () => {
 
   return (
     <>
-      <nav className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 shadow-lg z-50 md:hidden">
+      <nav className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 shadow-lg z-50 lg:hidden" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0)' }}>
         <div className="flex justify-around items-center h-16 relative">
           {/* First 2 items */}
           {navItems.slice(0, 2).map((item) => {
