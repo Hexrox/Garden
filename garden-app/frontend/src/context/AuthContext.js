@@ -16,6 +16,23 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(localStorage.getItem('token'));
   const [loading, setLoading] = useState(true);
 
+  // Emergency timeout: Force loading to false if stuck for too long
+  // This is a safety net in case the main useEffect fails to set loading=false
+  useEffect(() => {
+    if (loading) {
+      const emergencyTimeout = setTimeout(() => {
+        console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.error('🚨 EMERGENCY: Auth loading stuck at true');
+        console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.error('Forcing loading to false after 8 seconds');
+        console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        setLoading(false);
+      }, 8000); // 8 seconds as last resort
+
+      return () => clearTimeout(emergencyTimeout);
+    }
+  }, [loading]);
+
   useEffect(() => {
     // Fallback timeout to prevent infinite loading (max 3 seconds)
     const fallbackTimeout = setTimeout(() => {
@@ -53,9 +70,12 @@ export const AuthProvider = ({ children }) => {
         });
       } catch (error) {
         console.error('Invalid token:', error);
+        // CRITICAL FIX: Set loading to false immediately to prevent infinite loading state
+        // This happens when token is corrupted/expired and can't be decoded
+        setLoading(false);
         clearTimeout(fallbackTimeout);
         logout();
-        return; // Exit early, don't set loading to false yet (logout will trigger re-render)
+        return;
       }
 
       // Setup axios interceptor for 401 errors

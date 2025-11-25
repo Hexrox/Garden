@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
@@ -23,28 +23,68 @@ import Analytics from './pages/Analytics';
 import NotFound from './pages/NotFound';
 
 // Protected Route Component
-const ProtectedRoute = ({ children }) => {
+const ProtectedRoute = ({ children, forceRender }) => {
   const { isAuthenticated, loading } = useAuth();
 
-  if (loading) {
+  // If loading stuck for too long, force render was triggered from AppRoutes
+  if (loading && !forceRender) {
     return <div className="flex items-center justify-center min-h-screen">Ładowanie...</div>;
+  }
+
+  // If forceRender is true and still loading, assume not authenticated (safety fallback)
+  if (forceRender && loading) {
+    console.warn('⚠️  Force rendering ProtectedRoute - redirecting to login');
+    return <Navigate to="/login" />;
   }
 
   return isAuthenticated ? <Layout>{children}</Layout> : <Navigate to="/login" />;
 };
 
 // Public Route Component (redirect to dashboard if already logged in)
-const PublicRoute = ({ children }) => {
+const PublicRoute = ({ children, forceRender }) => {
   const { isAuthenticated, loading } = useAuth();
 
-  if (loading) {
+  // If loading stuck for too long, force render was triggered from AppRoutes
+  if (loading && !forceRender) {
     return <div className="flex items-center justify-center min-h-screen">Ładowanie...</div>;
+  }
+
+  // If forceRender is true and still loading, assume not authenticated (safety fallback)
+  if (forceRender && loading) {
+    console.warn('⚠️  Force rendering PublicRoute - showing public content');
+    return children;
   }
 
   return !isAuthenticated ? children : <Navigate to="/dashboard" />;
 };
 
 function AppRoutes() {
+  const { loading } = useAuth();
+  const [forceRender, setForceRender] = useState(false);
+
+  // Safety timeout: If loading takes too long, force render the app
+  // This is an additional safety net on top of AuthContext timeouts
+  useEffect(() => {
+    if (loading && !forceRender) {
+      const routeTimeout = setTimeout(() => {
+        console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.error('🚨 ROUTE LOADING TIMEOUT');
+        console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.error('Loading stuck for > 5 seconds at route level');
+        console.error('Forcing app to render to prevent infinite loading');
+        console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        setForceRender(true);
+      }, 5000); // 5 seconds
+
+      return () => clearTimeout(routeTimeout);
+    }
+
+    // Reset forceRender when loading completes normally
+    if (!loading && forceRender) {
+      setForceRender(false);
+    }
+  }, [loading, forceRender]);
+
   return (
     <Router>
       <Routes>
@@ -52,7 +92,7 @@ function AppRoutes() {
         <Route
           path="/login"
           element={
-            <PublicRoute>
+            <PublicRoute forceRender={forceRender}>
               <Login />
             </PublicRoute>
           }
@@ -60,7 +100,7 @@ function AppRoutes() {
         <Route
           path="/register"
           element={
-            <PublicRoute>
+            <PublicRoute forceRender={forceRender}>
               <Register />
             </PublicRoute>
           }
@@ -70,7 +110,7 @@ function AppRoutes() {
         <Route
           path="/dashboard"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute forceRender={forceRender}>
               <Dashboard />
             </ProtectedRoute>
           }
@@ -78,7 +118,7 @@ function AppRoutes() {
         <Route
           path="/plots"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute forceRender={forceRender}>
               <PlotsList />
             </ProtectedRoute>
           }
@@ -86,7 +126,7 @@ function AppRoutes() {
         <Route
           path="/plots/new"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute forceRender={forceRender}>
               <PlotForm />
             </ProtectedRoute>
           }
@@ -94,7 +134,7 @@ function AppRoutes() {
         <Route
           path="/plots/:id"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute forceRender={forceRender}>
               <PlotDetail />
             </ProtectedRoute>
           }
@@ -102,7 +142,7 @@ function AppRoutes() {
         <Route
           path="/plots/:id/edit"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute forceRender={forceRender}>
               <PlotForm />
             </ProtectedRoute>
           }
@@ -110,7 +150,7 @@ function AppRoutes() {
         <Route
           path="/beds/:bedId/spray"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute forceRender={forceRender}>
               <SprayForm />
             </ProtectedRoute>
           }
@@ -118,7 +158,7 @@ function AppRoutes() {
         <Route
           path="/sprays"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute forceRender={forceRender}>
               <SprayHistory />
             </ProtectedRoute>
           }
@@ -126,7 +166,7 @@ function AppRoutes() {
         <Route
           path="/reminders"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute forceRender={forceRender}>
               <Reminders />
             </ProtectedRoute>
           }
@@ -134,7 +174,7 @@ function AppRoutes() {
         <Route
           path="/export"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute forceRender={forceRender}>
               <Export />
             </ProtectedRoute>
           }
@@ -142,7 +182,7 @@ function AppRoutes() {
         <Route
           path="/plants"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute forceRender={forceRender}>
               <PlantManagement />
             </ProtectedRoute>
           }
@@ -150,7 +190,7 @@ function AppRoutes() {
         <Route
           path="/succession"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute forceRender={forceRender}>
               <SuccessionPlanting />
             </ProtectedRoute>
           }
@@ -158,7 +198,7 @@ function AppRoutes() {
         <Route
           path="/tasks"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute forceRender={forceRender}>
               <Tasks />
             </ProtectedRoute>
           }
@@ -166,7 +206,7 @@ function AppRoutes() {
         <Route
           path="/calendar"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute forceRender={forceRender}>
               <Calendar />
             </ProtectedRoute>
           }
@@ -174,7 +214,7 @@ function AppRoutes() {
         <Route
           path="/analytics"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute forceRender={forceRender}>
               <Analytics />
             </ProtectedRoute>
           }
@@ -182,7 +222,7 @@ function AppRoutes() {
         <Route
           path="/profile"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute forceRender={forceRender}>
               <Profile />
             </ProtectedRoute>
           }

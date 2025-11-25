@@ -6,6 +6,9 @@ const API_URL = process.env.REACT_APP_API_URL || '';
 
 axios.defaults.baseURL = API_URL;
 axios.defaults.headers.common['Content-Type'] = 'application/json';
+// CRITICAL FIX: Set timeout to prevent infinite hanging requests
+// Without this, requests can hang forever if backend doesn't respond
+axios.defaults.timeout = 10000; // 10 seconds
 
 // Log API configuration on startup
 console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
@@ -42,6 +45,13 @@ axios.interceptors.response.use(
     console.error(`Status: ${error.response?.status || 'No response'}`);
     console.error(`Message: ${error.response?.data?.error || error.message}`);
 
+    // Check for timeout error
+    if (error.code === 'ECONNABORTED' && error.message.includes('timeout')) {
+      console.error('');
+      console.error('⏱️  Request Timeout (> 10 seconds)');
+      console.error('Backend nie odpowiedział w ciągu 10 sekund');
+    }
+
     // Additional help for common errors
     if (!error.response) {
       console.error('');
@@ -50,6 +60,7 @@ axios.interceptors.response.use(
       console.error('1. Backend nie działa (sprawdź: pm2 status)');
       console.error('2. Nginx nie przekierowuje /api (sprawdź nginx config)');
       console.error('3. Firewall blokuje port');
+      console.error('4. Request timeout (> 10 sekund)');
     } else if (error.response.status === 401) {
       console.error('');
       console.error('⚠️  Nieautoryzowany - token wygasł lub jest nieprawidłowy');
