@@ -12,7 +12,7 @@ router.get('/moon/current', (req, res) => {
   try {
     const today = new Date();
     const moonPhase = moonPhases.getMoonPhase(today);
-    const recommendations = moonPhases.getGardeningRecommendations(moonPhase);
+    const recommendations = moonPhases.getGardeningRecommendations(moonPhase, today);
 
     const response = {
       date: today.toISOString().split('T')[0],
@@ -114,7 +114,7 @@ router.get('/summary', auth, (req, res) => {
   try {
     const today = new Date();
     const moonPhase = moonPhases.getMoonPhase(today);
-    const recommendations = moonPhases.getGardeningRecommendations(moonPhase);
+    const recommendations = moonPhases.getGardeningRecommendations(moonPhase, today);
 
     // Znajdź najbliższe optymalne dni dla różnych aktywności
     const upcomingDays = {
@@ -134,6 +134,7 @@ router.get('/summary', auth, (req, res) => {
       },
       gardening: {
         general: recommendations.general,
+        seasonInfo: recommendations.seasonInfo,
         favorable: recommendations.favorable,
         unfavorable: recommendations.unfavorable
       },
