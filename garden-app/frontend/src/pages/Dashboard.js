@@ -86,6 +86,13 @@ const Dashboard = () => {
           </h1>
           <p className="text-sm md:text-base text-gray-600 dark:text-gray-400 mt-1">Przegląd Twojego ogrodu</p>
         </div>
+        <Link
+          to="/calendar"
+          className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg shadow-sm transition-colors font-medium"
+        >
+          <Calendar size={20} />
+          <span className="hidden sm:inline">Kalendarz księżycowy</span>
+        </Link>
       </div>
 
       {/* Widgets Row - Weather, Tasks, Harvests */}
@@ -222,7 +229,7 @@ const Dashboard = () => {
       {/* Quick Actions */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 transition-colors">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Szybkie akcje</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <Link
             to="/plots/new"
             className="flex items-center justify-center gap-2 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
@@ -243,13 +250,6 @@ const Dashboard = () => {
           >
             <Save size={18} />
             Eksport danych
-          </Link>
-          <Link
-            to="/calendar"
-            className="flex items-center justify-center gap-2 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
-          >
-            <Calendar size={18} />
-            Kalendarz ogrodnika
           </Link>
         </div>
       </div>
