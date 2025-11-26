@@ -207,6 +207,25 @@ db.serialize(() => {
     }
   });
 
+  // Add auto-generated task management columns
+  db.run(`ALTER TABLE tasks ADD COLUMN auto_generated BOOLEAN DEFAULT 0`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding auto_generated column:', err.message);
+    }
+  });
+
+  db.run(`ALTER TABLE tasks ADD COLUMN dismissed_at DATETIME`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding dismissed_at column:', err.message);
+    }
+  });
+
+  db.run(`ALTER TABLE tasks ADD COLUMN snoozed_until DATETIME`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding snoozed_until column:', err.message);
+    }
+  });
+
   // Weather history table (for monthly statistics)
   db.run(`CREATE TABLE IF NOT EXISTS weather_history (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

@@ -40,6 +40,8 @@ router.get('/today', auth, (req, res) => {
      WHERE user_id = ?
      AND completed = 0
      AND (due_date <= ? OR due_date IS NULL)
+     AND (dismissed_at IS NULL OR datetime(dismissed_at, '+14 days') < datetime('now'))
+     AND (snoozed_until IS NULL OR datetime(snoozed_until) < datetime('now'))
      ORDER BY priority DESC, due_date ASC`,
     [req.user.id, today],
     (err, rows) => {
@@ -227,8 +229,90 @@ router.post('/:id/complete', auth, (req, res) => {
 });
 
 /**
+ * POST /api/tasks/:id/dismiss
+ * Odrzuć auto-generated zadanie (nie pokazuj więcej przez 14 dni)
+ */
+router.post('/:id/dismiss', auth, (req, res) => {
+  // Sprawdź czy zadanie jest auto-generated
+  db.get(
+    'SELECT * FROM tasks WHERE id = ? AND user_id = ?',
+    [req.params.id, req.user.id],
+    (err, task) => {
+      if (err) {
+        return res.status(500).json({ error: err.message });
+      }
+      if (!task) {
+        return res.status(404).json({ error: 'Zadanie nie znalezione' });
+      }
+      if (!task.auto_generated) {
+        return res.status(400).json({ error: 'Tylko auto-generated zadania mogą być dismissed' });
+      }
+
+      // Ustaw dismissed_at na teraz
+      db.run(
+        'UPDATE tasks SET dismissed_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?',
+        [req.params.id, req.user.id],
+        function (err) {
+          if (err) {
+            return res.status(500).json({ error: err.message });
+          }
+          res.json({ message: 'Zadanie dismissed - nie pojawi się przez 14 dni' });
+        }
+      );
+    }
+  );
+});
+
+/**
+ * POST /api/tasks/:id/snooze
+ * Przesuń auto-generated zadanie na później
+ */
+router.post('/:id/snooze', auth, (req, res) => {
+  const { days } = req.body; // 1, 3, 7 dni
+
+  if (!days || ![1, 3, 7].includes(parseInt(days))) {
+    return res.status(400).json({ error: 'days musi być: 1, 3 lub 7' });
+  }
+
+  // Sprawdź czy zadanie jest auto-generated
+  db.get(
+    'SELECT * FROM tasks WHERE id = ? AND user_id = ?',
+    [req.params.id, req.user.id],
+    (err, task) => {
+      if (err) {
+        return res.status(500).json({ error: err.message });
+      }
+      if (!task) {
+        return res.status(404).json({ error: 'Zadanie nie znalezione' });
+      }
+      if (!task.auto_generated) {
+        return res.status(400).json({ error: 'Tylko auto-generated zadania mogą być snoozed' });
+      }
+
+      // Oblicz snoozed_until (teraz + X dni)
+      const snoozeDate = new Date();
+      snoozeDate.setDate(snoozeDate.getDate() + parseInt(days));
+
+      db.run(
+        'UPDATE tasks SET snoozed_until = ? WHERE id = ? AND user_id = ?',
+        [snoozeDate.toISOString(), req.params.id, req.user.id],
+        function (err) {
+          if (err) {
+            return res.status(500).json({ error: err.message });
+          }
+          res.json({
+            message: `Zadanie przesunięte o ${days} dni`,
+            snoozed_until: snoozeDate.toISOString()
+          });
+        }
+      );
+    }
+  );
+});
+
+/**
  * DELETE /api/tasks/:id
- * Usuń zadanie
+ * Usuń zadanie (dla ręcznych zadań) lub dismiss (dla auto-generated)
  */
 router.delete('/:id', auth, (req, res) => {
   db.run(
@@ -271,10 +355,10 @@ router.post('/generate', auth, async (req, res) => {
     });
 
     for (const reminder of sprayReminders) {
-      // Sprawdź czy zadanie już nie istnieje
+      // Sprawdź czy zadanie już nie istnieje (nieukończone) lub zostało dismissed/snoozed
       const existing = await new Promise((resolve, reject) => {
         db.get(
-          `SELECT id FROM tasks
+          `SELECT id, dismissed_at, snoozed_until FROM tasks
            WHERE user_id = ? AND task_type = 'spray' AND bed_id = ? AND completed = 0`,
           [req.user.id, reminder.bed_id],
           (err, row) => {
@@ -284,11 +368,30 @@ router.post('/generate', auth, async (req, res) => {
         );
       });
 
+      // Pomiń jeśli zadanie istnieje i:
+      // 1. Jest dismissed (w ostatnich 14 dniach)
+      // 2. Jest snoozed (snoozed_until > teraz)
+      if (existing) {
+        if (existing.dismissed_at) {
+          const dismissedDate = new Date(existing.dismissed_at);
+          const daysSinceDismissed = (Date.now() - dismissedDate) / (1000 * 60 * 60 * 24);
+          if (daysSinceDismissed < 14) {
+            continue; // Pomiń - dismissed < 14 dni temu
+          }
+        }
+        if (existing.snoozed_until) {
+          const snoozeDate = new Date(existing.snoozed_until);
+          if (snoozeDate > new Date()) {
+            continue; // Pomiń - wciąż snoozed
+          }
+        }
+      }
+
       if (!existing) {
         await new Promise((resolve, reject) => {
           db.run(
-            `INSERT INTO tasks (user_id, task_type, description, due_date, priority, bed_id)
-             VALUES (?, 'spray', ?, ?, 3, ?)`,
+            `INSERT INTO tasks (user_id, task_type, description, due_date, priority, bed_id, auto_generated)
+             VALUES (?, 'spray', ?, ?, 3, ?, 1)`,
             [
               req.user.id,
               `Wykonaj oprysk ${reminder.plant_name} - ${reminder.spray_name}`,
@@ -331,7 +434,7 @@ router.post('/generate', auth, async (req, res) => {
 
       const existing = await new Promise((resolve, reject) => {
         db.get(
-          `SELECT id FROM tasks
+          `SELECT id, dismissed_at, snoozed_until FROM tasks
            WHERE user_id = ? AND task_type = 'harvest' AND bed_id = ? AND completed = 0`,
           [req.user.id, bed.id],
           (err, row) => {
@@ -341,11 +444,24 @@ router.post('/generate', auth, async (req, res) => {
         );
       });
 
+      // Pomiń jeśli dismissed lub snoozed
+      if (existing) {
+        if (existing.dismissed_at) {
+          const dismissedDate = new Date(existing.dismissed_at);
+          const daysSinceDismissed = (Date.now() - dismissedDate) / (1000 * 60 * 60 * 24);
+          if (daysSinceDismissed < 14) continue;
+        }
+        if (existing.snoozed_until) {
+          const snoozeDate = new Date(existing.snoozed_until);
+          if (snoozeDate > new Date()) continue;
+        }
+      }
+
       if (!existing) {
         await new Promise((resolve, reject) => {
           db.run(
-            `INSERT INTO tasks (user_id, task_type, description, due_date, priority, bed_id)
-             VALUES (?, 'harvest', ?, ?, 2, ?)`,
+            `INSERT INTO tasks (user_id, task_type, description, due_date, priority, bed_id, auto_generated)
+             VALUES (?, 'harvest', ?, ?, 2, ?, 1)`,
             [
               req.user.id,
               `Zbierz ${bed.plant_name} (posadzona ${daysPlanted} dni temu)`,
@@ -387,7 +503,7 @@ router.post('/generate', auth, async (req, res) => {
     for (const bed of needsWatering) {
       const existing = await new Promise((resolve, reject) => {
         db.get(
-          `SELECT id FROM tasks
+          `SELECT id, dismissed_at, snoozed_until FROM tasks
            WHERE user_id = ? AND task_type = 'water' AND bed_id = ? AND completed = 0`,
           [req.user.id, bed.id],
           (err, row) => {
@@ -396,6 +512,19 @@ router.post('/generate', auth, async (req, res) => {
           }
         );
       });
+
+      // Pomiń jeśli dismissed lub snoozed
+      if (existing) {
+        if (existing.dismissed_at) {
+          const dismissedDate = new Date(existing.dismissed_at);
+          const daysSinceDismissed = (Date.now() - dismissedDate) / (1000 * 60 * 60 * 24);
+          if (daysSinceDismissed < 14) continue;
+        }
+        if (existing.snoozed_until) {
+          const snoozeDate = new Date(existing.snoozed_until);
+          if (snoozeDate > new Date()) continue;
+        }
+      }
 
       if (!existing) {
         let daysAgo = 'nigdy nie podlewano';
@@ -418,8 +547,8 @@ router.post('/generate', auth, async (req, res) => {
 
         await new Promise((resolve, reject) => {
           db.run(
-            `INSERT INTO tasks (user_id, task_type, description, due_date, priority, bed_id)
-             VALUES (?, 'water', ?, ?, ?, ?)`,
+            `INSERT INTO tasks (user_id, task_type, description, due_date, priority, bed_id, auto_generated)
+             VALUES (?, 'water', ?, ?, ?, ?, 1)`,
             [
               req.user.id,
               `Podlej ${bed.plant_name} (ostatnio: ${daysAgo})`,

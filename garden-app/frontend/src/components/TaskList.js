@@ -82,6 +82,30 @@ const TaskList = () => {
     }
   };
 
+  const dismissTask = async (taskId) => {
+    try {
+      await axios.post(`/api/tasks/${taskId}/dismiss`);
+      setMessage({ type: 'success', text: 'Zadanie odrzucone - nie pojawi się przez 14 dni' });
+      fetchTasks();
+      setTimeout(() => setMessage({ type: '', text: '' }), 3000);
+    } catch (err) {
+      console.error('Error dismissing task:', err);
+      setMessage({ type: 'error', text: err.response?.data?.error || 'Błąd' });
+    }
+  };
+
+  const snoozeTask = async (taskId, days) => {
+    try {
+      await axios.post(`/api/tasks/${taskId}/snooze`, { days });
+      setMessage({ type: 'success', text: `Zadanie przesunięte o ${days} dni` });
+      fetchTasks();
+      setTimeout(() => setMessage({ type: '', text: '' }), 3000);
+    } catch (err) {
+      console.error('Error snoozing task:', err);
+      setMessage({ type: 'error', text: err.response?.data?.error || 'Błąd' });
+    }
+  };
+
   const getTaskIcon = (type) => {
     const icons = {
       spray: '🌿',
@@ -130,7 +154,7 @@ const TaskList = () => {
                 : 'bg-green-600 hover:bg-green-700'
             } text-white`}
           >
-            {generating ? 'Generowanie...' : 'Generuj zadania'}
+            {generating ? 'Odświeżanie...' : '🔄 Odśwież zadania'}
           </button>
         </div>
 
@@ -241,6 +265,12 @@ const TaskList = () => {
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2 text-xs">
+                      {task.auto_generated && (
+                        <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-medium">
+                          ✨ Auto
+                        </span>
+                      )}
+
                       <span className={`px-2 py-0.5 rounded-full ${priorityInfo.color}`}>
                         {priorityInfo.text}
                       </span>
@@ -264,15 +294,51 @@ const TaskList = () => {
                         </span>
                       )}
                     </div>
+
+                    {/* Auto-generated task actions */}
+                    {task.auto_generated && !task.completed && (
+                      <div className="flex flex-wrap gap-1 mt-2 text-xs">
+                        <button
+                          onClick={() => snoozeTask(task.id, 1)}
+                          className="px-2 py-1 bg-yellow-100 text-yellow-700 rounded hover:bg-yellow-200 transition"
+                          title="Przypomnij jutro"
+                        >
+                          ⏰ 1d
+                        </button>
+                        <button
+                          onClick={() => snoozeTask(task.id, 3)}
+                          className="px-2 py-1 bg-yellow-100 text-yellow-700 rounded hover:bg-yellow-200 transition"
+                          title="Przypomnij za 3 dni"
+                        >
+                          ⏰ 3d
+                        </button>
+                        <button
+                          onClick={() => snoozeTask(task.id, 7)}
+                          className="px-2 py-1 bg-yellow-100 text-yellow-700 rounded hover:bg-yellow-200 transition"
+                          title="Przypomnij za tydzień"
+                        >
+                          ⏰ 7d
+                        </button>
+                        <button
+                          onClick={() => dismissTask(task.id)}
+                          className="px-2 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition"
+                          title="Nie pokazuj więcej"
+                        >
+                          ❌ Odrzuć
+                        </button>
+                      </div>
+                    )}
                   </div>
 
-                  {/* Przycisk usuń */}
-                  <button
-                    onClick={() => deleteTask(task.id)}
-                    className="flex-shrink-0 text-gray-400 hover:text-red-600 transition"
-                  >
-                    🗑️
-                  </button>
+                  {/* Przycisk usuń (tylko dla ręcznych zadań) */}
+                  {!task.auto_generated && (
+                    <button
+                      onClick={() => deleteTask(task.id)}
+                      className="flex-shrink-0 text-gray-400 hover:text-red-600 transition"
+                    >
+                      🗑️
+                    </button>
+                  )}
                 </div>
               </div>
             );
