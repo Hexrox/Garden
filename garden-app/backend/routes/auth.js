@@ -100,6 +100,18 @@ router.post('/login',
           return res.status(401).json({ error: 'Nieprawidłowe dane logowania' });
         }
 
+        // Update last_login timestamp
+        db.run(
+          'UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?',
+          [user.id],
+          (updateErr) => {
+            if (updateErr) {
+              console.error('Error updating last_login:', updateErr);
+              // Don't fail login if last_login update fails
+            }
+          }
+        );
+
         // Create token
         const token = jwt.sign(
           { id: user.id, username: user.username, email: user.email },

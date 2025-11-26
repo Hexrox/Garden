@@ -200,6 +200,13 @@ db.serialize(() => {
     }
   });
 
+  // Add last_login to track user activity
+  db.run(`ALTER TABLE users ADD COLUMN last_login DATETIME`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding last_login column:', err.message);
+    }
+  });
+
   // Add last_watered_date for smart watering system
   db.run(`ALTER TABLE beds ADD COLUMN last_watered_date DATE`, (err) => {
     if (err && !err.message.includes('duplicate column')) {

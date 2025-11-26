@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import Layout from './components/Layout';
 import ErrorBoundary from './components/ErrorBoundary';
+import CookieConsent from './components/CookieConsent';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
@@ -20,6 +21,8 @@ import SuccessionPlanting from './pages/SuccessionPlanting';
 import Tasks from './pages/Tasks';
 import Calendar from './pages/Calendar';
 import Analytics from './pages/Analytics';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import AdminPanel from './pages/AdminPanel';
 import NotFound from './pages/NotFound';
 
 // Protected Route Component
@@ -227,6 +230,17 @@ function AppRoutes() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute forceRender={forceRender}>
+              <AdminPanel />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Public Pages */}
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
 
         {/* Default redirect */}
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
@@ -244,6 +258,7 @@ function App() {
       <ThemeProvider>
         <AuthProvider>
           <AppRoutes />
+          <CookieConsent />
         </AuthProvider>
       </ThemeProvider>
     </ErrorBoundary>

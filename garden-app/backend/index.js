@@ -27,6 +27,7 @@ const photosRoutes = require('./routes/photos');
 const successionRoutes = require('./routes/succession');
 const analyticsRoutes = require('./routes/analytics');
 const calendarRoutes = require('./routes/calendar');
+const adminRoutes = require('./routes/admin');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -152,6 +153,7 @@ app.get('/api/health', (req, res) => {
 
 // Routes
 app.use('/api/auth', authLimiter, authRoutes);
+app.use('/api/admin', adminRoutes);
 app.use('/api', plotRoutes);
 app.use('/api', bedRoutes);
 app.use('/api', sprayRoutes);
