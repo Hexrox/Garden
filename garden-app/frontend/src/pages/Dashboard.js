@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Sprout, Droplets, Bell, Plus, BarChart3, Save, Layout } from 'lucide-react';
+import { Sprout, Droplets, Bell, Plus, BarChart3, Save, Calendar } from 'lucide-react';
 import axios from '../config/axios';
 import { useAuth } from '../context/AuthContext';
 import WeatherWidget from '../components/WeatherWidget';
@@ -21,16 +21,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     loadDashboardData();
-
-    // Fallback timeout to prevent infinite loading (max 5 seconds)
-    const fallbackTimeout = setTimeout(() => {
-      if (loading) {
-        console.warn('Dashboard loading timeout - forcing loading to false');
-        setLoading(false);
-      }
-    }, 5000);
-
-    return () => clearTimeout(fallbackTimeout);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadDashboardData = async () => {
@@ -254,11 +245,11 @@ const Dashboard = () => {
             Eksport danych
           </Link>
           <Link
-            to="/plots"
+            to="/calendar"
             className="flex items-center justify-center gap-2 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
           >
-            <Layout size={18} />
-            Wszystkie poletka
+            <Calendar size={18} />
+            Kalendarz ogrodnika
           </Link>
         </div>
       </div>

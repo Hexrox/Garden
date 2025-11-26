@@ -291,7 +291,7 @@ router.post('/generate', auth, async (req, res) => {
              VALUES (?, 'spray', ?, ?, 3, ?)`,
             [
               req.user.id,
-              `Oprysz ${reminder.plant_name} - ${reminder.spray_name}`,
+              `Wykonaj oprysk ${reminder.plant_name} - ${reminder.spray_name}`,
               reminder.reminder_date,
               reminder.bed_id
             ],
@@ -348,7 +348,7 @@ router.post('/generate', auth, async (req, res) => {
              VALUES (?, 'harvest', ?, ?, 2, ?)`,
             [
               req.user.id,
-              `Zebrać ${bed.plant_name} (posadzona ${daysPlanted} dni temu)`,
+              `Zbierz ${bed.plant_name} (posadzona ${daysPlanted} dni temu)`,
               new Date().toISOString().split('T')[0],
               bed.id
             ],
@@ -422,7 +422,7 @@ router.post('/generate', auth, async (req, res) => {
              VALUES (?, 'water', ?, ?, ?, ?)`,
             [
               req.user.id,
-              `Podlać ${bed.plant_name} (ostatnio: ${daysAgo})`,
+              `Podlej ${bed.plant_name} (ostatnio: ${daysAgo})`,
               new Date().toISOString().split('T')[0],
               priority,
               bed.id

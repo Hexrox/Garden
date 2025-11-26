@@ -489,7 +489,7 @@ class WeatherService {
       } else {
         return {
           message: `Zimno (${temp}°C) - podlewaj tylko jeśli konieczne`,
-          details: 'Rośliny potrzebują mniej wody w niskich temperaturach. Ograniąż podlewanie',
+          details: 'Rośliny potrzebują mniej wody w niskich temperaturach. Ogranicź podlewanie',
           priority: 'low',
           blocks: false
         };
