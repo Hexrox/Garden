@@ -8,10 +8,24 @@ const TaskList = () => {
   const [filter, setFilter] = useState('today'); // 'today', 'all', 'completed'
   const [generating, setGenerating] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
+  const [hasAnyTasks, setHasAnyTasks] = useState(false);
 
   useEffect(() => {
     fetchTasks();
   }, [filter]);
+
+  useEffect(() => {
+    checkIfHasAnyTasks();
+  }, []);
+
+  const checkIfHasAnyTasks = async () => {
+    try {
+      const response = await axios.get('/api/tasks');
+      setHasAnyTasks(response.data.length > 0);
+    } catch (err) {
+      console.error('Error checking tasks:', err);
+    }
+  };
 
   const fetchTasks = async () => {
     try {
@@ -27,6 +41,11 @@ const TaskList = () => {
       const response = await axios.get(url);
       setTasks(response.data);
       setError(null);
+
+      // Check if user has any tasks (regardless of filter) - only when filter is 'all'
+      if (filter === 'all') {
+        setHasAnyTasks(response.data.length > 0);
+      }
     } catch (err) {
       setError('Nie można pobrać zadań');
       console.error('Error fetching tasks:', err);
@@ -44,7 +63,8 @@ const TaskList = () => {
         type: 'success',
         text: response.data.message || `Wygenerowano ${response.data.tasks?.length || 0} zadań`
       });
-      fetchTasks();
+      await fetchTasks();
+      await checkIfHasAnyTasks();
       // Clear message after 5 seconds
       setTimeout(() => setMessage({ type: '', text: '' }), 5000);
     } catch (err) {
@@ -154,7 +174,7 @@ const TaskList = () => {
                 : 'bg-green-600 hover:bg-green-700'
             } text-white`}
           >
-            {generating ? 'Odświeżanie...' : '🔄 Odśwież zadania'}
+            {generating ? 'Generowanie...' : (hasAnyTasks ? '🔄 Odśwież zadania' : '✨ Generuj zadania')}
           </button>
         </div>
 

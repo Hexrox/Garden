@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, LayoutGrid, Bell, User, Menu } from 'lucide-react';
+import { Home, LayoutGrid, Calendar, User, Menu } from 'lucide-react';
 import MenuModal from './MenuModal';
 
 const BottomNav = () => {
@@ -21,10 +21,10 @@ const BottomNav = () => {
       match: '/plots'
     },
     {
-      path: '/reminders',
-      icon: Bell,
-      label: 'Przypomnienia',
-      match: '/reminders'
+      path: '/calendar',
+      icon: Calendar,
+      label: 'Kalendarz',
+      match: '/calendar'
     },
     {
       path: '/profile',

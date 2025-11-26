@@ -242,6 +242,46 @@ const WeatherWidget = () => {
         </div>
       </div>
 
+      {/* Prognoza 5-dniowa */}
+      {forecast && forecast.daily && forecast.daily.length > 0 && (
+        <div className="bg-white rounded-lg shadow-md overflow-hidden">
+          <button
+            onClick={() => setShowForecast(!showForecast)}
+            className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-50 transition"
+          >
+            <h4 className="font-semibold text-gray-800">Prognoza 5-dniowa</h4>
+            <span className="text-gray-500">{showForecast ? '▲' : '▼'}</span>
+          </button>
+
+          {showForecast && (
+            <div className="p-4 pt-0 space-y-2">
+              {forecast.daily.slice(0, 5).map((day, index) => (
+                <div
+                  key={index}
+                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                >
+                  <div className="flex items-center space-x-3">
+                    <span className="text-3xl">{getWeatherIcon(day.icon)}</span>
+                    <div>
+                      <div className="font-medium text-gray-900">{day.date}</div>
+                      <div className="text-xs text-gray-600 capitalize">{day.description}</div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-semibold text-gray-900">
+                      {day.tempMin}° / {day.tempMax}°C
+                    </div>
+                    <div className="text-xs text-gray-600">
+                      💧 {day.precipProbability}% | 💨 {day.avgWind} km/h
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Alerty */}
       {recommendations && recommendations.alerts && recommendations.alerts.length > 0 && (
         <div className="space-y-2">
@@ -315,46 +355,6 @@ const WeatherWidget = () => {
               </div>
             )}
           </div>
-        </div>
-      )}
-
-      {/* Prognoza 5-dniowa */}
-      {forecast && forecast.daily && forecast.daily.length > 0 && (
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          <button
-            onClick={() => setShowForecast(!showForecast)}
-            className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-50 transition"
-          >
-            <h4 className="font-semibold text-gray-800">Prognoza 5-dniowa</h4>
-            <span className="text-gray-500">{showForecast ? '▲' : '▼'}</span>
-          </button>
-
-          {showForecast && (
-            <div className="p-4 pt-0 space-y-2">
-              {forecast.daily.slice(0, 5).map((day, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                >
-                  <div className="flex items-center space-x-3">
-                    <span className="text-3xl">{getWeatherIcon(day.icon)}</span>
-                    <div>
-                      <div className="font-medium text-gray-900">{day.date}</div>
-                      <div className="text-xs text-gray-600 capitalize">{day.description}</div>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="font-semibold text-gray-900">
-                      {day.tempMin}° / {day.tempMax}°C
-                    </div>
-                    <div className="text-xs text-gray-600">
-                      💧 {day.precipProbability}% | 💨 {day.avgWind} km/h
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
       )}
 
