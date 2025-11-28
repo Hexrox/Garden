@@ -91,7 +91,7 @@ const Dashboard = () => {
           className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg shadow-sm transition-colors font-medium"
         >
           <Calendar size={20} />
-          <span className="hidden sm:inline">Kalendarz księżycowy</span>
+          <span className="hidden sm:inline">Kalendarz Ogrodnika</span>
         </Link>
       </div>
 
@@ -252,6 +252,18 @@ const Dashboard = () => {
             Eksport danych
           </Link>
         </div>
+      </div>
+
+      {/* Footer with Privacy Policy link */}
+      <div className="mt-8 text-center pb-4">
+        <a
+          href="/privacy-policy"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-sm text-gray-500 dark:text-gray-400 hover:text-green-600 dark:hover:text-green-400 transition-colors"
+        >
+          📄 Polityka prywatności
+        </a>
       </div>
     </div>
   );

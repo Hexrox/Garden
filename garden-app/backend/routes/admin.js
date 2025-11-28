@@ -45,6 +45,7 @@ router.get('/stats', auth, adminAuth, async (req, res) => {
           email,
           created_at,
           last_login,
+          COALESCE(login_count, 0) as login_count,
           city,
           hardiness_zone,
           (SELECT COUNT(*) FROM plots WHERE user_id = users.id) as plots_count,

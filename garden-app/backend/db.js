@@ -207,6 +207,13 @@ db.serialize(() => {
     }
   });
 
+  // Add login_count to track number of logins
+  db.run(`ALTER TABLE users ADD COLUMN login_count INTEGER DEFAULT 0`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding login_count column:', err.message);
+    }
+  });
+
   // Add last_watered_date for smart watering system
   db.run(`ALTER TABLE beds ADD COLUMN last_watered_date DATE`, (err) => {
     if (err && !err.message.includes('duplicate column')) {

@@ -100,13 +100,13 @@ router.post('/login',
           return res.status(401).json({ error: 'Nieprawidłowe dane logowania' });
         }
 
-        // Update last_login timestamp
+        // Update last_login timestamp and increment login_count
         db.run(
-          'UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?',
+          'UPDATE users SET last_login = CURRENT_TIMESTAMP, login_count = COALESCE(login_count, 0) + 1 WHERE id = ?',
           [user.id],
           (updateErr) => {
             if (updateErr) {
-              console.error('Error updating last_login:', updateErr);
+              console.error('Error updating last_login/login_count:', updateErr);
               // Don't fail login if last_login update fails
             }
           }

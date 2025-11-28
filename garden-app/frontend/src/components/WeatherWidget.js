@@ -240,6 +240,26 @@ const WeatherWidget = () => {
             </div>
           </div>
         </div>
+
+        {/* Alerty - przymrozki, upały itp. - ZARAZ PO POGODZIE */}
+        {recommendations && recommendations.alerts && recommendations.alerts.length > 0 && (
+          <div className="mt-4 space-y-2">
+            {recommendations.alerts.map((alert, index) => (
+              <div
+                key={index}
+                className={`rounded-lg border-2 p-3 ${getPriorityColor(alert.priority)}`}
+              >
+                <div className="flex items-start">
+                  <span className="text-xl mr-2">{alert.icon}</span>
+                  <div className="flex-1">
+                    <div className="font-semibold text-sm mb-1">{alert.message}</div>
+                    <div className="text-xs">{alert.details}</div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Prognoza 5-dniowa */}
@@ -279,26 +299,6 @@ const WeatherWidget = () => {
               ))}
             </div>
           )}
-        </div>
-      )}
-
-      {/* Alerty */}
-      {recommendations && recommendations.alerts && recommendations.alerts.length > 0 && (
-        <div className="space-y-2">
-          {recommendations.alerts.map((alert, index) => (
-            <div
-              key={index}
-              className={`rounded-lg border-2 p-4 ${getPriorityColor(alert.priority)}`}
-            >
-              <div className="flex items-start">
-                <span className="text-2xl mr-3">{alert.icon}</span>
-                <div className="flex-1">
-                  <div className="font-semibold mb-1">{alert.message}</div>
-                  <div className="text-sm">{alert.details}</div>
-                </div>
-              </div>
-            </div>
-          ))}
         </div>
       )}
 
@@ -355,13 +355,6 @@ const WeatherWidget = () => {
               </div>
             )}
           </div>
-        </div>
-      )}
-
-      {/* Podsumowanie */}
-      {recommendations && recommendations.summary && (
-        <div className="bg-gray-50 rounded-lg p-3 text-center text-sm text-gray-600">
-          {recommendations.summary}
         </div>
       )}
     </div>

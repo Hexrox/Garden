@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { Cookie, X } from 'lucide-react';
+import { Cookie } from 'lucide-react';
 
 /**
  * CookieConsent - Banner informujący o ciasteczkach
@@ -72,12 +71,14 @@ const CookieConsent = () => {
             <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
               Bez akceptacji ciasteczek nie możesz korzystać z aplikacji.
               Szczegółowe informacje znajdziesz w{' '}
-              <Link
-                to="/privacy-policy"
+              <a
+                href="/privacy-policy"
                 className="text-blue-600 dark:text-blue-400 hover:underline"
+                target="_blank"
+                rel="noopener noreferrer"
               >
                 Polityce Prywatności
-              </Link>.
+              </a>.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-3">
