@@ -1,11 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
+import { MoreVertical, Edit2, Copy, Trash2 } from 'lucide-react';
 import axios from '../config/axios';
 import PhotoGallery from '../components/PhotoGallery';
 import PlantSelector from '../components/PlantSelector';
 import GrowthProgressCard from '../features/growth-tracking/GrowthProgressCard';
 import CompanionSuggestions from '../features/companion-planting/CompanionSuggestions';
 import BedGridView from '../features/garden-layout/BedGridView';
+import HarvestModal from '../components/modals/HarvestModal';
+import BedEditModal from '../components/modals/BedEditModal';
+import BedDuplicateModal from '../components/modals/BedDuplicateModal';
+import DeleteConfirmDialog from '../components/modals/DeleteConfirmDialog';
 
 const PlotDetail = () => {
   const { id } = useParams();
@@ -21,6 +26,14 @@ const PlotDetail = () => {
     expected_harvest_date: '',
     note: ''
   });
+
+  // Modal states
+  const [selectedBed, setSelectedBed] = useState(null);
+  const [showHarvestModal, setShowHarvestModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDuplicateModal, setShowDuplicateModal] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [openMenuId, setOpenMenuId] = useState(null);
 
   useEffect(() => {
     loadPlotDetails();
@@ -55,6 +68,55 @@ const PlotDetail = () => {
       console.error('Error adding bed:', error);
       alert('Błąd podczas dodawania grządki');
     }
+  };
+
+  // Harvest handler
+  const handleHarvest = async (bed, harvestData) => {
+    await axios.put(`/api/beds/${bed.id}/harvest`, harvestData);
+    loadPlotDetails();
+  };
+
+  // Edit handler
+  const handleEdit = async (bedId, formData) => {
+    await axios.put(`/api/beds/${bedId}`, formData);
+    loadPlotDetails();
+  };
+
+  // Duplicate handler
+  const handleDuplicate = async (bedData) => {
+    await axios.post(`/api/plots/${id}/beds`, bedData);
+    loadPlotDetails();
+  };
+
+  // Delete handler
+  const handleDelete = async (bedId) => {
+    await axios.delete(`/api/beds/${bedId}`);
+    loadPlotDetails();
+  };
+
+  // Menu actions
+  const openHarvestModal = (bed) => {
+    setSelectedBed(bed);
+    setShowHarvestModal(true);
+    setOpenMenuId(null);
+  };
+
+  const openEditModal = (bed) => {
+    setSelectedBed(bed);
+    setShowEditModal(true);
+    setOpenMenuId(null);
+  };
+
+  const openDuplicateModal = (bed) => {
+    setSelectedBed(bed);
+    setShowDuplicateModal(true);
+    setOpenMenuId(null);
+  };
+
+  const openDeleteDialog = (bed) => {
+    setSelectedBed(bed);
+    setShowDeleteDialog(true);
+    setOpenMenuId(null);
   };
 
   if (loading) return <div className="text-center py-12 text-gray-500 dark:text-gray-400">Ładowanie...</div>;
@@ -206,7 +268,7 @@ const PlotDetail = () => {
           <div className="divide-y divide-gray-200 dark:divide-gray-700">
             {plot.beds.map((bed) => (
               <div key={bed.id} className="px-6 py-4">
-                <div className="flex justify-between">
+                <div className="flex justify-between items-start">
                   <div className="flex-1">
                     <h3 className="text-sm font-medium text-gray-900 dark:text-white">
                       Rząd {bed.row_number} - {bed.plant_name || 'Brak rośliny'}
@@ -262,13 +324,51 @@ const PlotDetail = () => {
                       </div>
                     )}
                   </div>
-                  <div className="ml-4">
-                    <Link
-                      to={`/beds/${bed.id}/spray`}
-                      className="text-sm text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300"
+
+                  {/* Action Menu */}
+                  <div className="ml-4 relative">
+                    <button
+                      onClick={() => setOpenMenuId(openMenuId === bed.id ? null : bed.id)}
+                      className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
                     >
-                      + Dodaj oprysk
-                    </Link>
+                      <MoreVertical className="w-5 h-5 text-gray-500" />
+                    </button>
+
+                    {openMenuId === bed.id && (
+                      <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-10">
+                        <button
+                          onClick={() => openEditModal(bed)}
+                          className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-t-lg"
+                        >
+                          <Edit2 size={16} />
+                          Edytuj
+                        </button>
+                        <button
+                          onClick={() => openDuplicateModal(bed)}
+                          className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                        >
+                          <Copy size={16} />
+                          Powiel
+                        </button>
+                        <hr className="border-gray-200 dark:border-gray-700" />
+                        {bed.plant_name && !bed.actual_harvest_date && (
+                          <button
+                            onClick={() => openHarvestModal(bed)}
+                            className="w-full flex items-center gap-2 px-4 py-2 text-sm text-green-700 dark:text-green-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+                          >
+                            <span>🌾</span>
+                            Zbierz
+                          </button>
+                        )}
+                        <button
+                          onClick={() => openDeleteDialog(bed)}
+                          className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-700 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-b-lg"
+                        >
+                          <Trash2 size={16} />
+                          Usuń
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -285,6 +385,40 @@ const PlotDetail = () => {
           </div>
         )}
       </div>
+
+      {/* Modals */}
+      {showHarvestModal && selectedBed && (
+        <HarvestModal
+          bed={selectedBed}
+          onClose={() => setShowHarvestModal(false)}
+          onHarvest={handleHarvest}
+        />
+      )}
+
+      {showEditModal && selectedBed && (
+        <BedEditModal
+          bed={selectedBed}
+          onClose={() => setShowEditModal(false)}
+          onSave={handleEdit}
+        />
+      )}
+
+      {showDuplicateModal && selectedBed && (
+        <BedDuplicateModal
+          bed={selectedBed}
+          existingBeds={plot.beds}
+          onClose={() => setShowDuplicateModal(false)}
+          onDuplicate={handleDuplicate}
+        />
+      )}
+
+      {showDeleteDialog && selectedBed && (
+        <DeleteConfirmDialog
+          bed={selectedBed}
+          onClose={() => setShowDeleteDialog(false)}
+          onDelete={handleDelete}
+        />
+      )}
     </div>
   );
 };

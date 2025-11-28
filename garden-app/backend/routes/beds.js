@@ -288,6 +288,77 @@ router.put('/beds/:id',
   }
 );
 
+// Harvest bed - special endpoint for harvesting
+router.put('/beds/:id/harvest', auth, (req, res) => {
+  const { actual_harvest_date, yield_amount, yield_unit, clearBed } = req.body;
+
+  // Validate
+  if (!actual_harvest_date || !yield_amount) {
+    return res.status(400).json({ error: 'Data zbioru i ilość plonu są wymagane' });
+  }
+
+  // Verify ownership
+  db.get(
+    `SELECT b.* FROM beds b
+     JOIN plots p ON b.plot_id = p.id
+     WHERE b.id = ? AND p.user_id = ?`,
+    [req.params.id, req.user.id],
+    (err, bed) => {
+      if (err) {
+        return res.status(500).json({ error: 'Błąd serwera' });
+      }
+      if (!bed) {
+        return res.status(404).json({ error: 'Grządka nie znaleziona' });
+      }
+
+      if (clearBed) {
+        // Option 1: Clear bed (free for new planting)
+        db.run(
+          `UPDATE beds
+           SET actual_harvest_date = ?,
+               yield_amount = ?,
+               yield_unit = ?,
+               plant_name = NULL,
+               plant_variety = NULL,
+               planted_date = NULL,
+               expected_harvest_date = NULL,
+               note = NULL
+           WHERE id = ?`,
+          [actual_harvest_date, yield_amount, yield_unit, req.params.id],
+          function (err) {
+            if (err) {
+              return res.status(500).json({ error: 'Błąd podczas zapisywania zbioru' });
+            }
+            res.json({
+              message: 'Zbiór zapisany, grządka opróżniona',
+              cleared: true
+            });
+          }
+        );
+      } else {
+        // Option 2: Keep as history (archived)
+        db.run(
+          `UPDATE beds
+           SET actual_harvest_date = ?,
+               yield_amount = ?,
+               yield_unit = ?
+           WHERE id = ?`,
+          [actual_harvest_date, yield_amount, yield_unit, req.params.id],
+          function (err) {
+            if (err) {
+              return res.status(500).json({ error: 'Błąd podczas zapisywania zbioru' });
+            }
+            res.json({
+              message: 'Zbiór zapisany w historii',
+              cleared: false
+            });
+          }
+        );
+      }
+    }
+  );
+});
+
 // Delete bed
 router.delete('/beds/:id', auth, (req, res) => {
   db.run(
