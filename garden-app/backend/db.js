@@ -8,6 +8,7 @@ db.serialize(() => {
     username TEXT UNIQUE NOT NULL,
     email TEXT UNIQUE NOT NULL,
     password TEXT NOT NULL,
+    role TEXT DEFAULT 'user',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )`);
 
@@ -119,13 +120,60 @@ db.serialize(() => {
   // Plant photos table
   db.run(`CREATE TABLE IF NOT EXISTS plant_photos (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    bed_id INTEGER NOT NULL,
+    bed_id INTEGER,
     photo_path TEXT NOT NULL,
     caption TEXT,
     taken_date DATE,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY(bed_id) REFERENCES beds(id) ON DELETE CASCADE
+    FOREIGN KEY(bed_id) REFERENCES beds(id) ON DELETE SET NULL
   )`);
+
+  // Extend plant_photos for unified gallery (preserve context after deletion)
+  db.run(`ALTER TABLE plant_photos ADD COLUMN user_id INTEGER`, (err) => {});
+  db.run(`ALTER TABLE plant_photos ADD COLUMN source_type TEXT DEFAULT 'progress'`, (err) => {});
+  db.run(`ALTER TABLE plant_photos ADD COLUMN bed_row_number INTEGER`, (err) => {});
+  db.run(`ALTER TABLE plant_photos ADD COLUMN bed_plant_name TEXT`, (err) => {});
+  db.run(`ALTER TABLE plant_photos ADD COLUMN bed_plant_variety TEXT`, (err) => {});
+  db.run(`ALTER TABLE plant_photos ADD COLUMN plot_name TEXT`, (err) => {});
+
+  // Migrate existing plant_photos data (fill context for existing photos)
+  db.run(`
+    UPDATE plant_photos
+    SET
+      user_id = (
+        SELECT pl.user_id
+        FROM beds b
+        JOIN plots pl ON b.plot_id = pl.id
+        WHERE b.id = plant_photos.bed_id
+      ),
+      bed_row_number = (SELECT row_number FROM beds WHERE id = plant_photos.bed_id),
+      bed_plant_name = (SELECT plant_name FROM beds WHERE id = plant_photos.bed_id),
+      bed_plant_variety = (SELECT plant_variety FROM beds WHERE id = plant_photos.bed_id),
+      plot_name = (
+        SELECT pl.name
+        FROM beds b
+        JOIN plots pl ON b.plot_id = pl.id
+        WHERE b.id = plant_photos.bed_id
+      )
+    WHERE bed_id IS NOT NULL AND user_id IS NULL
+  `);
+
+  // Trigger before deleting bed - preserve photo context
+  db.run(`
+    CREATE TRIGGER IF NOT EXISTS preserve_photo_context_before_bed_delete
+    BEFORE DELETE ON beds
+    FOR EACH ROW
+    BEGIN
+      UPDATE plant_photos
+      SET
+        user_id = (SELECT user_id FROM plots WHERE id = OLD.plot_id),
+        bed_row_number = OLD.row_number,
+        bed_plant_name = OLD.plant_name,
+        bed_plant_variety = OLD.plant_variety,
+        plot_name = (SELECT name FROM plots WHERE id = OLD.plot_id)
+      WHERE bed_id = OLD.id;
+    END;
+  `);
 
   // Succession planting reminders table
   db.run(`CREATE TABLE IF NOT EXISTS succession_reminders (
@@ -211,6 +259,22 @@ db.serialize(() => {
   db.run(`ALTER TABLE users ADD COLUMN login_count INTEGER DEFAULT 0`, (err) => {
     if (err && !err.message.includes('duplicate column')) {
       console.error('Error adding login_count column:', err.message);
+    }
+  });
+
+  // Add role column for RBAC
+  db.run(`ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'user'`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding role column:', err.message);
+    } else if (!err) {
+      // Set existing admin user to admin role
+      db.run(`UPDATE users SET role = 'admin' WHERE username = 'admin'`, (updateErr) => {
+        if (updateErr) {
+          console.error('Error setting admin role:', updateErr.message);
+        } else {
+          console.log('✅ Admin role assigned to admin user');
+        }
+      });
     }
   });
 

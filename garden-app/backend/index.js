@@ -28,6 +28,7 @@ const successionRoutes = require('./routes/succession');
 const analyticsRoutes = require('./routes/analytics');
 const calendarRoutes = require('./routes/calendar');
 const adminRoutes = require('./routes/admin');
+const galleryRoutes = require('./routes/gallery');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -85,9 +86,13 @@ const allowedOrigins = process.env.FRONTEND_URL
 
 app.use(cors({
   origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps, curl, Postman)
-    if (!origin) return callback(null, true);
+    // Pozwól na brak origin (same-origin requests, service workers)
+    // CSRF protection zapewnia header X-Requested-With
+    if (!origin) {
+      return callback(null, true);
+    }
 
+    // Sprawdź czy origin jest w allowlist
     if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
@@ -98,12 +103,37 @@ app.use(cors({
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
 
 // Body parsing middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// CSRF Protection - wymaga custom header
+app.use((req, res, next) => {
+  // Pomiń GET requests i public endpoints
+  if (req.method === 'GET' || req.path.startsWith('/api/calendar/moon')) {
+    return next();
+  }
+
+  // Pomiń auth endpoints (login/register)
+  if (req.path === '/api/auth/login' || req.path === '/api/auth/register') {
+    return next();
+  }
+
+  // Sprawdź custom header dla wszystkich mutating requests
+  if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(req.method)) {
+    const csrfHeader = req.headers['x-requested-with'];
+
+    if (csrfHeader !== 'XMLHttpRequest') {
+      console.warn(`CSRF: Blocked ${req.method} request to ${req.path} - missing/invalid X-Requested-With header`);
+      return res.status(403).json({ error: 'CSRF validation failed' });
+    }
+  }
+
+  next();
+});
 
 // Static files for uploads (use absolute path)
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -122,7 +152,7 @@ const apiLimiter = rateLimit({
 // Stricter rate limiting for auth endpoints
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // 5 requests per window
+  max: 10, // 10 requests per window (increased for UX)
   message: { error: 'Zbyt wiele prób logowania. Spróbuj ponownie za 15 minut.' },
   standardHeaders: true,
   legacyHeaders: false
@@ -136,6 +166,15 @@ const mutationLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   skip: (req) => req.method === 'GET' // Only apply to mutations
+});
+
+// Public endpoints limiter (moon phases, etc.) - strict to prevent DoS
+const publicLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minute
+  max: 10, // 10 requests per minute
+  message: { error: 'Zbyt wiele żądań. Spróbuj ponownie za minutę.' },
+  standardHeaders: true,
+  legacyHeaders: false
 });
 
 // Apply rate limiting to all /api routes
@@ -167,6 +206,7 @@ app.use('/api', photosRoutes);
 app.use('/api/succession', successionRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/calendar', calendarRoutes);
+app.use('/api/gallery', galleryRoutes);
 
 // 404 handler
 app.use((req, res) => {

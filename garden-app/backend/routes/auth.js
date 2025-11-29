@@ -36,8 +36,9 @@ router.post('/register',
           return res.status(400).json({ error: 'Użytkownik już istnieje' });
         }
 
-        // Hash password
-        const hashedPassword = await bcrypt.hash(password, 10);
+        // Hash password (12 rounds for better security in 2025)
+        const BCRYPT_ROUNDS = parseInt(process.env.BCRYPT_ROUNDS) || 12;
+        const hashedPassword = await bcrypt.hash(password, BCRYPT_ROUNDS);
 
         // Create user
         db.run(
@@ -48,9 +49,9 @@ router.post('/register',
               return res.status(500).json({ error: 'Błąd podczas tworzenia użytkownika' });
             }
 
-            // Create token
+            // Create token (bez email dla bezpieczeństwa - PII)
             const token = jwt.sign(
-              { id: this.lastID, username, email },
+              { id: this.lastID, username },
               process.env.JWT_SECRET,
               { expiresIn: process.env.JWT_EXPIRES_IN }
             );
@@ -112,9 +113,9 @@ router.post('/login',
           }
         );
 
-        // Create token
+        // Create token (bez email dla bezpieczeństwa - PII)
         const token = jwt.sign(
-          { id: user.id, username: user.username, email: user.email },
+          { id: user.id, username: user.username },
           process.env.JWT_SECRET,
           { expiresIn: process.env.JWT_EXPIRES_IN }
         );

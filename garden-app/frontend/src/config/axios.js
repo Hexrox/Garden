@@ -6,6 +6,8 @@ const API_URL = process.env.REACT_APP_API_URL || '';
 
 axios.defaults.baseURL = API_URL;
 axios.defaults.headers.common['Content-Type'] = 'application/json';
+// CSRF Protection - custom header required by backend
+axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 // CRITICAL FIX: Set timeout to prevent infinite hanging requests
 // Without this, requests can hang forever if backend doesn't respond
 axios.defaults.timeout = 10000; // 10 seconds

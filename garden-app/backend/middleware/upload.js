@@ -1,6 +1,7 @@
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
 
 // Create uploads directory if it doesn't exist
 // Production: use /var/www/garden-uploads (served by nginx)
@@ -18,8 +19,22 @@ const storage = multer.diskStorage({
     cb(null, uploadDir);
   },
   filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
+    // Sanitize extension - tylko alfanumeryczne
+    const ext = path.extname(file.originalname).toLowerCase().replace(/[^a-z0-9.]/g, '');
+
+    // Whitelist dozwolonych rozszerzeń
+    const allowedExts = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+    if (!allowedExts.includes(ext)) {
+      return cb(new Error('Invalid file extension'));
+    }
+
+    // Cryptographically secure random filename (prevent enumeration)
+    crypto.randomBytes(16, (err, buf) => {
+      if (err) return cb(err);
+
+      const filename = buf.toString('hex') + ext;
+      cb(null, filename);
+    });
   }
 });
 

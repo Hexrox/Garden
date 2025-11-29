@@ -6,6 +6,7 @@ const auth = require('../middleware/auth');
 const upload = require('../middleware/upload');
 const { imageValidationMiddleware } = require('../utils/imageValidator');
 const { calculateHarvestDate } = require('../utils/harvestPredictor');
+const { buildUpdateQuery } = require('../utils/queryBuilder');
 
 // Get all beds for a plot
 router.get('/plots/:plotId/beds', auth, (req, res) => {
@@ -164,56 +165,29 @@ router.put('/beds/:id',
             }
           }
 
-          // Build update query dynamically
-          let updateFields = [];
-          let values = [];
+          // Build update query with strict whitelist
+          const allowedFields = {
+            row_number: 'row_number',
+            plant_name: 'plant_name',
+            plant_variety: 'plant_variety',
+            planted_date: 'planted_date',
+            note: 'note',
+            imagePath: 'image_path',
+            yield_amount: 'yield_amount',
+            yield_unit: 'yield_unit',
+            actual_harvest_date: 'actual_harvest_date'
+          };
 
-          if (row_number !== undefined) {
-            updateFields.push('row_number = ?');
-            values.push(row_number);
-          }
-          if (plant_name !== undefined) {
-            updateFields.push('plant_name = ?');
-            values.push(plant_name);
-          }
-          if (plant_variety !== undefined) {
-            updateFields.push('plant_variety = ?');
-            values.push(plant_variety);
-          }
-          if (planted_date !== undefined) {
-            updateFields.push('planted_date = ?');
-            values.push(planted_date);
-          }
-          if (note !== undefined) {
-            updateFields.push('note = ?');
-            values.push(note);
-          }
-          if (imagePath !== undefined) {
-            updateFields.push('image_path = ?');
-            values.push(imagePath);
-          }
-          if (yield_amount !== undefined) {
-            updateFields.push('yield_amount = ?');
-            values.push(yield_amount);
-          }
-          if (yield_unit !== undefined) {
-            updateFields.push('yield_unit = ?');
-            values.push(yield_unit);
-          }
-          if (actual_harvest_date !== undefined) {
-            updateFields.push('actual_harvest_date = ?');
-            values.push(actual_harvest_date);
-          }
-          // Always update expected_harvest_date when recalculating
-          updateFields.push('expected_harvest_date = ?');
-          values.push(expectedHarvestDate);
+          try {
+            const { sql, values } = buildUpdateQuery('beds', allowedFields, req.body);
 
-          values.push(req.params.id, req.user.id);
+            // Always add expected_harvest_date when recalculating
+            const finalSql = sql + ', expected_harvest_date = ?';
+            const finalValues = [...values, expectedHarvestDate, req.params.id, req.user.id];
 
-          db.run(
-            `UPDATE beds SET ${updateFields.join(', ')}
-             WHERE id = ? AND plot_id IN (SELECT id FROM plots WHERE user_id = ?)`,
-            values,
+            db.run(
+              `${finalSql} WHERE id = ? AND plot_id IN (SELECT id FROM plots WHERE user_id = ?)`,
+              finalValues,
             function (err) {
               if (err) {
                 return res.status(500).json({ error: 'Błąd podczas aktualizacji' });
@@ -226,6 +200,9 @@ router.put('/beds/:id',
               res.json({ message: 'Grządka zaktualizowana pomyślnie' });
             }
           );
+          } catch (buildError) {
+            return res.status(400).json({ error: buildError.message });
+          }
         }
       );
     } else {

@@ -1,14 +1,24 @@
 const express = require('express');
 const router = express.Router();
+const rateLimit = require('express-rate-limit');
 const auth = require('../middleware/auth');
 const moonPhases = require('../utils/moonPhases');
+
+// Public limiter dla moon endpoints (prevent DoS)
+const publicLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minute
+  max: 10, // 10 requests per minute per IP
+  message: { error: 'Zbyt wiele żądań. Spróbuj ponownie za minutę.' },
+  standardHeaders: true,
+  legacyHeaders: false
+});
 
 /**
  * GET /api/calendar/moon/current
  * Pobierz aktualną fazę księżyca i rekomendacje
  * PUBLIC - nie wymaga autoryzacji (dane astronomiczne uniwersalne)
  */
-router.get('/moon/current', (req, res) => {
+router.get('/moon/current', publicLimiter, (req, res) => {
   try {
     const today = new Date();
     const moonPhase = moonPhases.getMoonPhase(today);
@@ -38,7 +48,7 @@ router.get('/moon/current', (req, res) => {
  * Pobierz fazy księżyca dla całego miesiąca
  * PUBLIC - nie wymaga autoryzacji (dane astronomiczne uniwersalne)
  */
-router.get('/moon/month/:year/:month', (req, res) => {
+router.get('/moon/month/:year/:month', publicLimiter, (req, res) => {
   try {
     const year = parseInt(req.params.year);
     const month = parseInt(req.params.month);

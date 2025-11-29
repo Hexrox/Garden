@@ -3,12 +3,21 @@ const router = express.Router();
 const db = require('../db');
 const auth = require('../middleware/auth');
 
-// Admin middleware - sprawdza czy użytkownik to admin
+// Admin middleware - sprawdza czy użytkownik ma rolę admin (RBAC)
 const adminAuth = (req, res, next) => {
-  if (req.user.username !== 'admin') {
-    return res.status(403).json({ error: 'Brak uprawnień administratora' });
-  }
-  next();
+  // Pobierz rolę użytkownika z bazy (JWT nie zawiera role dla bezpieczeństwa)
+  db.get('SELECT role FROM users WHERE id = ?', [req.user.id], (err, user) => {
+    if (err) {
+      console.error('Error checking admin role:', err);
+      return res.status(500).json({ error: 'Błąd serwera' });
+    }
+
+    if (!user || user.role !== 'admin') {
+      return res.status(403).json({ error: 'Brak uprawnień administratora' });
+    }
+
+    next();
+  });
 };
 
 /**
