@@ -23,6 +23,7 @@ import Calendar from './pages/Calendar';
 import Analytics from './pages/Analytics';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import AdminPanel from './pages/AdminPanel';
+import Gallery from './pages/Gallery';
 import NotFound from './pages/NotFound';
 
 // Protected Route Component
@@ -235,6 +236,14 @@ function AppRoutes() {
           element={
             <ProtectedRoute forceRender={forceRender}>
               <AdminPanel />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/gallery"
+          element={
+            <ProtectedRoute forceRender={forceRender}>
+              <Gallery />
             </ProtectedRoute>
           }
         />
