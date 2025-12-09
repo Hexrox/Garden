@@ -30,6 +30,7 @@ const Profile = () => {
     enabled: false,
     bio: '',
     coverPhotoId: null,
+    profilePhoto: null,
     socialInstagram: '',
     showStats: true,
     showTimeline: true,
@@ -118,6 +119,7 @@ const Profile = () => {
           enabled: publicResponse.data.enabled || false,
           bio: publicResponse.data.bio || '',
           coverPhotoId: publicResponse.data.coverPhotoId || null,
+          profilePhoto: publicResponse.data.profilePhoto || null,
           socialInstagram: publicResponse.data.socialInstagram || '',
           showStats: publicResponse.data.showStats !== undefined ? publicResponse.data.showStats : true,
           showTimeline: publicResponse.data.showTimeline !== undefined ? publicResponse.data.showTimeline : true,
@@ -393,6 +395,54 @@ const Profile = () => {
 
   const handleRemoveCoverPhoto = () => {
     setPublicProfile(prev => ({ ...prev, coverPhotoId: null }));
+  };
+
+  const handleSelectProfilePhoto = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const formData = new FormData();
+      formData.append('photo', file);
+
+      try {
+        const res = await axios.post('/api/profile/photo', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        setPublicProfile(prev => ({ ...prev, profilePhoto: res.data.photoPath }));
+        setPublicMessage({
+          type: 'success',
+          text: 'Zdjęcie profilowe zostało zaktualizowane!'
+        });
+      } catch (err) {
+        console.error('Error uploading profile photo:', err);
+        setPublicMessage({
+          type: 'error',
+          text: err.response?.data?.error || 'Błąd podczas uploadowania zdjęcia'
+        });
+      }
+    };
+    input.click();
+  };
+
+  const handleRemoveProfilePhoto = async () => {
+    try {
+      await axios.delete('/api/profile/photo');
+      setPublicProfile(prev => ({ ...prev, profilePhoto: null }));
+      setPublicMessage({
+        type: 'success',
+        text: 'Zdjęcie profilowe zostało usunięte'
+      });
+    } catch (err) {
+      console.error('Error removing profile photo:', err);
+      setPublicMessage({
+        type: 'error',
+        text: err.response?.data?.error || 'Błąd podczas usuwania zdjęcia'
+      });
+    }
   };
 
   const handleOpenPublicProfile = () => {
@@ -842,6 +892,43 @@ const Profile = () => {
             />
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
               Link pojawi się jako ikona na Twoim publicznym profilu
+            </p>
+          </div>
+
+          {/* Profile Photo */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Zdjęcie profilowe
+            </label>
+            {publicProfile.profilePhoto ? (
+              <div className="relative inline-block">
+                <img
+                  src={`/${publicProfile.profilePhoto}`}
+                  alt="Profile"
+                  className="w-32 h-32 object-cover rounded-full border-4 border-gray-200 dark:border-gray-700"
+                />
+                <button
+                  type="button"
+                  onClick={handleRemoveProfilePhoto}
+                  className="absolute top-0 right-0 p-2 bg-red-600 text-white rounded-full hover:bg-red-700 transition shadow-lg"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={handleSelectProfilePhoto}
+                className="w-32 h-32 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-full flex flex-col items-center justify-center gap-2 hover:border-green-500 dark:hover:border-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 transition"
+              >
+                <ImageIcon size={24} className="text-gray-400 dark:text-gray-500" />
+                <span className="text-xs text-gray-600 dark:text-gray-400 text-center px-2">
+                  Dodaj zdjęcie
+                </span>
+              </button>
+            )}
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+              Zdjęcie będzie wyświetlane jako avatar na Twoim profilu publicznym
             </p>
           </div>
 

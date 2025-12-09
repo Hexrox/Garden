@@ -72,7 +72,23 @@ const PlotDetail = () => {
 
   // Harvest handler
   const handleHarvest = async (bed, harvestData) => {
-    await axios.put(`/api/beds/${bed.id}/harvest`, harvestData);
+    // Jeśli jest zdjęcie, użyj FormData
+    if (harvestData.harvest_photo) {
+      const formData = new FormData();
+      formData.append('actual_harvest_date', harvestData.actual_harvest_date);
+      formData.append('yield_amount', harvestData.yield_amount || '');
+      formData.append('yield_unit', harvestData.yield_unit || 'kg');
+      formData.append('harvest_notes', harvestData.harvest_notes || '');
+      formData.append('clearBed', harvestData.clearBed);
+      formData.append('harvest_photo', harvestData.harvest_photo);
+
+      await axios.put(`/api/beds/${bed.id}/harvest`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+    } else {
+      // Bez zdjęcia - zwykły JSON
+      await axios.put(`/api/beds/${bed.id}/harvest`, harvestData);
+    }
     loadPlotDetails();
   };
 

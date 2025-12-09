@@ -266,13 +266,23 @@ router.put('/beds/:id',
 );
 
 // Harvest bed - special endpoint for harvesting
-router.put('/beds/:id/harvest', auth, (req, res) => {
-  const { actual_harvest_date, yield_amount, yield_unit, clearBed } = req.body;
+router.put('/beds/:id/harvest', [auth, upload.single('harvest_photo')], (req, res) => {
+  const { actual_harvest_date, yield_amount, yield_unit, harvest_notes, clearBed } = req.body;
 
-  // Validate
-  if (!actual_harvest_date || !yield_amount) {
-    return res.status(400).json({ error: 'Data zbioru i ilość plonu są wymagane' });
+  // Walidacja: wymagana data zbioru + przynajmniej jedno z: waga, zdjęcie lub notatki
+  if (!actual_harvest_date) {
+    return res.status(400).json({ error: 'Data zbioru jest wymagana' });
   }
+
+  const hasYield = yield_amount && parseFloat(yield_amount) > 0;
+  const hasPhoto = req.file;
+  const hasNotes = harvest_notes && harvest_notes.trim().length > 0;
+
+  if (!hasYield && !hasPhoto && !hasNotes) {
+    return res.status(400).json({ error: 'Podaj przynajmniej: ilość plonu, zdjęcie lub opis zbioru' });
+  }
+
+  const harvest_photo = req.file ? `uploads/${req.file.filename}` : null;
 
   // Verify ownership
   db.get(
@@ -295,13 +305,15 @@ router.put('/beds/:id/harvest', auth, (req, res) => {
            SET actual_harvest_date = ?,
                yield_amount = ?,
                yield_unit = ?,
+               harvest_photo = ?,
+               harvest_notes = ?,
                plant_name = NULL,
                plant_variety = NULL,
                planted_date = NULL,
                expected_harvest_date = NULL,
                note = NULL
            WHERE id = ?`,
-          [actual_harvest_date, yield_amount, yield_unit, req.params.id],
+          [actual_harvest_date, yield_amount || null, yield_unit || 'kg', harvest_photo, harvest_notes || null, req.params.id],
           function (err) {
             if (err) {
               return res.status(500).json({ error: 'Błąd podczas zapisywania zbioru' });
@@ -318,9 +330,11 @@ router.put('/beds/:id/harvest', auth, (req, res) => {
           `UPDATE beds
            SET actual_harvest_date = ?,
                yield_amount = ?,
-               yield_unit = ?
+               yield_unit = ?,
+               harvest_photo = ?,
+               harvest_notes = ?
            WHERE id = ?`,
-          [actual_harvest_date, yield_amount, yield_unit, req.params.id],
+          [actual_harvest_date, yield_amount || null, yield_unit || 'kg', harvest_photo, harvest_notes || null, req.params.id],
           function (err) {
             if (err) {
               return res.status(500).json({ error: 'Błąd podczas zapisywania zbioru' });

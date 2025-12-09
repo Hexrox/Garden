@@ -3,6 +3,8 @@ const router = express.Router();
 const { body, validationResult } = require('express-validator');
 const db = require('../db');
 const auth = require('../middleware/auth');
+const upload = require('../middleware/upload');
+const fs = require('fs');
 
 // ==========================================
 // PUBLIC ENDPOINTS (no auth required)
@@ -35,6 +37,7 @@ router.get('/g/:username', (req, res) => {
       public_show_gallery,
       public_show_badges,
       social_instagram,
+      profile_photo,
       created_at
     FROM users
     WHERE public_username = ?
@@ -68,9 +71,11 @@ router.get('/g/:username', (req, res) => {
       bio: user.public_bio,
       memberSince: user.created_at,
       socialInstagram: user.social_instagram,
+      profilePhoto: user.profile_photo,
       coverPhoto: null,
       stats: null,
       timeline: null,
+      harvests: null,
       gallery: null,
       badges: null
     };
@@ -99,7 +104,7 @@ router.get('/g/:username', (req, res) => {
 
     function buildProfileData() {
       let completed = 0;
-      const total = 4; // stats, timeline, gallery, badges
+      const total = 5; // stats, timeline, harvests, gallery, badges
 
       function checkComplete() {
         completed++;
@@ -203,6 +208,49 @@ router.get('/g/:username', (req, res) => {
       } else {
         checkComplete();
       }
+
+      // Get recent harvests (last 60 days)
+      const harvestsQuery = `
+        SELECT
+          b.id,
+          b.plant_name,
+          b.plant_variety,
+          b.actual_harvest_date,
+          b.yield_amount,
+          b.yield_unit,
+          b.harvest_photo,
+          b.harvest_notes,
+          b.image_path,
+          p.name as plot_name,
+          b.row_number
+        FROM beds b
+        JOIN plots p ON p.id = b.plot_id
+        WHERE p.user_id = ?
+          AND b.actual_harvest_date IS NOT NULL
+          AND b.actual_harvest_date >= date('now', '-60 days')
+          AND (b.harvest_photo IS NOT NULL OR b.harvest_notes IS NOT NULL)
+        ORDER BY b.actual_harvest_date DESC
+        LIMIT 6
+      `;
+
+      db.all(harvestsQuery, [user.id], (err, harvests) => {
+        if (!err && harvests) {
+          profileData.harvests = harvests.map(item => ({
+            id: item.id,
+            plantName: item.plant_name,
+            plantVariety: item.plant_variety,
+            harvestDate: item.actual_harvest_date,
+            yieldAmount: item.yield_amount,
+            yieldUnit: item.yield_unit,
+            harvestPhoto: item.harvest_photo,
+            harvestNotes: item.harvest_notes,
+            imagePath: item.image_path,
+            plotName: item.plot_name,
+            rowNumber: item.row_number
+          }));
+        }
+        checkComplete();
+      });
 
       // Get public gallery photos
       if (user.public_show_gallery) {
@@ -837,6 +885,104 @@ router.get('/profile/public/photos/available', auth, (req, res) => {
       createdAt: photo.created_at,
       isSelected: Boolean(photo.is_selected)
     })));
+  });
+});
+
+/**
+ * POST /api/profile/photo
+ * Upload profile photo
+ * Requires authentication
+ */
+router.post('/profile/photo', [auth, upload.single('photo')], (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: 'Brak pliku' });
+  }
+
+  const photoPath = `uploads/${req.file.filename}`;
+
+  // Delete old profile photo if exists
+  db.get('SELECT profile_photo FROM users WHERE id = ?', [req.user.id], (err, user) => {
+    if (err) {
+      console.error('Error fetching user:', err);
+      return res.status(500).json({ error: 'Błąd serwera' });
+    }
+
+    // Delete old photo file
+    if (user && user.profile_photo) {
+      const oldPhotoPath = user.profile_photo.startsWith('uploads/')
+        ? user.profile_photo
+        : `uploads/${user.profile_photo}`;
+
+      const fullPath = process.env.NODE_ENV === 'production'
+        ? `/var/www/garden-uploads/${req.file.filename}`.replace('uploads/', '')
+        : require('path').join(__dirname, '..', oldPhotoPath);
+
+      fs.unlink(fullPath, (err) => {
+        if (err) console.error('Error deleting old profile photo:', err);
+      });
+    }
+
+    // Update user profile photo
+    db.run(
+      'UPDATE users SET profile_photo = ? WHERE id = ?',
+      [photoPath, req.user.id],
+      (err) => {
+        if (err) {
+          console.error('Error updating profile photo:', err);
+          return res.status(500).json({ error: 'Błąd zapisywania zdjęcia' });
+        }
+
+        res.json({
+          success: true,
+          photoPath: photoPath
+        });
+      }
+    );
+  });
+});
+
+/**
+ * DELETE /api/profile/photo
+ * Delete profile photo
+ * Requires authentication
+ */
+router.delete('/profile/photo', auth, (req, res) => {
+  db.get('SELECT profile_photo FROM users WHERE id = ?', [req.user.id], (err, user) => {
+    if (err) {
+      console.error('Error fetching user:', err);
+      return res.status(500).json({ error: 'Błąd serwera' });
+    }
+
+    if (!user || !user.profile_photo) {
+      return res.status(404).json({ error: 'Brak zdjęcia profilowego' });
+    }
+
+    // Delete photo file
+    const photoPath = user.profile_photo.startsWith('uploads/')
+      ? user.profile_photo
+      : `uploads/${user.profile_photo}`;
+
+    const fullPath = process.env.NODE_ENV === 'production'
+      ? `/var/www/garden-uploads/${photoPath.replace('uploads/', '')}`
+      : require('path').join(__dirname, '..', photoPath);
+
+    fs.unlink(fullPath, (err) => {
+      if (err) console.error('Error deleting profile photo:', err);
+    });
+
+    // Update database
+    db.run(
+      'UPDATE users SET profile_photo = NULL WHERE id = ?',
+      [req.user.id],
+      (err) => {
+        if (err) {
+          console.error('Error removing profile photo:', err);
+          return res.status(500).json({ error: 'Błąd usuwania zdjęcia' });
+        }
+
+        res.json({ success: true });
+      }
+    );
   });
 });
 

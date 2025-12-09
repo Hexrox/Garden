@@ -234,6 +234,19 @@ db.serialize(() => {
     }
   });
 
+  // Harvest photo and notes (for flower gardens and quality descriptions)
+  db.run(`ALTER TABLE beds ADD COLUMN harvest_photo TEXT`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding harvest_photo column:', err.message);
+    }
+  });
+
+  db.run(`ALTER TABLE beds ADD COLUMN harvest_notes TEXT`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding harvest_notes column:', err.message);
+    }
+  });
+
   // REMOVED: Duplicate 'notes' column - we use 'note' column from the original schema
   // db.run(`ALTER TABLE beds ADD COLUMN notes TEXT`, (err) => {
   //   if (err && !err.message.includes('duplicate column')) {
@@ -404,6 +417,12 @@ db.serialize(() => {
   db.run(`ALTER TABLE users ADD COLUMN social_instagram TEXT`, (err) => {
     if (err && !err.message.includes('duplicate column')) {
       console.error('Error adding social_instagram column:', err.message);
+    }
+  });
+
+  db.run(`ALTER TABLE users ADD COLUMN profile_photo TEXT`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding profile_photo column:', err.message);
     }
   });
 

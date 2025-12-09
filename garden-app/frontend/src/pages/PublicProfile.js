@@ -168,79 +168,115 @@ const PublicProfile = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Hero Section with Cover Photo - Enhanced Mobile First */}
-      <div className="relative min-h-[450px] md:min-h-[600px] bg-gradient-to-br from-green-500 to-emerald-600 dark:from-green-700 dark:to-emerald-800">
+      {/* Hero Section - Glass Card with Avatar (Variant A) */}
+      <div className="relative min-h-[450px] md:min-h-[600px] bg-gradient-to-br from-green-500 to-emerald-600 dark:from-green-700 dark:to-emerald-800 overflow-hidden">
+        {/* Cover Photo Background */}
         {profile.coverPhoto ? (
-          <img
-            src={`${process.env.REACT_APP_API_URL || ''}/${profile.coverPhoto.path}`}
-            alt="Cover"
-            className="w-full h-full object-cover"
-          />
+          <>
+            <img
+              src={`${process.env.REACT_APP_API_URL || ''}/${profile.coverPhoto.path}`}
+              alt="Cover"
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent"></div>
+          </>
         ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <Sprout size={80} className="text-white opacity-30" />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Sprout size={80} className="text-white opacity-20" />
           </div>
         )}
-        {/* Enhanced overlay for better text contrast */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent"></div>
 
-        {/* Profile Info Overlay - Improved Layout */}
-        <div className="absolute inset-0 flex flex-col justify-end p-4 md:p-8">
-          <div className="max-w-6xl mx-auto w-full">
-            <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
-              <div className="flex-1">
-                <h1 className="text-4xl md:text-5xl font-bold text-white mb-3 drop-shadow-2xl">
-                  🌿 {username}
-                </h1>
-                {profile.bio && (
-                  <p className="text-white text-base md:text-lg max-w-2xl drop-shadow-lg mb-3 leading-relaxed">
-                    {profile.bio}
-                  </p>
-                )}
+        {/* Glass Card Container */}
+        <div className="relative z-10 h-full flex items-center justify-center p-4 md:p-8">
+          <div className="max-w-4xl w-full">
+            {/* Glass Morphism Card */}
+            <div className="backdrop-blur-md bg-white/10 dark:bg-black/20 rounded-2xl md:rounded-3xl p-6 md:p-10 border border-white/20 shadow-2xl">
+              <div className="flex flex-col md:flex-row items-center md:items-start gap-6 md:gap-8">
+                {/* Avatar */}
+                <div className="flex-shrink-0">
+                  {profile.profilePhoto ? (
+                    <img
+                      src={`${process.env.REACT_APP_API_URL || ''}/${profile.profilePhoto}`}
+                      alt={username}
+                      className="w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-white/30 shadow-xl object-cover"
+                    />
+                  ) : (
+                    <div className="w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-white/30 shadow-xl bg-white/20 flex items-center justify-center">
+                      <Sprout size={40} className="text-white/70" />
+                    </div>
+                  )}
+                </div>
 
-                {/* Quick Stats in Hero - Mobile Optimized */}
-                {profile.stats && (
-                  <div className="flex items-center gap-4 mb-3 flex-wrap">
-                    <div className="flex items-center gap-2 text-white/95 backdrop-blur-sm bg-white/10 px-3 py-1.5 rounded-full">
-                      <Sprout size={18} />
-                      <span className="font-semibold text-sm md:text-base">{profile.stats.plots} grządek</span>
+                {/* Profile Info */}
+                <div className="flex-1 text-center md:text-left">
+                  <h1 className="text-3xl md:text-5xl font-bold text-white mb-3 drop-shadow-2xl">
+                    {username}
+                  </h1>
+
+                  {profile.bio && (
+                    <p className="text-white/95 text-base md:text-lg max-w-2xl mb-4 leading-relaxed">
+                      {profile.bio}
+                    </p>
+                  )}
+
+                  {/* Stats Badges Inline */}
+                  {profile.stats && (
+                    <div className="flex flex-wrap gap-3 justify-center md:justify-start mb-4">
+                      <div className="backdrop-blur-sm bg-white/20 border border-white/30 px-4 py-2 rounded-full flex items-center gap-2">
+                        <Sprout size={18} className="text-white" />
+                        <span className="text-white font-semibold text-sm">{profile.stats.plots} grządek</span>
+                      </div>
+                      <div className="backdrop-blur-sm bg-white/20 border border-white/30 px-4 py-2 rounded-full flex items-center gap-2">
+                        <Calendar size={18} className="text-white" />
+                        <span className="text-white font-semibold text-sm">{profile.stats.plants} roślin</span>
+                      </div>
+                      {profile.stats.harvests > 0 && (
+                        <div className="backdrop-blur-sm bg-white/20 border border-white/30 px-4 py-2 rounded-full flex items-center gap-2">
+                          <span className="text-white text-lg">🌾</span>
+                          <span className="text-white font-semibold text-sm">{profile.stats.harvests} zbiorów</span>
+                        </div>
+                      )}
                     </div>
-                    <div className="flex items-center gap-2 text-white/95 backdrop-blur-sm bg-white/10 px-3 py-1.5 rounded-full">
-                      <Calendar size={18} />
-                      <span className="font-semibold text-sm md:text-base">{profile.stats.plants} roślin</span>
-                    </div>
+                  )}
+
+                  {profile.memberSince && (
+                    <p className="text-white/80 text-sm mb-4">
+                      🌱 Ogrodnik od {formatDate(profile.memberSince)}
+                    </p>
+                  )}
+
+                  {/* Action Buttons */}
+                  <div className="flex gap-3 justify-center md:justify-start">
+                    {profile.socialInstagram && (
+                      <a
+                        href={profile.socialInstagram}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label="Zobacz na Instagramie"
+                        className="p-3 bg-white/20 backdrop-blur-sm hover:bg-white/30 border border-white/30 text-white rounded-full transition-all duration-200 hover:scale-105 active:scale-95 min-w-[44px] min-h-[44px] flex items-center justify-center"
+                        title="Instagram"
+                      >
+                        <Instagram size={20} />
+                      </a>
+                    )}
+                    <button
+                      onClick={handleShare}
+                      aria-label="Udostępnij profil"
+                      className="p-3 bg-white/20 backdrop-blur-sm hover:bg-white/30 border border-white/30 text-white rounded-full transition-all duration-200 hover:scale-105 active:scale-95 min-w-[44px] min-h-[44px] flex items-center justify-center"
+                      title="Udostępnij profil"
+                    >
+                      <Share2 size={20} />
+                    </button>
+                    <Link
+                      to="/"
+                      aria-label="Wróć do strony głównej"
+                      className="p-3 bg-white/20 backdrop-blur-sm hover:bg-white/30 border border-white/30 text-white rounded-full transition-all duration-200 hover:scale-105 active:scale-95 min-w-[44px] min-h-[44px] flex items-center justify-center"
+                      title="Strona główna"
+                    >
+                      <Home size={20} />
+                    </Link>
                   </div>
-                )}
-
-                {profile.memberSince && (
-                  <p className="text-white/80 text-sm md:text-base drop-shadow-md">
-                    Ogrodnik od {formatDate(profile.memberSince)}
-                  </p>
-                )}
-              </div>
-
-              {/* Action Buttons - Touch-Friendly 44x44px */}
-              <div className="flex-shrink-0 flex gap-3">
-                {profile.socialInstagram && (
-                  <a
-                    href={profile.socialInstagram}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label="Zobacz na Instagramie"
-                    className="p-4 bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white rounded-full transition-all duration-200 hover:scale-105 active:scale-95 min-w-[44px] min-h-[44px] flex items-center justify-center"
-                    title="Instagram"
-                  >
-                    <Instagram size={24} />
-                  </a>
-                )}
-                <button
-                  onClick={handleShare}
-                  aria-label="Udostępnij profil"
-                  className="p-4 bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white rounded-full transition-all duration-200 hover:scale-105 active:scale-95 min-w-[44px] min-h-[44px] flex items-center justify-center"
-                  title="Udostępnij profil"
-                >
-                  <Share2 size={24} />
-                </button>
+                </div>
               </div>
             </div>
           </div>
@@ -281,6 +317,80 @@ const PublicProfile = () => {
                     </div>
                   </div>
                 </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Recent Harvests - Showcase with Photos & Notes */}
+        {profile.harvests && profile.harvests.length > 0 && (
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 md:p-6">
+            <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-4 md:mb-6 flex items-center gap-2">
+              <span className="text-2xl">🌾</span>
+              Ostatnie zbiory
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {profile.harvests.map((harvest) => (
+                <article
+                  key={harvest.id}
+                  className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden hover:shadow-lg transition-shadow"
+                >
+                  {/* Harvest Photo */}
+                  {harvest.harvestPhoto && (
+                    <div className="relative h-48">
+                      <img
+                        src={`${process.env.REACT_APP_API_URL || ''}/${harvest.harvestPhoto}`}
+                        alt={`Zbiór ${harvest.plantName}`}
+                        loading="lazy"
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute top-2 right-2 bg-green-600 text-white px-3 py-1 rounded-full text-xs font-semibold">
+                        🌾 Zebrano
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Harvest Info */}
+                  <div className="p-4">
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <div className="flex-1">
+                        <h3 className="font-bold text-gray-900 dark:text-white text-base">
+                          {harvest.plantName}
+                        </h3>
+                        {harvest.plantVariety && (
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                            {harvest.plantVariety}
+                          </p>
+                        )}
+                      </div>
+                      <span className="text-xs text-gray-500 dark:text-gray-400 flex-shrink-0">
+                        {new Date(harvest.harvestDate).toLocaleDateString('pl-PL', {
+                          day: 'numeric',
+                          month: 'short'
+                        })}
+                      </span>
+                    </div>
+
+                    {/* Harvest Notes */}
+                    {harvest.harvestNotes && (
+                      <p className="text-sm text-gray-700 dark:text-gray-300 mb-3 italic">
+                        "{harvest.harvestNotes}"
+                      </p>
+                    )}
+
+                    {/* Yield & Location */}
+                    <div className="flex items-center gap-4 text-xs text-gray-600 dark:text-gray-400">
+                      {harvest.yieldAmount && (
+                        <span className="flex items-center gap-1">
+                          ⚖️ {harvest.yieldAmount} {harvest.yieldUnit}
+                        </span>
+                      )}
+                      <span className="flex items-center gap-1">
+                        📍 {harvest.plotName} • Rz. {harvest.rowNumber}
+                      </span>
+                    </div>
+                  </div>
+                </article>
               ))}
             </div>
           </div>

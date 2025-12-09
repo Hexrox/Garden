@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X } from 'lucide-react';
+import { X, Image as ImageIcon } from 'lucide-react';
 
 /**
  * HarvestModal - Formularz zbioru plonów z grządki
@@ -13,16 +13,39 @@ const HarvestModal = ({ bed, onClose, onHarvest }) => {
     actual_harvest_date: new Date().toISOString().split('T')[0],
     yield_amount: '',
     yield_unit: 'kg',
+    harvest_photo: null,
+    harvest_notes: '',
     clearBed: true, // domyślnie: wolna grządka
   });
+  const [photoPreview, setPhotoPreview] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  const handlePhotoSelect = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setFormData({ ...formData, harvest_photo: file });
+    const reader = new FileReader();
+    reader.onload = (e) => setPhotoPreview(e.target.result);
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemovePhoto = () => {
+    setFormData({ ...formData, harvest_photo: null });
+    setPhotoPreview(null);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!formData.yield_amount || formData.yield_amount <= 0) {
-      setError('Podaj ilość plonu');
+    // Walidacja: wymagane przynajmniej jedno z: waga, zdjęcie lub notatki
+    const hasYield = formData.yield_amount && formData.yield_amount > 0;
+    const hasPhoto = formData.harvest_photo;
+    const hasNotes = formData.harvest_notes && formData.harvest_notes.trim().length > 0;
+
+    if (!hasYield && !hasPhoto && !hasNotes) {
+      setError('Podaj przynajmniej: ilość plonu, zdjęcie lub opis zbioru');
       return;
     }
 
@@ -87,17 +110,73 @@ const HarvestModal = ({ bed, onClose, onHarvest }) => {
             />
           </div>
 
+          {/* Zdjęcie zbioru */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              📸 Zdjęcie zbioru (opcjonalnie)
+            </label>
+            {photoPreview ? (
+              <div className="relative">
+                <img
+                  src={photoPreview}
+                  alt="Harvest preview"
+                  className="w-full h-40 object-cover rounded-lg"
+                />
+                <button
+                  type="button"
+                  onClick={handleRemovePhoto}
+                  className="absolute top-2 right-2 p-1.5 bg-red-600 text-white rounded-full hover:bg-red-700 transition"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            ) : (
+              <label className="w-full h-32 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg flex flex-col items-center justify-center gap-2 hover:border-green-500 dark:hover:border-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 transition cursor-pointer">
+                <ImageIcon size={28} className="text-gray-400 dark:text-gray-500" />
+                <span className="text-sm text-gray-600 dark:text-gray-400">
+                  Dodaj zdjęcie zbioru
+                </span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handlePhotoSelect}
+                  className="hidden"
+                />
+              </label>
+            )}
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              Szczególnie przydatne dla kwiatów i ozdobnych roślin
+            </p>
+          </div>
+
+          {/* Notatki o zbiorze */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              📝 Opis zbioru (opcjonalnie)
+            </label>
+            <textarea
+              value={formData.harvest_notes}
+              onChange={(e) => setFormData({ ...formData, harvest_notes: e.target.value })}
+              placeholder="np. Piękne róże, intensywny zapach, 12 kwiatów w wazonie..."
+              rows={3}
+              maxLength={200}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white resize-none"
+            />
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              {formData.harvest_notes.length}/200
+            </p>
+          </div>
+
           {/* Plon */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              ⚖️ Plon *
+              ⚖️ Plon (opcjonalnie)
             </label>
             <div className="flex gap-2">
               <input
                 type="number"
                 step="0.1"
                 min="0"
-                required
                 placeholder="0.0"
                 value={formData.yield_amount}
                 onChange={(e) => setFormData({ ...formData, yield_amount: e.target.value })}
