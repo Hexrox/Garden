@@ -168,8 +168,8 @@ const PublicProfile = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Hero Section with Cover Photo */}
-      <div className="relative h-64 md:h-80 bg-gradient-to-br from-green-500 to-emerald-600 dark:from-green-700 dark:to-emerald-800">
+      {/* Hero Section with Cover Photo - Enhanced Mobile First */}
+      <div className="relative min-h-[450px] md:min-h-[600px] bg-gradient-to-br from-green-500 to-emerald-600 dark:from-green-700 dark:to-emerald-800">
         {profile.coverPhoto ? (
           <img
             src={`${process.env.REACT_APP_API_URL || ''}/${profile.coverPhoto.path}`}
@@ -181,45 +181,65 @@ const PublicProfile = () => {
             <Sprout size={80} className="text-white opacity-30" />
           </div>
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
+        {/* Enhanced overlay for better text contrast */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent"></div>
 
-        {/* Profile Info Overlay */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 md:p-8">
-          <div className="max-w-6xl mx-auto">
-            <div className="flex items-end justify-between gap-4">
+        {/* Profile Info Overlay - Improved Layout */}
+        <div className="absolute inset-0 flex flex-col justify-end p-4 md:p-8">
+          <div className="max-w-6xl mx-auto w-full">
+            <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
               <div className="flex-1">
-                <h1 className="text-3xl md:text-4xl font-bold text-white mb-2 drop-shadow-lg">
+                <h1 className="text-4xl md:text-5xl font-bold text-white mb-3 drop-shadow-2xl">
                   🌿 {username}
                 </h1>
                 {profile.bio && (
-                  <p className="text-white/90 text-sm md:text-base max-w-2xl drop-shadow-md">
+                  <p className="text-white text-base md:text-lg max-w-2xl drop-shadow-lg mb-3 leading-relaxed">
                     {profile.bio}
                   </p>
                 )}
+
+                {/* Quick Stats in Hero - Mobile Optimized */}
+                {profile.stats && (
+                  <div className="flex items-center gap-4 mb-3 flex-wrap">
+                    <div className="flex items-center gap-2 text-white/95 backdrop-blur-sm bg-white/10 px-3 py-1.5 rounded-full">
+                      <Sprout size={18} />
+                      <span className="font-semibold text-sm md:text-base">{profile.stats.plots} grządek</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-white/95 backdrop-blur-sm bg-white/10 px-3 py-1.5 rounded-full">
+                      <Calendar size={18} />
+                      <span className="font-semibold text-sm md:text-base">{profile.stats.plants} roślin</span>
+                    </div>
+                  </div>
+                )}
+
                 {profile.memberSince && (
-                  <p className="text-white/70 text-xs md:text-sm mt-2 drop-shadow-md">
+                  <p className="text-white/80 text-sm md:text-base drop-shadow-md">
                     Ogrodnik od {formatDate(profile.memberSince)}
                   </p>
                 )}
               </div>
-              <div className="flex-shrink-0 flex gap-2">
+
+              {/* Action Buttons - Touch-Friendly 44x44px */}
+              <div className="flex-shrink-0 flex gap-3">
                 {profile.socialInstagram && (
                   <a
                     href={profile.socialInstagram}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="p-3 bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white rounded-full transition"
+                    aria-label="Zobacz na Instagramie"
+                    className="p-4 bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white rounded-full transition-all duration-200 hover:scale-105 active:scale-95 min-w-[44px] min-h-[44px] flex items-center justify-center"
                     title="Instagram"
                   >
-                    <Instagram size={20} />
+                    <Instagram size={24} />
                   </a>
                 )}
                 <button
                   onClick={handleShare}
-                  className="p-3 bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white rounded-full transition"
+                  aria-label="Udostępnij profil"
+                  className="p-4 bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white rounded-full transition-all duration-200 hover:scale-105 active:scale-95 min-w-[44px] min-h-[44px] flex items-center justify-center"
                   title="Udostępnij profil"
                 >
-                  <Share2 size={20} />
+                  <Share2 size={24} />
                 </button>
               </div>
             </div>
@@ -228,49 +248,32 @@ const PublicProfile = () => {
       </div>
 
       <div className="max-w-6xl mx-auto px-4 py-8 space-y-8">
-        {/* Stats Cards */}
-        {profile.stats && (
-          <div className="grid grid-cols-2 gap-4 max-w-2xl mx-auto">
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 md:p-6 text-center">
-              <div className="text-3xl md:text-4xl font-bold text-green-600 dark:text-green-400 mb-2">
-                {profile.stats.plots}
-              </div>
-              <div className="text-sm md:text-base text-gray-600 dark:text-gray-400">
-                {profile.stats.plots === 1 ? 'Grządka' : 'Grządek'}
-              </div>
-            </div>
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 md:p-6 text-center">
-              <div className="text-3xl md:text-4xl font-bold text-green-600 dark:text-green-400 mb-2">
-                {profile.stats.plants}
-              </div>
-              <div className="text-sm md:text-base text-gray-600 dark:text-gray-400">
-                {profile.stats.plants === 1 ? 'Roślina' : 'Roślin'}
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Stats Cards - Removed, now in Hero for better mobile UX */}
 
-        {/* Badges / Achievements */}
+        {/* Badges / Achievements - Mobile Optimized */}
         {profile.badges && profile.badges.length > 0 && (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
-              <Award size={24} className="text-yellow-600 dark:text-yellow-400" />
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 md:p-6">
+            <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-4 md:mb-6 flex items-center gap-2">
+              <Award size={20} className="text-yellow-600 dark:text-yellow-400 md:w-6 md:h-6" />
               Osiągnięcia
             </h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 min-[400px]:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3 md:gap-4">
               {profile.badges.map((badge) => (
                 <div
                   key={badge.id}
-                  className={`relative group bg-gradient-to-br ${getBadgeColor(badge.tier)} p-0.5 rounded-xl hover:scale-105 transition-transform duration-300`}
+                  className={`relative group bg-gradient-to-br ${getBadgeColor(badge.tier)} p-0.5 rounded-xl hover:scale-105 active:scale-95 transition-transform duration-300 touch-manipulation`}
                   title={badge.description}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`${badge.name}: ${badge.description}`}
                 >
-                  <div className="bg-white dark:bg-gray-800 rounded-xl p-4 h-full flex flex-col items-center justify-center text-center">
-                    <div className="text-4xl mb-2">{badge.icon}</div>
+                  <div className="bg-white dark:bg-gray-800 rounded-xl p-3 md:p-4 h-full flex flex-col items-center justify-center text-center min-h-[80px]">
+                    <div className="text-3xl md:text-4xl mb-1 md:mb-2">{badge.icon}</div>
                     <div className="text-xs font-bold text-gray-900 dark:text-white leading-tight">
                       {badge.name}
                     </div>
-                    {/* Tooltip on hover */}
-                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 dark:bg-gray-700 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+                    {/* Tooltip on hover - Desktop only */}
+                    <div className="hidden md:block absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 dark:bg-gray-700 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none max-w-[200px] text-center z-10">
                       {badge.description}
                       <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1">
                         <div className="border-4 border-transparent border-t-gray-900 dark:border-t-gray-700"></div>
@@ -283,23 +286,25 @@ const PublicProfile = () => {
           </div>
         )}
 
-        {/* Photo Gallery */}
+        {/* Photo Gallery - Mobile Optimized */}
         {profile.gallery && profile.gallery.length > 0 && (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
-              <ImageIcon size={24} className="text-green-600 dark:text-green-400" />
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 md:p-6">
+            <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-4 md:mb-6 flex items-center gap-2">
+              <ImageIcon size={20} className="text-green-600 dark:text-green-400 md:w-6 md:h-6" />
               Galeria
             </h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 md:gap-3">
               {profile.gallery.map((photo) => (
                 <button
                   key={photo.id}
                   onClick={() => setSelectedPhoto(photo)}
-                  className="relative aspect-square overflow-hidden rounded-lg hover:opacity-90 transition group"
+                  aria-label={`Zobacz zdjęcie: ${photo.caption || photo.plantName}`}
+                  className="relative aspect-square overflow-hidden rounded-lg hover:opacity-90 active:opacity-75 transition group touch-manipulation"
                 >
                   <img
                     src={`${process.env.REACT_APP_API_URL || ''}/${photo.path}`}
                     alt={photo.caption || photo.plantName}
+                    loading="lazy"
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                   />
                   {(photo.plantName || photo.caption) && (
@@ -315,67 +320,68 @@ const PublicProfile = () => {
           </div>
         )}
 
-        {/* Timeline - What's Growing Now */}
+        {/* Timeline - What's Growing Now - Mobile Optimized */}
         {profile.timeline && profile.timeline.length > 0 && (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
-              <Calendar size={24} className="text-green-600 dark:text-green-400" />
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 md:p-6">
+            <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-4 md:mb-6 flex items-center gap-2">
+              <Calendar size={20} className="text-green-600 dark:text-green-400 md:w-6 md:h-6" />
               Co rośnie teraz
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
               {profile.timeline.map((item) => (
-                <div
+                <article
                   key={item.id}
-                  className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden hover:shadow-lg transition-all duration-300 hover:scale-[1.02]"
+                  className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden hover:shadow-lg active:shadow-md transition-all duration-300 hover:scale-[1.01] md:hover:scale-[1.02]"
                 >
                   <div className="flex">
-                    {/* Image */}
-                    <div className="flex-shrink-0 w-32 h-32">
+                    {/* Image - Responsive size */}
+                    <div className="flex-shrink-0 w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32">
                       {item.imagePath ? (
                         <img
                           src={`${process.env.REACT_APP_API_URL || ''}/${item.imagePath}`}
-                          alt={item.plantName}
+                          alt={`${item.plantName} ${item.plantVariety || ''}`}
+                          loading="lazy"
                           className="w-full h-full object-cover"
                         />
                       ) : (
                         <div className="w-full h-full bg-gradient-to-br from-green-100 to-emerald-100 dark:from-green-900/30 dark:to-emerald-900/30 flex items-center justify-center">
-                          <Sprout size={32} className="text-green-600 dark:text-green-400 opacity-50" />
+                          <Sprout size={28} className="text-green-600 dark:text-green-400 opacity-50 md:w-8 md:h-8" />
                         </div>
                       )}
                     </div>
 
-                    {/* Content */}
-                    <div className="flex-1 p-4 flex flex-col justify-between">
+                    {/* Content - Better spacing on mobile */}
+                    <div className="flex-1 p-3 md:p-4 flex flex-col justify-between min-w-0">
                       <div>
-                        <div className="flex items-start justify-between gap-2 mb-2">
-                          <div className="flex-1">
-                            <h3 className="font-bold text-gray-900 dark:text-white text-base leading-tight">
+                        <div className="flex items-start justify-between gap-2 mb-1 md:mb-2">
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-bold text-gray-900 dark:text-white text-sm md:text-base leading-tight truncate">
                               {item.plantName}
                             </h3>
                             {item.plantVariety && (
-                              <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
+                              <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5 truncate">
                                 {item.plantVariety}
                               </p>
                             )}
                           </div>
-                          <span className={`flex-shrink-0 px-2 py-0.5 text-xs font-semibold rounded-full ${getStatusBadge(item.status)}`}>
+                          <span className={`flex-shrink-0 px-2 py-0.5 text-xs font-semibold rounded-full whitespace-nowrap ${getStatusBadge(item.status)}`}>
                             {getStatusText(item.status)}
                           </span>
                         </div>
-                        <p className="text-xs text-gray-500 dark:text-gray-500">
+                        <p className="text-xs text-gray-500 dark:text-gray-500 truncate">
                           {item.plotName} • Rząd {item.rowNumber}
                         </p>
                       </div>
 
-                      {/* Progress Bar */}
+                      {/* Progress Bar - Optimized */}
                       {item.progressPercent !== undefined && item.progressPercent !== null && (
-                        <div className="mt-3">
+                        <div className="mt-2 md:mt-3">
                           <div className="flex items-center justify-between text-xs mb-1">
-                            <span className="text-gray-600 dark:text-gray-400 font-medium">
+                            <span className="text-gray-600 dark:text-gray-400 font-medium truncate mr-2">
                               {formatDaysUntil(item.daysUntilHarvest) ||
-                               `${item.daysSincePlanted} dni od sadzenia`}
+                               `${item.daysSincePlanted} dni`}
                             </span>
-                            <span className="text-gray-900 dark:text-white font-bold">
+                            <span className="text-gray-900 dark:text-white font-bold flex-shrink-0">
                               {item.progressPercent}%
                             </span>
                           </div>
@@ -386,6 +392,11 @@ const PublicProfile = () => {
                                 width: `${item.progressPercent}%`,
                                 animation: 'progressGrow 1.5s ease-out'
                               }}
+                              role="progressbar"
+                              aria-valuenow={item.progressPercent}
+                              aria-valuemin={0}
+                              aria-valuemax={100}
+                              aria-label={`Postęp wzrostu: ${item.progressPercent}%`}
                             >
                               {/* Shimmer effect */}
                               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer"></div>
@@ -395,22 +406,22 @@ const PublicProfile = () => {
                       )}
                     </div>
                   </div>
-                </div>
+                </article>
               ))}
             </div>
           </div>
         )}
 
-        {/* Empty State */}
+        {/* Empty State - Mobile Optimized */}
         {(!profile.timeline || profile.timeline.length === 0) &&
          (!profile.gallery || profile.gallery.length === 0) &&
          !profile.stats && (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-12 text-center">
-            <Sprout size={64} className="mx-auto text-gray-400 dark:text-gray-600 mb-4" />
-            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-8 md:p-12 text-center">
+            <Sprout size={48} className="mx-auto text-gray-400 dark:text-gray-600 mb-4 md:w-16 md:h-16" />
+            <h3 className="text-lg md:text-xl font-semibold text-gray-900 dark:text-white mb-2">
               Ten ogród dopiero się rozwija
             </h3>
-            <p className="text-gray-600 dark:text-gray-400">
+            <p className="text-sm md:text-base text-gray-600 dark:text-gray-400">
               Wkrótce pojawią się tutaj rośliny i zdjęcia!
             </p>
           </div>
@@ -431,15 +442,19 @@ const PublicProfile = () => {
         </div>
       </div>
 
-      {/* Photo Lightbox */}
+      {/* Photo Lightbox - Mobile Optimized */}
       {selectedPhoto && (
         <div
-          className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center p-2 md:p-4"
           onClick={() => setSelectedPhoto(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Podgląd zdjęcia"
         >
           <button
             onClick={() => setSelectedPhoto(null)}
-            className="absolute top-4 right-4 p-2 bg-white/10 hover:bg-white/20 text-white rounded-full transition"
+            aria-label="Zamknij podgląd"
+            className="absolute top-2 right-2 md:top-4 md:right-4 p-3 md:p-4 bg-white/10 hover:bg-white/20 active:bg-white/30 text-white rounded-full transition-all min-w-[44px] min-h-[44px] flex items-center justify-center touch-manipulation"
           >
             <X size={24} />
           </button>
@@ -447,12 +462,12 @@ const PublicProfile = () => {
             <img
               src={`${process.env.REACT_APP_API_URL || ''}/${selectedPhoto.path}`}
               alt={selectedPhoto.caption || selectedPhoto.plantName}
-              className="w-full h-auto max-h-[85vh] object-contain rounded-lg"
+              className="w-full h-auto max-h-[80vh] md:max-h-[85vh] object-contain rounded-lg"
               onClick={(e) => e.stopPropagation()}
             />
             {(selectedPhoto.caption || selectedPhoto.plantName) && (
-              <div className="mt-4 text-center">
-                <p className="text-white text-lg font-medium">
+              <div className="mt-3 md:mt-4 text-center px-4">
+                <p className="text-white text-base md:text-lg font-medium">
                   {selectedPhoto.caption || selectedPhoto.plantName}
                 </p>
                 {selectedPhoto.plotName && (
@@ -466,23 +481,27 @@ const PublicProfile = () => {
         </div>
       )}
 
-      {/* Share Modal */}
+      {/* Share Modal - Mobile Optimized */}
       {showShareModal && (
         <div
           className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
           onClick={() => setShowShareModal(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="share-modal-title"
         >
           <div
-            className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full"
+            className="bg-white dark:bg-gray-800 rounded-lg p-4 md:p-6 max-w-md w-full"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+              <h3 id="share-modal-title" className="text-base md:text-lg font-semibold text-gray-900 dark:text-white">
                 Udostępnij profil
               </h3>
               <button
                 onClick={() => setShowShareModal(false)}
-                className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+                aria-label="Zamknij modal"
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 active:bg-gray-200 dark:active:bg-gray-600 rounded transition min-w-[44px] min-h-[44px] flex items-center justify-center touch-manipulation"
               >
                 <X size={20} className="text-gray-600 dark:text-gray-400" />
               </button>
@@ -490,19 +509,21 @@ const PublicProfile = () => {
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label htmlFor="profile-link" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Link do profilu:
                 </label>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                   <input
+                    id="profile-link"
                     type="text"
                     value={window.location.href}
                     readOnly
-                    className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white text-sm"
+                    className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white text-sm min-h-[44px]"
+                    aria-label="Link do profilu"
                   />
                   <button
                     onClick={copyLink}
-                    className="px-4 py-2 bg-green-600 dark:bg-green-700 text-white rounded-lg hover:bg-green-700 dark:hover:bg-green-800 transition text-sm font-medium"
+                    className="px-4 py-2 bg-green-600 dark:bg-green-700 text-white rounded-lg hover:bg-green-700 dark:hover:bg-green-800 active:bg-green-800 dark:active:bg-green-900 transition text-sm font-medium min-h-[44px] touch-manipulation"
                   >
                     {copySuccess ? '✓ Skopiowano' : 'Kopiuj'}
                   </button>
@@ -510,7 +531,7 @@ const PublicProfile = () => {
               </div>
 
               <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
-                <p className="text-xs text-gray-600 dark:text-gray-400 text-center">
+                <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 text-center">
                   💡 Dodaj ten link do swojego bio na Instagramie!
                 </p>
               </div>
