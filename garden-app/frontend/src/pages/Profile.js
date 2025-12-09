@@ -45,6 +45,7 @@ const Profile = () => {
   const [availablePhotos, setAvailablePhotos] = useState([]);
   const [analytics, setAnalytics] = useState(null);
   const [loadingAnalytics, setLoadingAnalytics] = useState(false);
+  const [originalUsername, setOriginalUsername] = useState('');
 
   useEffect(() => {
     loadUserData();
@@ -71,8 +72,6 @@ const Profile = () => {
 
   // Debounce username validation
   useEffect(() => {
-    const originalUsername = publicProfile.username;
-
     if (publicProfile.username.length >= 3) {
       const timer = setTimeout(() => {
         checkUsernameAvailability(publicProfile.username);
@@ -126,6 +125,8 @@ const Profile = () => {
           showGallery: publicResponse.data.showGallery !== undefined ? publicResponse.data.showGallery : true,
           showBadges: publicResponse.data.showBadges !== undefined ? publicResponse.data.showBadges : true
         });
+        // Store original username for comparison
+        setOriginalUsername(publicResponse.data.username || '');
         // If username exists, it's available (it's the user's current username)
         if (publicResponse.data.username) {
           setUsernameAvailable(true);
@@ -300,11 +301,17 @@ const Profile = () => {
       return;
     }
 
+    // If it's our own username, it's available
+    if (username === originalUsername) {
+      setUsernameAvailable(true);
+      return;
+    }
+
     try {
       setCheckingUsername(true);
       // Try to fetch the public profile with this username
       const response = await axios.get(`/api/g/${username}`);
-      // If we get a response, the username is taken (unless it's ours)
+      // If we get a response, username is taken by someone else
       setUsernameAvailable(false);
     } catch (error) {
       // If 404, username is available
@@ -1045,7 +1052,7 @@ const Profile = () => {
 
             <button
               type="submit"
-              disabled={savingPublic || (publicProfile.enabled && !usernameAvailable)}
+              disabled={savingPublic || (publicProfile.enabled && publicProfile.username.length > 0 && usernameAvailable === false)}
               className="flex-1 px-6 py-3 bg-green-600 dark:bg-green-700 text-white rounded-lg hover:bg-green-700 dark:hover:bg-green-800 transition font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {savingPublic ? 'Zapisywanie...' : 'Zapisz ustawienia'}
