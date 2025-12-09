@@ -348,6 +348,93 @@ db.serialize(() => {
   db.run('CREATE INDEX IF NOT EXISTS idx_weather_history_user_date ON weather_history(user_id, date)');
   db.run('CREATE INDEX IF NOT EXISTS idx_weather_history_date ON weather_history(date)');
 
+  // ==========================================
+  // PUBLIC GARDEN PROFILE FEATURE
+  // ==========================================
+
+  // Add public profile columns to users table
+  db.run(`ALTER TABLE users ADD COLUMN public_username TEXT`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding public_username column:', err.message);
+    }
+  });
+
+  db.run(`ALTER TABLE users ADD COLUMN public_profile_enabled BOOLEAN DEFAULT 0`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding public_profile_enabled column:', err.message);
+    }
+  });
+
+  db.run(`ALTER TABLE users ADD COLUMN public_bio TEXT`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding public_bio column:', err.message);
+    }
+  });
+
+  db.run(`ALTER TABLE users ADD COLUMN public_cover_photo_id INTEGER`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding public_cover_photo_id column:', err.message);
+    }
+  });
+
+  db.run(`ALTER TABLE users ADD COLUMN public_show_stats BOOLEAN DEFAULT 1`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding public_show_stats column:', err.message);
+    }
+  });
+
+  db.run(`ALTER TABLE users ADD COLUMN public_show_timeline BOOLEAN DEFAULT 1`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding public_show_timeline column:', err.message);
+    }
+  });
+
+  db.run(`ALTER TABLE users ADD COLUMN public_show_gallery BOOLEAN DEFAULT 1`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding public_show_gallery column:', err.message);
+    }
+  });
+
+  db.run(`ALTER TABLE users ADD COLUMN public_show_badges BOOLEAN DEFAULT 1`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding public_show_badges column:', err.message);
+    }
+  });
+
+  db.run(`ALTER TABLE users ADD COLUMN social_instagram TEXT`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding social_instagram column:', err.message);
+    }
+  });
+
+  // Public gallery photos table (selected photos for public profile)
+  db.run(`CREATE TABLE IF NOT EXISTS public_gallery_photos (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    photo_id INTEGER NOT NULL,
+    display_order INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY(photo_id) REFERENCES plant_photos(id) ON DELETE CASCADE,
+    UNIQUE(user_id, photo_id)
+  )`);
+
+  // Profile views analytics table
+  db.run(`CREATE TABLE IF NOT EXISTS profile_views (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT NOT NULL,
+    viewed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    referrer TEXT,
+    user_agent TEXT
+  )`);
+
+  // Create indexes for public profile feature
+  db.run('CREATE UNIQUE INDEX IF NOT EXISTS idx_users_public_username ON users(public_username)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_public_gallery_user_id ON public_gallery_photos(user_id)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_public_gallery_photo_id ON public_gallery_photos(photo_id)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_profile_views_username ON profile_views(username)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_profile_views_date ON profile_views(viewed_at)');
+
   console.log('✅ Database tables and indexes created successfully');
 });
 

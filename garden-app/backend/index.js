@@ -29,6 +29,7 @@ const analyticsRoutes = require('./routes/analytics');
 const calendarRoutes = require('./routes/calendar');
 const adminRoutes = require('./routes/admin');
 const galleryRoutes = require('./routes/gallery');
+const publicProfileRoutes = require('./routes/publicProfile');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -113,7 +114,7 @@ app.use(express.urlencoded({ extended: true }));
 // CSRF Protection - wymaga custom header
 app.use((req, res, next) => {
   // Pomiń GET requests i public endpoints
-  if (req.method === 'GET' || req.path.startsWith('/api/calendar/moon')) {
+  if (req.method === 'GET' || req.path.startsWith('/api/calendar/moon') || req.path.startsWith('/api/g/')) {
     return next();
   }
 
@@ -181,6 +182,9 @@ const publicLimiter = rateLimit({
 app.use('/api', apiLimiter);
 app.use('/api', mutationLimiter);
 
+// Stricter rate limiting for public profiles (prevent scraping)
+app.use('/api/g', publicLimiter);
+
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({
@@ -207,6 +211,7 @@ app.use('/api/succession', successionRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/calendar', calendarRoutes);
 app.use('/api/gallery', galleryRoutes);
+app.use('/api', publicProfileRoutes);
 
 // 404 handler
 app.use((req, res) => {

@@ -24,6 +24,7 @@ import Analytics from './pages/Analytics';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import AdminPanel from './pages/AdminPanel';
 import Gallery from './pages/Gallery';
+import PublicProfile from './pages/PublicProfile';
 import NotFound from './pages/NotFound';
 
 // Protected Route Component
@@ -250,6 +251,7 @@ function AppRoutes() {
 
         {/* Public Pages */}
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+        <Route path="/g/:username" element={<PublicProfile />} />
 
         {/* Default redirect */}
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
