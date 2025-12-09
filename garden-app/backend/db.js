@@ -384,6 +384,12 @@ db.serialize(() => {
     }
   });
 
+  db.run(`ALTER TABLE users ADD COLUMN public_display_name TEXT`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding public_display_name column:', err.message);
+    }
+  });
+
   db.run(`ALTER TABLE users ADD COLUMN public_cover_photo_id INTEGER`, (err) => {
     if (err && !err.message.includes('duplicate column')) {
       console.error('Error adding public_cover_photo_id column:', err.message);

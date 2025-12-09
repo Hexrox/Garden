@@ -210,7 +210,7 @@ const PublicProfile = () => {
                 {/* Profile Info */}
                 <div className="flex-1 text-center md:text-left">
                   <h1 className="text-3xl md:text-5xl font-bold text-white mb-3 drop-shadow-2xl">
-                    {username}
+                    {profile.displayName || username}
                   </h1>
 
                   {profile.bio && (

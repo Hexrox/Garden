@@ -27,6 +27,7 @@ const Profile = () => {
   // Public profile state
   const [publicProfile, setPublicProfile] = useState({
     username: '',
+    displayName: '',
     enabled: false,
     bio: '',
     coverPhotoId: null,
@@ -115,6 +116,7 @@ const Profile = () => {
       if (publicResponse.data) {
         setPublicProfile({
           username: publicResponse.data.username || '',
+          displayName: publicResponse.data.displayName || '',
           enabled: publicResponse.data.enabled || false,
           bio: publicResponse.data.bio || '',
           coverPhotoId: publicResponse.data.coverPhotoId || null,
@@ -323,6 +325,17 @@ const Profile = () => {
     } finally {
       setCheckingUsername(false);
     }
+  };
+
+  const sanitizeSlug = (text) => {
+    return text
+      .toLowerCase()
+      .replace(/ą/g, 'a').replace(/ć/g, 'c').replace(/ę/g, 'e')
+      .replace(/ł/g, 'l').replace(/ń/g, 'n').replace(/ó/g, 'o')
+      .replace(/ś/g, 's').replace(/ź/g, 'z').replace(/ż/g, 'z')
+      .replace(/[^a-z0-9-]/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '');
   };
 
   const handlePublicProfileChange = (field, value) => {
@@ -802,22 +815,43 @@ const Profile = () => {
             </button>
           </div>
 
-          {/* Username */}
+          {/* Display Name */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Nazwa użytkownika *
+              Nazwa wyświetlana *
+            </label>
+            <input
+              type="text"
+              value={publicProfile.displayName}
+              onChange={(e) => handlePublicProfileChange('displayName', e.target.value)}
+              placeholder="np. Ogród Pokazowy"
+              maxLength={50}
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            />
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              Ta nazwa będzie wyświetlana na Twoim profilu publicznym
+            </p>
+          </div>
+
+          {/* Username (URL Slug) */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Adres profilu (URL) *
             </label>
             <div className="relative">
-              <div className="flex items-center">
-                <span className="inline-flex items-center px-3 py-2 border border-r-0 border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900 text-gray-600 dark:text-gray-400 text-sm rounded-l-lg">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                <span className="text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
                   gardenapp.pl/g/
                 </span>
                 <input
                   type="text"
                   value={publicProfile.username}
-                  onChange={(e) => handlePublicProfileChange('username', e.target.value)}
+                  onChange={(e) => {
+                    const sanitized = sanitizeSlug(e.target.value);
+                    handlePublicProfileChange('username', sanitized);
+                  }}
                   placeholder="twoja-nazwa"
-                  className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-r-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   pattern="[a-zA-Z0-9_-]{3,30}"
                   title="3-30 znaków: litery, cyfry, _ lub -"
                 />
@@ -1078,8 +1112,8 @@ const Profile = () => {
               <h3 className="text-sm font-semibold text-blue-900 dark:text-blue-200 mb-2">
                 🔗 Twój publiczny link:
               </h3>
-              <div className="flex items-center gap-2">
-                <code className="flex-1 px-3 py-2 bg-white dark:bg-gray-900 border border-blue-200 dark:border-blue-700 rounded text-sm text-blue-600 dark:text-blue-300 font-mono">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                <code className="flex-1 px-3 py-2 bg-white dark:bg-gray-900 border border-blue-200 dark:border-blue-700 rounded text-xs sm:text-sm text-blue-600 dark:text-blue-300 font-mono break-all">
                   {window.location.origin}/g/{publicProfile.username}
                 </code>
                 <button
@@ -1089,7 +1123,7 @@ const Profile = () => {
                     setPublicMessage({ type: 'success', text: 'Link skopiowany!' });
                     setTimeout(() => setPublicMessage({ type: '', text: '' }), 2000);
                   }}
-                  className="px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded hover:bg-blue-700 dark:hover:bg-blue-800 transition text-sm font-medium"
+                  className="w-full sm:w-auto px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded hover:bg-blue-700 dark:hover:bg-blue-800 transition text-sm font-medium whitespace-nowrap"
                 >
                   Kopiuj
                 </button>

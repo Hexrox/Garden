@@ -31,6 +31,7 @@ router.get('/g/:username', (req, res) => {
       public_username,
       public_profile_enabled,
       public_bio,
+      public_display_name,
       public_cover_photo_id,
       public_show_stats,
       public_show_timeline,
@@ -68,6 +69,7 @@ router.get('/g/:username', (req, res) => {
     // Build response object
     const profileData = {
       username: user.public_username,
+      displayName: user.public_display_name || user.public_username,
       bio: user.public_bio,
       memberSince: user.created_at,
       socialInstagram: user.social_instagram,
@@ -474,6 +476,7 @@ router.get('/profile/public', auth, (req, res) => {
       public_username,
       public_profile_enabled,
       public_bio,
+      public_display_name,
       public_cover_photo_id,
       public_show_stats,
       public_show_timeline,
@@ -491,6 +494,7 @@ router.get('/profile/public', auth, (req, res) => {
 
     res.json({
       username: settings.public_username || '',
+      displayName: settings.public_display_name || '',
       enabled: Boolean(settings.public_profile_enabled),
       bio: settings.public_bio || '',
       coverPhotoId: settings.public_cover_photo_id,
@@ -543,6 +547,7 @@ router.post('/profile/public', [
 
   const {
     username,
+    displayName,
     bio,
     enabled,
     coverPhotoId,
@@ -601,6 +606,10 @@ router.post('/profile/public', [
     if (username !== undefined) {
       updates.push('public_username = ?');
       params.push(username);
+    }
+    if (displayName !== undefined) {
+      updates.push('public_display_name = ?');
+      params.push(displayName);
     }
     if (bio !== undefined) {
       updates.push('public_bio = ?');
