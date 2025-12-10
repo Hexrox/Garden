@@ -67,6 +67,21 @@ const QuickPhotoModal = ({ isOpen, onClose, onSuccess }) => {
     const file = e.target.files[0];
     if (!file) return;
 
+    // Validate file size (5MB limit)
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      setError('Plik jest za duży. Maksymalny rozmiar: 5MB');
+      return;
+    }
+
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      setError('Nieprawidłowy typ pliku. Dozwolone: JPG, PNG, GIF, WebP');
+      return;
+    }
+
+    setError('');
     setPhoto(file);
     const reader = new FileReader();
     reader.onload = (e) => setPhotoPreview(e.target.result);
@@ -113,6 +128,7 @@ const QuickPhotoModal = ({ isOpen, onClose, onSuccess }) => {
     setSelectedBed('');
     setCaption('');
     setError('');
+    setUploading(false);
     onClose();
   };
 
@@ -330,10 +346,10 @@ const QuickPhotoModal = ({ isOpen, onClose, onSuccess }) => {
                     </div>
                   )}
                   {selectedPlot && (
-                    <div>📍 {plots.find(p => p.id == selectedPlot)?.name}</div>
+                    <div>📍 {plots.find(p => p.id === parseInt(selectedPlot))?.name}</div>
                   )}
                   {selectedBed && (
-                    <div>🌱 {beds.find(b => b.id == selectedBed)?.plant_name}</div>
+                    <div>🌱 {beds.find(b => b.id === parseInt(selectedBed))?.plant_name}</div>
                   )}
                 </div>
               </div>

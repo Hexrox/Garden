@@ -54,10 +54,10 @@ router.post('/plots/:plotId/beds',
   imageValidationMiddleware,
   [
     body('row_number').isInt({ min: 1 }).withMessage('Numer rzędu musi być liczbą większą od 0'),
-    body('plant_name').optional().trim(),
-    body('plant_variety').optional().trim(),
+    body('plant_name').optional().trim().escape(),
+    body('plant_variety').optional().trim().escape(),
     body('planted_date').optional().isDate().withMessage('Nieprawidłowa data'),
-    body('note').optional()
+    body('note').optional().trim().escape()
   ],
   (req, res) => {
     const errors = validationResult(req);
@@ -75,7 +75,7 @@ router.post('/plots/:plotId/beds',
       }
 
       const { row_number, plant_name, plant_variety, planted_date, note } = req.body;
-      const imagePath = req.file ? req.file.path : null;
+      const imagePath = req.file ? `uploads/${req.file.filename}` : null;
 
       // Calculate expected harvest date
       let expectedHarvestDate = null;
@@ -122,10 +122,10 @@ router.put('/beds/:id',
   imageValidationMiddleware,
   [
     body('row_number').optional().isInt({ min: 1 }).withMessage('Numer rzędu musi być liczbą większą od 0'),
-    body('plant_name').optional().trim(),
-    body('plant_variety').optional().trim(),
+    body('plant_name').optional().trim().escape(),
+    body('plant_variety').optional().trim().escape(),
     body('planted_date').optional().isDate().withMessage('Nieprawidłowa data'),
-    body('note').optional()
+    body('note').optional().trim().escape()
   ],
   (req, res) => {
     const errors = validationResult(req);
@@ -134,7 +134,7 @@ router.put('/beds/:id',
     }
 
     const { row_number, plant_name, plant_variety, planted_date, note, yield_amount, yield_unit, actual_harvest_date } = req.body;
-    const imagePath = req.file ? req.file.path : undefined;
+    const imagePath = req.file ? `uploads/${req.file.filename}` : undefined;
 
     // Check if we need to recalculate harvest date
     const needsRecalculation = plant_name !== undefined || planted_date !== undefined;
@@ -376,7 +376,7 @@ router.post('/beds/:id/harvest',
   [
     body('actual_harvest_date').optional().isDate().withMessage('Nieprawidłowa data'),
     body('yield_amount').optional().isFloat({ min: 0 }).withMessage('Ilość plonu musi być liczbą dodatnią'),
-    body('yield_unit').optional().trim()
+    body('yield_unit').optional().trim().escape()
   ],
   (req, res) => {
     const errors = validationResult(req);

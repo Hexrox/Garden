@@ -137,9 +137,9 @@ const TaskList = () => {
   };
 
   const getPriorityLabel = (priority) => {
-    if (priority >= 3) return { text: 'Pilne', color: 'bg-red-100 text-red-800' };
-    if (priority === 2) return { text: 'Ważne', color: 'bg-yellow-100 text-yellow-800' };
-    return { text: 'Normalne', color: 'bg-gray-100 text-gray-800' };
+    if (priority >= 3) return { text: 'Pilne', color: 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200' };
+    if (priority === 2) return { text: 'Ważne', color: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200' };
+    return { text: 'Normalne', color: 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300' };
   };
 
   const isOverdue = (dueDate) => {
@@ -149,10 +149,10 @@ const TaskList = () => {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-lg shadow-md p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
         <div className="animate-pulse space-y-3">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-16 bg-gray-200 rounded"></div>
+            <div key={i} className="h-16 bg-gray-200 dark:bg-gray-700 rounded"></div>
           ))}
         </div>
       </div>
@@ -160,18 +160,18 @@ const TaskList = () => {
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-md">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md">
       {/* Header */}
-      <div className="p-4 border-b">
+      <div className="p-4 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-lg font-semibold text-gray-800">Zadania</h3>
+          <h3 className="text-lg font-semibold text-gray-800 dark:text-white">Zadania</h3>
           <button
             onClick={generateTasks}
             disabled={generating}
             className={`text-sm px-3 py-1 rounded-lg transition ${
               generating
-                ? 'bg-gray-400 cursor-not-allowed'
-                : 'bg-green-600 hover:bg-green-700'
+                ? 'bg-gray-400 dark:bg-gray-600 cursor-not-allowed'
+                : 'bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-800'
             } text-white`}
           >
             {generating ? 'Generowanie...' : (hasAnyTasks ? '🔄 Odśwież zadania' : '✨ Generuj zadania')}
@@ -183,8 +183,8 @@ const TaskList = () => {
           <div
             className={`mb-3 p-3 rounded-lg text-sm ${
               message.type === 'success'
-                ? 'bg-green-100 text-green-800'
-                : 'bg-red-100 text-red-800'
+                ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200'
+                : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200'
             }`}
           >
             {message.text}
@@ -198,7 +198,7 @@ const TaskList = () => {
             className={`px-3 py-1 text-sm rounded-lg transition ${
               filter === 'today'
                 ? 'bg-green-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
             }`}
           >
             Dzisiaj ({tasks.filter(t => !t.completed).length})
@@ -208,7 +208,7 @@ const TaskList = () => {
             className={`px-3 py-1 text-sm rounded-lg transition ${
               filter === 'all'
                 ? 'bg-green-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
             }`}
           >
             Wszystkie
@@ -218,7 +218,7 @@ const TaskList = () => {
             className={`px-3 py-1 text-sm rounded-lg transition ${
               filter === 'completed'
                 ? 'bg-green-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
             }`}
           >
             Ukończone
@@ -227,13 +227,13 @@ const TaskList = () => {
       </div>
 
       {/* Lista zadań */}
-      <div className="divide-y max-h-96 overflow-y-auto">
+      <div className="divide-y divide-gray-200 dark:divide-gray-700 max-h-96 overflow-y-auto">
         {error && (
-          <div className="p-4 text-center text-red-600">{error}</div>
+          <div className="p-4 text-center text-red-600 dark:text-red-400">{error}</div>
         )}
 
         {tasks.length === 0 ? (
-          <div className="p-8 text-center text-gray-500">
+          <div className="p-8 text-center text-gray-500 dark:text-gray-400">
             {filter === 'completed' ? (
               <>
                 <span className="text-4xl block mb-2">✅</span>
@@ -254,9 +254,9 @@ const TaskList = () => {
             return (
               <div
                 key={task.id}
-                className={`p-4 hover:bg-gray-50 transition ${
+                className={`p-4 hover:bg-gray-50 dark:hover:bg-gray-750 transition ${
                   task.completed ? 'opacity-60' : ''
-                } ${overdue ? 'bg-red-50' : ''}`}
+                } ${overdue ? 'bg-red-50 dark:bg-red-900/20' : ''}`}
               >
                 <div className="flex items-start space-x-3">
                   {/* Checkbox */}
@@ -299,8 +299,8 @@ const TaskList = () => {
                         <span
                           className={`px-2 py-0.5 rounded-full ${
                             overdue
-                              ? 'bg-red-100 text-red-800 font-semibold'
-                              : 'bg-gray-100 text-gray-600'
+                              ? 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200 font-semibold'
+                              : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
                           }`}
                         >
                           📅 {new Date(task.due_date).toLocaleDateString('pl-PL')}
@@ -309,7 +309,7 @@ const TaskList = () => {
                       )}
 
                       {task.completed && task.completed_at && (
-                        <span className="text-gray-500">
+                        <span className="text-gray-500 dark:text-gray-400">
                           ✓ {new Date(task.completed_at).toLocaleDateString('pl-PL')}
                         </span>
                       )}
@@ -320,28 +320,28 @@ const TaskList = () => {
                       <div className="flex flex-wrap gap-1 mt-2 text-xs">
                         <button
                           onClick={() => snoozeTask(task.id, 1)}
-                          className="px-2 py-1 bg-yellow-100 text-yellow-700 rounded hover:bg-yellow-200 transition"
+                          className="px-2 py-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 rounded hover:bg-yellow-200 dark:hover:bg-yellow-900/50 transition"
                           title="Przypomnij jutro"
                         >
                           ⏰ 1d
                         </button>
                         <button
                           onClick={() => snoozeTask(task.id, 3)}
-                          className="px-2 py-1 bg-yellow-100 text-yellow-700 rounded hover:bg-yellow-200 transition"
+                          className="px-2 py-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 rounded hover:bg-yellow-200 dark:hover:bg-yellow-900/50 transition"
                           title="Przypomnij za 3 dni"
                         >
                           ⏰ 3d
                         </button>
                         <button
                           onClick={() => snoozeTask(task.id, 7)}
-                          className="px-2 py-1 bg-yellow-100 text-yellow-700 rounded hover:bg-yellow-200 transition"
+                          className="px-2 py-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 rounded hover:bg-yellow-200 dark:hover:bg-yellow-900/50 transition"
                           title="Przypomnij za tydzień"
                         >
                           ⏰ 7d
                         </button>
                         <button
                           onClick={() => dismissTask(task.id)}
-                          className="px-2 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition"
+                          className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition"
                           title="Nie pokazuj więcej"
                         >
                           ❌ Odrzuć
@@ -354,7 +354,7 @@ const TaskList = () => {
                   {!task.auto_generated && (
                     <button
                       onClick={() => deleteTask(task.id)}
-                      className="flex-shrink-0 text-gray-400 hover:text-red-600 transition"
+                      className="flex-shrink-0 text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 transition"
                     >
                       🗑️
                     </button>
@@ -368,7 +368,7 @@ const TaskList = () => {
 
       {/* Footer */}
       {tasks.length > 0 && filter !== 'completed' && (
-        <div className="p-3 bg-gray-50 text-center text-sm text-gray-600">
+        <div className="p-3 bg-gray-50 dark:bg-gray-750 text-center text-sm text-gray-600 dark:text-gray-400">
           {tasks.filter(t => !t.completed).length} zadań do zrobienia
         </div>
       )}

@@ -517,10 +517,17 @@ router.post('/profile/public', [
     .trim()
     .matches(/^[a-zA-Z0-9_-]{3,30}$/)
     .withMessage('Nazwa użytkownika może zawierać tylko litery, cyfry, _ i - (3-30 znaków)'),
+  body('displayName')
+    .optional()
+    .trim()
+    .isLength({ max: 50 })
+    .escape()
+    .withMessage('Nazwa wyświetlana może mieć maksymalnie 50 znaków'),
   body('bio')
     .optional()
     .trim()
     .isLength({ max: 500 })
+    .escape()
     .withMessage('Bio może mieć maksymalnie 500 znaków'),
   body('enabled')
     .optional()
@@ -538,6 +545,7 @@ router.post('/profile/public', [
     .optional()
     .trim()
     .isLength({ max: 200 })
+    .escape()
     .withMessage('Link może mieć maksymalnie 200 znaków')
 ], (req, res) => {
   const errors = validationResult(req);

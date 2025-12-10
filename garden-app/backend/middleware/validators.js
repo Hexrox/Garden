@@ -46,24 +46,28 @@ const nameValidator = body('name')
   .optional()
   .trim()
   .isLength({ max: 200 })
+  .escape()
   .withMessage('Nazwa nie może przekraczać 200 znaków');
 
 const descriptionValidator = body('description')
   .optional()
   .trim()
   .isLength({ max: 5000 })
+  .escape()
   .withMessage('Opis nie może przekraczać 5000 znaków');
 
 const noteValidator = body('note')
   .optional()
   .trim()
   .isLength({ max: 2000 })
+  .escape()
   .withMessage('Notatka nie może przekraczać 2000 znaków');
 
 const captionValidator = body('caption')
   .optional()
   .trim()
   .isLength({ max: 500 })
+  .escape()
   .withMessage('Podpis nie może przekraczać 500 znaków');
 
 module.exports = {

@@ -44,7 +44,7 @@ router.post('/beds/:bedId/photos',
   upload.single('photo'),
   imageValidationMiddleware,
   [
-    body('caption').optional().trim(),
+    body('caption').optional().trim().escape(),
     body('taken_date').optional().isDate()
   ],
   (req, res) => {

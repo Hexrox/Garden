@@ -269,12 +269,12 @@ const Tasks = () => {
           {loading ? (
             <div className="text-center py-8 text-gray-500 dark:text-gray-400">Ładowanie...</div>
           ) : tasks.length === 0 ? (
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-8 text-center">
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-8 text-center border border-gray-200 dark:border-gray-700">
               <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
-                <CheckSquare className="w-8 h-8 text-gray-400" />
+                <CheckSquare className="w-8 h-8 text-gray-400 dark:text-gray-500" />
               </div>
-              <p className="text-gray-600 dark:text-gray-400 mb-2">Brak zadań</p>
-              <p className="text-sm text-gray-500 dark:text-gray-500">
+              <p className="text-gray-600 dark:text-gray-300 mb-2">Brak zadań</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
                 Dodaj nowe zadanie lub wygeneruj smart AI
               </p>
             </div>
@@ -282,7 +282,7 @@ const Tasks = () => {
             tasks.map((task) => (
               <div
                 key={task.id}
-                className={`bg-white dark:bg-gray-800 rounded-lg p-4 shadow hover:shadow-md transition-all ${
+                className={`bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm hover:shadow-md transition-all border border-gray-100 dark:border-gray-700 ${
                   task.completed ? 'opacity-60' : ''
                 }`}
               >
@@ -292,8 +292,8 @@ const Tasks = () => {
                     onClick={() => toggleComplete(task.id, task.completed)}
                     className={`flex-shrink-0 w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all ${
                       task.completed
-                        ? 'bg-green-500 border-green-500'
-                        : 'border-gray-300 dark:border-gray-600 hover:border-green-500'
+                        ? 'bg-green-500 dark:bg-green-600 border-green-500 dark:border-green-600'
+                        : 'border-gray-300 dark:border-gray-500 hover:border-green-500 dark:hover:border-green-400 bg-white dark:bg-gray-700'
                     }`}
                   >
                     {task.completed && <Check size={16} className="text-white" />}
@@ -304,7 +304,7 @@ const Tasks = () => {
                     <div className="flex items-start gap-2">
                       <span className="text-xl">{getTaskIcon(task.task_type)}</span>
                       <div className="flex-1">
-                        <p className={`font-medium text-gray-900 dark:text-white ${
+                        <p className={`font-medium text-gray-900 dark:text-gray-100 ${
                           task.completed ? 'line-through' : ''
                         }`}>
                           {task.description}
@@ -326,7 +326,7 @@ const Tasks = () => {
                     </div>
                     <button
                       onClick={() => deleteTask(task.id)}
-                      className="text-red-500 hover:text-red-700"
+                      className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
                     >
                       <Trash2 size={18} />
                     </button>

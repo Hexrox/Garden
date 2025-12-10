@@ -22,7 +22,7 @@ router.get('/', auth, (req, res) => {
 router.post('/',
   auth,
   [
-    body('plant_name').trim().notEmpty().withMessage('Nazwa rośliny jest wymagana'),
+    body('plant_name').trim().notEmpty().escape().withMessage('Nazwa rośliny jest wymagana'),
     body('interval_days').isInt({ min: 1 }).withMessage('Interwał musi być liczbą większą od 0'),
     body('last_planted_date').isDate().withMessage('Nieprawidłowa data'),
     body('bed_id').optional().isInt()
@@ -67,7 +67,7 @@ router.post('/',
 router.put('/:id',
   auth,
   [
-    body('plant_name').optional().trim().notEmpty(),
+    body('plant_name').optional().trim().notEmpty().escape(),
     body('interval_days').optional().isInt({ min: 1 }),
     body('last_planted_date').optional().isDate(),
     body('bed_id').optional(),

@@ -1,8 +1,15 @@
 const express = require('express');
 const router = express.Router();
+const { body, validationResult } = require('express-validator');
 const db = require('../db');
 const auth = require('../middleware/auth');
 const upload = require('../middleware/upload');
+const fs = require('fs');
+const path = require('path');
+
+// Allowed photo tags
+const ALLOWED_TAGS = ['warzywa', 'kwiaty', 'zioła', 'owoce', 'siew', 'zbiór',
+                      'podlewanie', 'problem', 'pielęgnacja', 'pogoda', 'sukces', 'ogólne'];
 
 // Get all photos for user (unified gallery)
 router.get('/', auth, (req, res) => {
@@ -189,13 +196,30 @@ router.delete('/:photoId', auth, (req, res) => {
 });
 
 // Quick photo upload (for mobile users in garden)
-router.post('/quick', auth, upload.single('photo'), (req, res) => {
+router.post('/quick', auth, upload.single('photo'), [
+  body('tag').optional().isIn(ALLOWED_TAGS).withMessage('Nieprawidłowy tag'),
+  body('caption').optional().trim().isLength({ max: 200 }).escape().withMessage('Opis może mieć maksymalnie 200 znaków'),
+  body('bed_id').optional().isInt().withMessage('Nieprawidłowe ID grządki'),
+  body('plot_id').optional().isInt().withMessage('Nieprawidłowe ID poletka')
+], (req, res) => {
+  // Validate input
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    // Clean up uploaded file on validation error
+    if (req.file && req.file.path) {
+      fs.unlink(req.file.path, (err) => {
+        if (err) console.error('Failed to cleanup file:', err);
+      });
+    }
+    return res.status(400).json({ errors: errors.array() });
+  }
+
   if (!req.file) {
     return res.status(400).json({ error: 'Brak zdjęcia' });
   }
 
   const { tag, caption, bed_id, plot_id } = req.body;
-  const photoPath = req.file.path;
+  const photoPath = `uploads/${req.file.filename}`;
 
   // If bed_id provided, get context from bed
   if (bed_id) {
@@ -232,6 +256,12 @@ router.post('/quick', auth, upload.single('photo'), (req, res) => {
           ],
           function (err) {
             if (err) {
+              // Clean up uploaded file on database error
+              if (req.file && req.file.path) {
+                fs.unlink(req.file.path, (unlinkErr) => {
+                  if (unlinkErr) console.error('Failed to cleanup file:', unlinkErr);
+                });
+              }
               console.error('Quick photo insert error:', err);
               return res.status(500).json({ error: 'Błąd zapisywania zdjęcia' });
             }
@@ -264,6 +294,12 @@ router.post('/quick', auth, upload.single('photo'), (req, res) => {
           [req.user.id, photoPath, caption || null, tag || null, plot.name],
           function (err) {
             if (err) {
+              // Clean up uploaded file on database error
+              if (req.file && req.file.path) {
+                fs.unlink(req.file.path, (unlinkErr) => {
+                  if (unlinkErr) console.error('Failed to cleanup file:', unlinkErr);
+                });
+              }
               return res.status(500).json({ error: 'Błąd zapisywania zdjęcia' });
             }
             res.status(201).json({
@@ -284,6 +320,12 @@ router.post('/quick', auth, upload.single('photo'), (req, res) => {
       [req.user.id, photoPath, caption || null, tag || null],
       function (err) {
         if (err) {
+          // Clean up uploaded file on database error
+          if (req.file && req.file.path) {
+            fs.unlink(req.file.path, (unlinkErr) => {
+              if (unlinkErr) console.error('Failed to cleanup file:', unlinkErr);
+            });
+          }
           return res.status(500).json({ error: 'Błąd zapisywania zdjęcia' });
         }
         res.status(201).json({

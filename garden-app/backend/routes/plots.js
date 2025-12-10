@@ -147,7 +147,7 @@ router.post('/plots',
     }
 
     const { name, description } = req.body;
-    const imagePath = req.file ? req.file.path : null;
+    const imagePath = req.file ? `uploads/${req.file.filename}` : null;
 
     db.run(
       'INSERT INTO plots (user_id, name, description, image_path) VALUES (?, ?, ?, ?)',
@@ -189,7 +189,7 @@ router.put('/plots/:id',
     }
 
     const { name, description } = req.body;
-    const imagePath = req.file ? req.file.path : undefined;
+    const imagePath = req.file ? `uploads/${req.file.filename}` : undefined;
 
     // If new image uploaded, delete old image first
     if (imagePath) {

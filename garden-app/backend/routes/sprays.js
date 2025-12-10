@@ -105,13 +105,13 @@ router.get('/sprays/active', auth, (req, res) => {
 router.post('/beds/:bedId/sprays',
   auth,
   [
-    body('spray_name').trim().notEmpty().withMessage('Nazwa środka jest wymagana'),
-    body('spray_type').optional().trim(),
+    body('spray_name').trim().notEmpty().escape().withMessage('Nazwa środka jest wymagana'),
+    body('spray_type').optional().trim().escape(),
     body('spray_date').isDate().withMessage('Nieprawidłowa data oprysku'),
     body('withdrawal_period').isInt({ min: 0 }).withMessage('Okres karencji musi być liczbą >= 0'),
-    body('dosage').optional().trim(),
-    body('weather_conditions').optional().trim(),
-    body('note').optional()
+    body('dosage').optional().trim().escape(),
+    body('weather_conditions').optional().trim().escape(),
+    body('note').optional().trim().escape()
   ],
   (req, res) => {
     const errors = validationResult(req);
@@ -178,13 +178,13 @@ router.post('/beds/:bedId/sprays',
 router.put('/sprays/:id',
   auth,
   [
-    body('spray_name').optional().trim().notEmpty().withMessage('Nazwa środka nie może być pusta'),
-    body('spray_type').optional().trim(),
+    body('spray_name').optional().trim().notEmpty().escape().withMessage('Nazwa środka nie może być pusta'),
+    body('spray_type').optional().trim().escape(),
     body('spray_date').optional().isDate().withMessage('Nieprawidłowa data oprysku'),
     body('withdrawal_period').optional().isInt({ min: 0 }).withMessage('Okres karencji musi być liczbą >= 0'),
-    body('dosage').optional().trim(),
-    body('weather_conditions').optional().trim(),
-    body('note').optional()
+    body('dosage').optional().trim().escape(),
+    body('weather_conditions').optional().trim().escape(),
+    body('note').optional().trim().escape()
   ],
   (req, res) => {
     const errors = validationResult(req);

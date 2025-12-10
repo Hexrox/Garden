@@ -40,8 +40,8 @@ const BottomNav = () => {
 
   return (
     <>
-      <nav className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 shadow-lg z-50 lg:hidden" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0)' }}>
-        <div className="flex justify-around items-center h-16 relative">
+      <nav className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 shadow-lg z-50 lg:hidden" style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 4px)' }}>
+        <div className="flex justify-around items-center h-20 relative">
           {/* First 2 items */}
           {navItems.slice(0, 2).map((item) => {
             const active = isActive(item.match);
@@ -71,7 +71,7 @@ const BottomNav = () => {
             <div className="absolute -top-2 w-14 h-14 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl shadow-lg flex items-center justify-center">
               <Menu size={28} className="text-white" />
             </div>
-            <span className="text-xs font-medium mt-8">Menu</span>
+            <span className="text-xs font-medium mt-9">Menu</span>
           </button>
 
           {/* Last 2 items */}
