@@ -852,7 +852,7 @@ const Profile = () => {
                   }}
                   placeholder="twoja-nazwa"
                   className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  pattern="[a-zA-Z0-9_-]{3,30}"
+                  pattern="[a-zA-Z0-9_\-]{3,30}"
                   title="3-30 znaków: litery, cyfry, _ lub -"
                 />
               </div>
