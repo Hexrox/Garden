@@ -135,6 +135,11 @@ db.serialize(() => {
   db.run(`ALTER TABLE plant_photos ADD COLUMN bed_plant_name TEXT`, (err) => {});
   db.run(`ALTER TABLE plant_photos ADD COLUMN bed_plant_variety TEXT`, (err) => {});
   db.run(`ALTER TABLE plant_photos ADD COLUMN plot_name TEXT`, (err) => {});
+  db.run(`ALTER TABLE plant_photos ADD COLUMN tag TEXT`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding tag column:', err.message);
+    }
+  });
 
   // Migrate existing plant_photos data (fill context for existing photos)
   db.run(`

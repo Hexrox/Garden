@@ -16,6 +16,7 @@ const Gallery = () => {
     plot: '',
     year: '',
     source_type: '',
+    tag: '',
     show_deleted: false,
   });
 
@@ -32,6 +33,7 @@ const Gallery = () => {
       if (filters.plot) params.append('plot', filters.plot);
       if (filters.year) params.append('year', filters.year);
       if (filters.source_type) params.append('source_type', filters.source_type);
+      if (filters.tag) params.append('tag', filters.tag);
       if (filters.show_deleted) params.append('show_deleted', 'true');
 
       const response = await axios.get(`/api/gallery?${params.toString()}`);
@@ -93,7 +95,7 @@ const Gallery = () => {
 
   // Clear all filters
   const clearAllFilters = () => {
-    setFilters({ plant: '', plot: '', year: '', source_type: '', show_deleted: false });
+    setFilters({ plant: '', plot: '', year: '', source_type: '', tag: '', show_deleted: false });
   };
 
   if (loading && !photos.length) {

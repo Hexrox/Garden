@@ -1,6 +1,21 @@
 import React from 'react';
 import { X } from 'lucide-react';
 
+const PHOTO_TAGS = [
+  { emoji: '🥕', label: 'Warzywa', value: 'warzywa' },
+  { emoji: '🌸', label: 'Kwiaty', value: 'kwiaty' },
+  { emoji: '🌿', label: 'Zioła', value: 'zioła' },
+  { emoji: '🍎', label: 'Owoce', value: 'owoce' },
+  { emoji: '🌱', label: 'Siew', value: 'siew' },
+  { emoji: '🌾', label: 'Zbiór', value: 'zbiór' },
+  { emoji: '💧', label: 'Podlewanie', value: 'podlewanie' },
+  { emoji: '🐛', label: 'Problem', value: 'problem' },
+  { emoji: '✂️', label: 'Pielęgnacja', value: 'pielęgnacja' },
+  { emoji: '🌤️', label: 'Pogoda', value: 'pogoda' },
+  { emoji: '🏆', label: 'Sukces', value: 'sukces' },
+  { emoji: '📸', label: 'Ogólne', value: 'ogólne' }
+];
+
 const GalleryFilters = ({ filters, setFilters, stats, onClose }) => {
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
@@ -13,6 +28,7 @@ const GalleryFilters = ({ filters, setFilters, stats, onClose }) => {
       plot: '',
       year: '',
       source_type: '',
+      tag: '',
       show_deleted: false,
     });
   };
@@ -89,6 +105,25 @@ const GalleryFilters = ({ filters, setFilters, stats, onClose }) => {
           </select>
         </div>
 
+        {/* Tag filter */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            🏷️ Kategoria
+          </label>
+          <select
+            value={filters.tag}
+            onChange={(e) => setFilters({ ...filters, tag: e.target.value })}
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
+          >
+            <option value="">Wszystkie</option>
+            {PHOTO_TAGS.map((tag) => (
+              <option key={tag.value} value={tag.value}>
+                {tag.emoji} {tag.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
         {/* Source type filter */}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -101,6 +136,7 @@ const GalleryFilters = ({ filters, setFilters, stats, onClose }) => {
           >
             <option value="">Wszystkie</option>
             <option value="progress">Galeria wzrostu</option>
+            <option value="quick">Szybkie zdjęcia</option>
             <option value="bed_main">Główne zdjęcia grządek</option>
             <option value="plot_main">Główne zdjęcia poletek</option>
             <option value="manual">Dodane ręcznie</option>

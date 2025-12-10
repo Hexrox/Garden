@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   X,
@@ -11,8 +11,10 @@ import {
   Droplets,
   LayoutGrid,
   TrendingUp,
-  Image
+  Image,
+  Camera
 } from 'lucide-react';
+import QuickPhotoModal from './modals/QuickPhotoModal';
 
 /**
  * Komponent MenuModal
@@ -21,9 +23,20 @@ import {
  * Układ siatki, zoptymalizowany na urządzenia mobilne, przejrzyste kategorie
  */
 const MenuModal = ({ isOpen, onClose }) => {
+  const [showQuickPhoto, setShowQuickPhoto] = useState(false);
+
   if (!isOpen) return null;
 
   const menuItems = [
+    {
+      id: 'quick-photo',
+      action: () => setShowQuickPhoto(true),
+      icon: Camera,
+      label: 'Dodaj zdjęcie',
+      description: 'Szybkie foto',
+      color: 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400',
+      badge: 'SZYBKI'
+    },
     {
       id: 'calendar',
       path: '/calendar',
@@ -125,16 +138,20 @@ const MenuModal = ({ isOpen, onClose }) => {
           <div className="grid grid-cols-2 gap-4">
             {menuItems.map((item) => {
               const Icon = item.icon;
+              const Component = item.path ? Link : 'button';
+              const props = item.path
+                ? { to: item.path, onClick: onClose }
+                : { onClick: () => { item.action(); onClose(); }, type: 'button' };
+
               return (
-                <Link
+                <Component
                   key={item.id}
-                  to={item.path}
-                  onClick={onClose}
-                  className="group relative bg-gray-50 dark:bg-gray-900/50 rounded-xl p-4 hover:shadow-md transition-all duration-200 hover:-translate-y-1"
+                  {...props}
+                  className="group relative bg-gray-50 dark:bg-gray-900/50 rounded-xl p-4 hover:shadow-md transition-all duration-200 hover:-translate-y-1 text-left w-full"
                 >
                   {/* Badge */}
                   {item.badge && (
-                    <div className="absolute -top-2 -right-2 px-2 py-0.5 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs font-bold rounded-full shadow-lg">
+                    <div className="absolute -top-2 -right-2 px-2 py-0.5 bg-gradient-to-r from-green-500 to-emerald-500 text-white text-xs font-bold rounded-full shadow-lg">
                       {item.badge}
                     </div>
                   )}
@@ -153,7 +170,7 @@ const MenuModal = ({ isOpen, onClose }) => {
                       {item.description}
                     </p>
                   </div>
-                </Link>
+                </Component>
               );
             })}
           </div>
@@ -166,12 +183,22 @@ const MenuModal = ({ isOpen, onClose }) => {
               </span>
               <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
                 <LayoutGrid size={16} />
-                <span className="font-medium">8 modułów</span>
+                <span className="font-medium">9 modułów</span>
               </div>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Quick Photo Modal */}
+      <QuickPhotoModal
+        isOpen={showQuickPhoto}
+        onClose={() => setShowQuickPhoto(false)}
+        onSuccess={() => {
+          // Możemy dodać toast notification tutaj
+          console.log('Zdjęcie dodane pomyślnie!');
+        }}
+      />
     </div>
   );
 };

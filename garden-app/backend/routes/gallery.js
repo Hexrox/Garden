@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 const auth = require('../middleware/auth');
+const upload = require('../middleware/upload');
 
 // Get all photos for user (unified gallery)
 router.get('/', auth, (req, res) => {
@@ -9,7 +10,7 @@ router.get('/', auth, (req, res) => {
   const offset = parseInt(req.query.offset) || 0;
 
   // Filters
-  const { plant, plot, year, source_type, show_deleted } = req.query;
+  const { plant, plot, year, source_type, tag, show_deleted } = req.query;
 
   let query = `
     SELECT
@@ -43,6 +44,11 @@ router.get('/', auth, (req, res) => {
   if (source_type) {
     query += ` AND p.source_type = ?`;
     params.push(source_type);
+  }
+
+  if (tag) {
+    query += ` AND p.tag = ?`;
+    params.push(tag);
   }
 
   if (show_deleted !== 'true') {
@@ -180,6 +186,114 @@ router.delete('/:photoId', auth, (req, res) => {
       );
     }
   );
+});
+
+// Quick photo upload (for mobile users in garden)
+router.post('/quick', auth, upload.single('photo'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: 'Brak zdjęcia' });
+  }
+
+  const { tag, caption, bed_id, plot_id } = req.body;
+  const photoPath = req.file.path;
+
+  // If bed_id provided, get context from bed
+  if (bed_id) {
+    db.get(
+      `SELECT b.*, p.name as plot_name, p.user_id
+       FROM beds b
+       JOIN plots p ON b.plot_id = p.id
+       WHERE b.id = ? AND p.user_id = ?`,
+      [bed_id, req.user.id],
+      (err, bed) => {
+        if (err) {
+          return res.status(500).json({ error: 'Błąd serwera' });
+        }
+        if (!bed) {
+          return res.status(404).json({ error: 'Grządka nie znaleziona' });
+        }
+
+        // Insert with bed context
+        db.run(
+          `INSERT INTO plant_photos (
+            user_id, bed_id, photo_path, caption, tag, source_type,
+            bed_row_number, bed_plant_name, bed_plant_variety, plot_name, taken_date
+          ) VALUES (?, ?, ?, ?, ?, 'quick', ?, ?, ?, ?, date('now'))`,
+          [
+            req.user.id,
+            bed_id,
+            photoPath,
+            caption || null,
+            tag || null,
+            bed.row_number,
+            bed.plant_name,
+            bed.plant_variety,
+            bed.plot_name
+          ],
+          function (err) {
+            if (err) {
+              console.error('Quick photo insert error:', err);
+              return res.status(500).json({ error: 'Błąd zapisywania zdjęcia' });
+            }
+            res.status(201).json({
+              message: 'Zdjęcie dodane!',
+              photoId: this.lastID,
+              photoPath: photoPath
+            });
+          }
+        );
+      }
+    );
+  } else if (plot_id) {
+    // Just plot context, no bed
+    db.get(
+      `SELECT name, user_id FROM plots WHERE id = ? AND user_id = ?`,
+      [plot_id, req.user.id],
+      (err, plot) => {
+        if (err) {
+          return res.status(500).json({ error: 'Błąd serwera' });
+        }
+        if (!plot) {
+          return res.status(404).json({ error: 'Poletko nie znalezione' });
+        }
+
+        db.run(
+          `INSERT INTO plant_photos (
+            user_id, photo_path, caption, tag, source_type, plot_name, taken_date
+          ) VALUES (?, ?, ?, ?, 'quick', ?, date('now'))`,
+          [req.user.id, photoPath, caption || null, tag || null, plot.name],
+          function (err) {
+            if (err) {
+              return res.status(500).json({ error: 'Błąd zapisywania zdjęcia' });
+            }
+            res.status(201).json({
+              message: 'Zdjęcie dodane!',
+              photoId: this.lastID,
+              photoPath: photoPath
+            });
+          }
+        );
+      }
+    );
+  } else {
+    // No location context - general photo
+    db.run(
+      `INSERT INTO plant_photos (
+        user_id, photo_path, caption, tag, source_type, taken_date
+      ) VALUES (?, ?, ?, ?, 'quick', date('now'))`,
+      [req.user.id, photoPath, caption || null, tag || null],
+      function (err) {
+        if (err) {
+          return res.status(500).json({ error: 'Błąd zapisywania zdjęcia' });
+        }
+        res.status(201).json({
+          message: 'Zdjęcie dodane!',
+          photoId: this.lastID,
+          photoPath: photoPath
+        });
+      }
+    );
+  }
 });
 
 module.exports = router;
