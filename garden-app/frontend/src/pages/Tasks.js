@@ -126,33 +126,34 @@ const Tasks = () => {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20 md:pb-0">
       <div className="max-w-4xl mx-auto p-4 md:p-6 space-y-6">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl shadow-lg p-6 text-white">
-          <div className="flex items-center justify-between mb-4">
+        {/* Header Card */}
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden transition-colors">
+          {/* Gradient Top Bar */}
+          <div className="bg-gradient-to-r from-blue-500 to-purple-600 dark:from-blue-600 dark:to-purple-700 p-6">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
-                <CheckSquare size={28} />
+              <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
+                <CheckSquare size={28} className="text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold">Zadania</h1>
-                <p className="text-blue-100 text-sm">Zarządzaj pracami ogrodniczymi</p>
+                <h1 className="text-2xl font-bold text-white">Zadania</h1>
+                <p className="text-white/90 text-sm">Zarządzaj pracami ogrodniczymi</p>
               </div>
             </div>
           </div>
 
-          {/* Stats */}
-          <div className="grid grid-cols-3 gap-3">
-            <div className="bg-white/10 rounded-lg p-3 text-center">
-              <div className="text-2xl font-bold">{stats.total}</div>
-              <div className="text-xs text-blue-100">Wszystkie</div>
+          {/* Stats - now inside white card */}
+          <div className="grid grid-cols-3 gap-3 p-4">
+            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 text-center border border-blue-100 dark:border-blue-800">
+              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{stats.total}</div>
+              <div className="text-xs text-blue-700 dark:text-blue-300">Wszystkie</div>
             </div>
-            <div className="bg-white/10 rounded-lg p-3 text-center">
-              <div className="text-2xl font-bold">{stats.pending}</div>
-              <div className="text-xs text-blue-100">Do zrobienia</div>
+            <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-3 text-center border border-purple-100 dark:border-purple-800">
+              <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">{stats.pending}</div>
+              <div className="text-xs text-purple-700 dark:text-purple-300">Do zrobienia</div>
             </div>
-            <div className="bg-white/10 rounded-lg p-3 text-center">
-              <div className="text-2xl font-bold">{stats.completed}</div>
-              <div className="text-xs text-blue-100">Wykonane</div>
+            <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3 text-center border border-green-100 dark:border-green-800">
+              <div className="text-2xl font-bold text-green-600 dark:text-green-400">{stats.completed}</div>
+              <div className="text-xs text-green-700 dark:text-green-300">Wykonane</div>
             </div>
           </div>
         </div>
