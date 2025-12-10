@@ -28,13 +28,19 @@ const QuickPhotoModal = ({ isOpen, onClose, onSuccess }) => {
   const [selectedBed, setSelectedBed] = useState('');
   const [caption, setCaption] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [processingPhoto, setProcessingPhoto] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (isOpen) {
-      loadPlots();
+    // LAZY LOADING: Load plots in background while user selects photo
+    // Don't block modal opening!
+    if (isOpen && plots.length === 0) {
+      // Use setTimeout to not block modal render
+      setTimeout(() => {
+        loadPlots();
+      }, 50);
     }
-  }, [isOpen]);
+  }, [isOpen, plots.length]);
 
   useEffect(() => {
     if (selectedPlot) {
@@ -82,9 +88,20 @@ const QuickPhotoModal = ({ isOpen, onClose, onSuccess }) => {
     }
 
     setError('');
+    setProcessingPhoto(true);
     setPhoto(file);
+
     const reader = new FileReader();
-    reader.onload = (e) => setPhotoPreview(e.target.result);
+    reader.onload = (e) => {
+      setPhotoPreview(e.target.result);
+      setProcessingPhoto(false);
+      // AUTO-ADVANCE to step 2 after photo is selected
+      setStep(2);
+    };
+    reader.onerror = () => {
+      setError('Błąd podczas wczytywania zdjęcia');
+      setProcessingPhoto(false);
+    };
     reader.readAsDataURL(file);
   };
 
@@ -129,6 +146,7 @@ const QuickPhotoModal = ({ isOpen, onClose, onSuccess }) => {
     setCaption('');
     setError('');
     setUploading(false);
+    setProcessingPhoto(false);
     onClose();
   };
 
@@ -184,7 +202,16 @@ const QuickPhotoModal = ({ isOpen, onClose, onSuccess }) => {
                 📸 Wybierz zdjęcie
               </h3>
 
-              {photoPreview ? (
+              {processingPhoto && (
+                <div className="flex flex-col items-center justify-center h-40 gap-3">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-3 border-green-600"></div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Przetwarzanie zdjęcia...
+                  </p>
+                </div>
+              )}
+
+              {photoPreview && !processingPhoto ? (
                 <div className="relative">
                   <img
                     src={photoPreview}
@@ -201,7 +228,7 @@ const QuickPhotoModal = ({ isOpen, onClose, onSuccess }) => {
                     <X size={16} />
                   </button>
                 </div>
-              ) : (
+              ) : !processingPhoto ? (
                 <div className="space-y-3">
                   <label className="block">
                     <input
@@ -234,7 +261,7 @@ const QuickPhotoModal = ({ isOpen, onClose, onSuccess }) => {
                     </div>
                   </label>
                 </div>
-              )}
+              ) : null}
             </div>
           )}
 
