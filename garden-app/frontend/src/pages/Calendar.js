@@ -32,8 +32,8 @@ const Calendar = () => {
       const [tasks, reminders, succession, sprays, moon] = await Promise.all([
         axios.get(`/api/tasks`).catch(() => ({ data: [] })),
         axios.get(`/api/reminders`).catch(() => ({ data: [] })),
-        axios.get(`/api/succession/reminders`).catch(() => ({ data: [] })),
-        axios.get(`/api/spray-history`).catch(() => ({ data: [] })),
+        axios.get(`/api/succession`).catch(() => ({ data: [] })),
+        axios.get(`/api/sprays/history`).catch(() => ({ data: [] })),
         axios.get(`/api/calendar/moon/month/${year}/${month}`).catch(() => ({ data: [] }))
       ]);
 
