@@ -125,7 +125,7 @@ db.serialize(() => {
     caption TEXT,
     taken_date DATE,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY(bed_id) REFERENCES beds(id) ON DELETE SET NULL
+    FOREIGN KEY(bed_id) REFERENCES beds(id) ON DELETE CASCADE
   )`);
 
   // Extend plant_photos for unified gallery (preserve context after deletion)
@@ -458,12 +458,27 @@ db.serialize(() => {
     user_agent TEXT
   )`);
 
+  // Weather history table (for advanced drought detection)
+  db.run(`CREATE TABLE IF NOT EXISTS weather_history (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    date DATE NOT NULL UNIQUE,
+    temperature REAL,
+    temp_min REAL,
+    temp_max REAL,
+    humidity INTEGER,
+    rain REAL DEFAULT 0,
+    wind_speed REAL,
+    description TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )`);
+
   // Create indexes for public profile feature
   db.run('CREATE UNIQUE INDEX IF NOT EXISTS idx_users_public_username ON users(public_username)');
   db.run('CREATE INDEX IF NOT EXISTS idx_public_gallery_user_id ON public_gallery_photos(user_id)');
   db.run('CREATE INDEX IF NOT EXISTS idx_public_gallery_photo_id ON public_gallery_photos(photo_id)');
   db.run('CREATE INDEX IF NOT EXISTS idx_profile_views_username ON profile_views(username)');
   db.run('CREATE INDEX IF NOT EXISTS idx_profile_views_date ON profile_views(viewed_at)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_weather_history_date ON weather_history(date)');
 
   console.log('✅ Database tables and indexes created successfully');
 });

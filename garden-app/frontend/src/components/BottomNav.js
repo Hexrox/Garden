@@ -2,10 +2,18 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Home, LayoutGrid, Calendar, User, Menu } from 'lucide-react';
 import MenuModal from './MenuModal';
+import QuickPhotoModal from './modals/QuickPhotoModal';
 
 const BottomNav = () => {
   const location = useLocation();
-  const [showMenu, setShowMenu] = useState(false);
+  // FIXED: Use single state instead of two booleans to avoid race conditions
+  const [activeModal, setActiveModal] = useState(null); // null | 'menu' | 'quickPhoto'
+  const [debugLog, setDebugLog] = useState([]);
+
+  const addDebugLog = (message) => {
+    console.log(message);
+    setDebugLog(prev => [...prev.slice(-4), `${new Date().toLocaleTimeString()}: ${message}`]);
+  };
 
   const navItems = [
     {
@@ -65,7 +73,7 @@ const BottomNav = () => {
 
           {/* Central Menu Button */}
           <button
-            onClick={() => setShowMenu(true)}
+            onClick={() => setActiveModal('menu')}
             className="flex flex-col items-center justify-center flex-1 h-full transition-colors text-gray-600 dark:text-gray-400 hover:text-green-600 dark:hover:text-green-400 hover:bg-gray-50 dark:hover:bg-gray-700 relative"
           >
             <div className="absolute -top-2 w-14 h-14 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl shadow-lg flex items-center justify-center">
@@ -97,8 +105,41 @@ const BottomNav = () => {
         </div>
       </nav>
 
+      {/* Debug Log Panel */}
+      {debugLog.length > 0 && (
+        <div className="fixed top-0 left-0 right-0 bg-black/90 text-white p-2 text-xs z-[999] max-h-32 overflow-y-auto">
+          {debugLog.map((log, i) => (
+            <div key={i} className="border-b border-gray-700 py-1">{log}</div>
+          ))}
+        </div>
+      )}
+
       {/* Menu Modal */}
-      <MenuModal isOpen={showMenu} onClose={() => setShowMenu(false)} />
+      <MenuModal
+        isOpen={activeModal === 'menu'}
+        onClose={() => {
+          addDebugLog('MenuModal onClose');
+          setActiveModal(null);
+        }}
+        onQuickPhotoClick={() => {
+          addDebugLog('QuickPhoto clicked');
+          setActiveModal('quickPhoto');
+        }}
+      />
+
+      {/* Quick Photo Modal */}
+      <QuickPhotoModal
+        isOpen={activeModal === 'quickPhoto'}
+        onClose={() => {
+          addDebugLog('QuickPhoto onClose');
+          setActiveModal(null);
+        }}
+        onSuccess={() => {
+          addDebugLog('QuickPhoto SUCCESS!');
+          setActiveModal(null);
+        }}
+        onDebug={addDebugLog}
+      />
     </>
   );
 };

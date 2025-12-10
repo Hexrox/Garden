@@ -1,8 +1,9 @@
 const axios = require('axios');
+const db = require('../db');
 
 /**
  * Weather Service - Integracja z OpenWeatherMap API
- * Funkcje: pobieranie pogody, cache, smart recommendations
+ * Funkcje: pobieranie pogody, cache, smart recommendations, historia
  */
 
 class WeatherService {
@@ -10,6 +11,9 @@ class WeatherService {
     this.apiKey = process.env.OPENWEATHER_API_KEY;
     this.cache = new Map();
     this.cacheDuration = 30 * 60 * 1000; // 30 minut cache
+
+    // Start daily weather history job
+    this.startDailyHistoryJob();
   }
 
   /**
@@ -688,28 +692,56 @@ class WeatherService {
    */
   checkDroughtConditions(currentWeather, forecast) {
     const temp = currentWeather.temperature;
+    const humidity = currentWeather.humidity;
+    const month = new Date().getMonth(); // 0=styczeń, 11=grudzień
 
-    // ZIMA/MRÓZ: Nie pokazuj alertu suszowego gdy jest zimno (temp < 5°C)
-    // W zimie nie należy podlewać - rośliny są w spoczynku, woda może zamarzać
-    if (temp < 5) {
+    // SEZON ZIMOWY (listopad-marzec): rośliny w spoczynku, niska ewapotranspiracja
+    const isWinter = month >= 10 || month <= 2;
+
+    // ZIMA: Nie pokazuj alertu gdy temp < 10°C (rośliny nieaktywne, nie potrzebują podlewania)
+    if (isWinter && temp < 10) {
       return null;
     }
 
-    // Sprawdź sumę opadów z ostatnich 5 dni (16 pomiarów co 3h = ~2 dni realnych danych)
-    const recentRain = forecast.forecast.slice(0, 16).reduce((sum, f) => sum + f.rain, 0);
+    // WYSOKA WILGOTNOŚĆ: Nie pokazuj alertu gdy wilgotność > 75%
+    // Nawet bez deszczu gleba jest wilgotna (rosa, para wodna, kondensacja)
+    if (humidity > 75) {
+      return null;
+    }
 
-    // Sprawdź czy będzie deszcz w najbliższych 2 dniach
-    const upcomingRain = forecast.forecast.slice(0, 16).reduce((sum, f) => sum + f.rain, 0);
+    // Sprawdź sumę opadów w całej prognozie (5 dni = max 40 pomiarów co 3h)
+    const totalRainForecast = forecast.forecast.reduce((sum, f) => sum + (f.rain || 0), 0);
 
-    // SUSZA: brak deszczu (< 2mm łącznie) przez długi czas (tylko w sezonie wegetacyjnym)
-    if (recentRain < 2 && upcomingRain < 2) {
-      return {
-        type: 'drought',
-        priority: 'high',
-        icon: '🏜️',
-        message: 'Susza - brak deszczu w prognozie',
-        details: 'Podlewaj rośliny gruntowe 2-3x/tydzień OBFICIE. Rośliny w donicach: 1-2x dziennie. MULCZUJ glebę (5-7cm słomy/kory) - zatrzyma wilgoć'
-      };
+    // Sprawdź maksymalne prawdopodobieństwo opadów (POP - Probability of Precipitation)
+    const maxPrecipProbability = Math.max(...forecast.forecast.map(f => f.pop || 0));
+
+    // Próg suszy zależny od sezonu
+    const droughtThreshold = isWinter ? 1 : 5; // mm w 5 dni
+    const humidityThreshold = isWinter ? 50 : 60; // %
+
+    // SUSZA: brak deszczu + niska wilgotność + niskie prawdopodobieństwo opadów
+    if (totalRainForecast < droughtThreshold &&
+        maxPrecipProbability < 30 &&
+        humidity < humidityThreshold) {
+
+      // Różne komunikaty dla zimy i lata
+      if (isWinter) {
+        return {
+          type: 'drought',
+          priority: 'medium',
+          icon: '🏜️',
+          message: 'Brak deszczu w prognozie',
+          details: 'Sprawdź wilgotność gleby przed podlewaniem (wbij palec na 5-10cm). Rośliny zimą potrzebują mniej wody. Podlewaj tylko gdy gleba jest sucha.'
+        };
+      } else {
+        return {
+          type: 'drought',
+          priority: 'high',
+          icon: '🏜️',
+          message: 'Susza - brak deszczu w prognozie',
+          details: 'Podlewaj rośliny gruntowe 2-3x/tydzień OBFICIE (10-20L/m²). Rośliny w donicach: 1-2x dziennie. MULCZUJ glebę (5-7cm słomy/kory) - zatrzyma wilgoć.'
+        };
+      }
     }
 
     return null;
@@ -907,6 +939,178 @@ class WeatherService {
    */
   clearCache() {
     this.cache.clear();
+  }
+
+  /**
+   * Zapisz dzisiejszą pogodę do historii (wywoływane codziennie)
+   */
+  async saveWeatherHistory(lat, lon) {
+    try {
+      const weather = await this.getCurrentWeather(lat, lon);
+      const today = new Date().toISOString().split('T')[0];
+
+      // Get min/max from daily forecast if available
+      const forecast = await this.getForecast(lat, lon);
+      const todayForecast = forecast.daily[0] || {};
+
+      return new Promise((resolve, reject) => {
+        db.run(
+          `INSERT OR REPLACE INTO weather_history
+           (date, temperature, temp_min, temp_max, humidity, rain, wind_speed, description)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            today,
+            weather.temperature,
+            todayForecast.tempMin || weather.temperature - 2,
+            todayForecast.tempMax || weather.temperature + 2,
+            weather.humidity,
+            weather.rain || 0,
+            weather.windSpeed,
+            weather.description
+          ],
+          function (err) {
+            if (err) {
+              console.error('❌ Error saving weather history:', err);
+              reject(err);
+            } else {
+              console.log(`✅ Weather history saved for ${today}`);
+              resolve(this.lastID);
+            }
+          }
+        );
+      });
+    } catch (error) {
+      console.error('❌ Error in saveWeatherHistory:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Pobierz historię pogody (ostatnie N dni)
+   */
+  async getWeatherHistory(days = 14) {
+    return new Promise((resolve, reject) => {
+      db.all(
+        `SELECT * FROM weather_history
+         WHERE date >= DATE('now', '-' || ? || ' days')
+         ORDER BY date DESC`,
+        [days],
+        (err, rows) => {
+          if (err) {
+            console.error('❌ Error fetching weather history:', err);
+            reject(err);
+          } else {
+            resolve(rows || []);
+          }
+        }
+      );
+    });
+  }
+
+  /**
+   * Pobierz sumę opadów z ostatnich N dni
+   */
+  async getHistoricalRain(days = 14) {
+    return new Promise((resolve, reject) => {
+      db.get(
+        `SELECT COALESCE(SUM(rain), 0) as total_rain
+         FROM weather_history
+         WHERE date >= DATE('now', '-' || ? || ' days')`,
+        [days],
+        (err, row) => {
+          if (err) {
+            console.error('❌ Error fetching historical rain:', err);
+            reject(err);
+          } else {
+            resolve(row?.total_rain || 0);
+          }
+        }
+      );
+    });
+  }
+
+  /**
+   * Pobierz średnią wilgotność z ostatnich N dni
+   */
+  async getHistoricalHumidity(days = 14) {
+    return new Promise((resolve, reject) => {
+      db.get(
+        `SELECT COALESCE(AVG(humidity), 0) as avg_humidity
+         FROM weather_history
+         WHERE date >= DATE('now', '-' || ? || ' days')`,
+        [days],
+        (err, row) => {
+          if (err) {
+            console.error('❌ Error fetching historical humidity:', err);
+            reject(err);
+          } else {
+            resolve(row?.avg_humidity || 0);
+          }
+        }
+      );
+    });
+  }
+
+  /**
+   * Uruchom codzienne zapisywanie pogody (co 24h o 23:00)
+   */
+  startDailyHistoryJob() {
+    // Calculate time until next 23:00
+    const now = new Date();
+    const next23 = new Date();
+    next23.setHours(23, 0, 0, 0);
+
+    if (now > next23) {
+      // If it's past 23:00 today, schedule for tomorrow
+      next23.setDate(next23.getDate() + 1);
+    }
+
+    const msUntilNext23 = next23 - now;
+
+    console.log(`📅 Weather history job scheduled for ${next23.toLocaleString('pl-PL')}`);
+
+    // Schedule first run
+    setTimeout(() => {
+      this.runDailyHistoryJob();
+
+      // Then run every 24 hours
+      setInterval(() => {
+        this.runDailyHistoryJob();
+      }, 24 * 60 * 60 * 1000);
+    }, msUntilNext23);
+  }
+
+  /**
+   * Wykonaj zapis historii dla wszystkich aktywnych użytkowników
+   */
+  async runDailyHistoryJob() {
+    try {
+      console.log('🌤️  Running daily weather history job...');
+
+      // Get unique locations from users who have coordinates
+      const users = await new Promise((resolve, reject) => {
+        db.all(
+          'SELECT DISTINCT latitude, longitude FROM users WHERE latitude IS NOT NULL AND longitude IS NOT NULL',
+          (err, rows) => {
+            if (err) reject(err);
+            else resolve(rows || []);
+          }
+        );
+      });
+
+      console.log(`📍 Found ${users.length} unique locations to save`);
+
+      // Save weather for each unique location
+      for (const user of users) {
+        if (user.latitude && user.longitude) {
+          await this.saveWeatherHistory(user.latitude, user.longitude);
+        }
+      }
+
+      console.log('✅ Daily weather history job completed');
+    } catch (error) {
+      console.error('❌ Error in daily history job:', error);
+    }
   }
 }
 

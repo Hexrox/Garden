@@ -17,7 +17,7 @@ const PHOTO_TAGS = [
   { emoji: '📸', label: 'Ogólne', value: 'ogólne' }
 ];
 
-const QuickPhotoModal = ({ isOpen, onClose, onSuccess }) => {
+const QuickPhotoModal = ({ isOpen, onClose, onSuccess, onDebug }) => {
   const [step, setStep] = useState(1);
   const [photo, setPhoto] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
@@ -31,16 +31,46 @@ const QuickPhotoModal = ({ isOpen, onClose, onSuccess }) => {
   const [processingPhoto, setProcessingPhoto] = useState(false);
   const [error, setError] = useState('');
 
+  // Track if component is mounted to prevent state updates after unmount
+  const isMountedRef = React.useRef(true);
+
+  // Cleanup on unmount
   useEffect(() => {
-    // LAZY LOADING: Load plots in background while user selects photo
-    // Don't block modal opening!
-    if (isOpen && plots.length === 0) {
-      // Use setTimeout to not block modal render
-      setTimeout(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+      console.log('[QuickPhoto] Component unmounting');
+    };
+  }, []);
+
+  // Reset state when modal closes
+  useEffect(() => {
+    console.log('[QuickPhoto] isOpen changed:', isOpen);
+    if (onDebug) onDebug(`QP isOpen: ${isOpen}`);
+
+    if (isOpen) {
+      // Modal opened - load plots if needed
+      if (plots.length === 0) {
+        console.log('[QuickPhoto] Loading plots...');
+        if (onDebug) onDebug('QP loading plots');
         loadPlots();
-      }, 50);
+      }
+    } else {
+      // Modal closed - RESET ALL STATE
+      console.log('[QuickPhoto] Modal closed - resetting state');
+      if (onDebug) onDebug('QP resetting');
+      setStep(1);
+      setPhoto(null);
+      setPhotoPreview(null);
+      setSelectedTag(null);
+      setSelectedPlot('');
+      setSelectedBed('');
+      setCaption('');
+      setError('');
+      setUploading(false);
+      setProcessingPhoto(false);
     }
-  }, [isOpen, plots.length]);
+  }, [isOpen]); // ONLY isOpen - removed plots.length and onDebug
 
   useEffect(() => {
     if (selectedPlot) {
@@ -70,12 +100,23 @@ const QuickPhotoModal = ({ isOpen, onClose, onSuccess }) => {
   };
 
   const handlePhotoSelect = (e) => {
+    console.log('[QuickPhoto] handlePhotoSelect called');
+    if (onDebug) onDebug('QP file select');
     const file = e.target.files[0];
-    if (!file) return;
+    if (!file) {
+      console.log('[QuickPhoto] No file selected');
+      if (onDebug) onDebug('QP no file');
+      return;
+    }
+
+    console.log('[QuickPhoto] File selected:', file.name, file.size, 'bytes');
+    if (onDebug) onDebug(`QP file: ${file.name}`);
 
     // Validate file size (5MB limit)
     const maxSize = 5 * 1024 * 1024;
     if (file.size > maxSize) {
+      console.log('[QuickPhoto] File too large');
+      if (onDebug) onDebug('QP file too large');
       setError('Plik jest za duży. Maksymalny rozmiar: 5MB');
       return;
     }
@@ -83,22 +124,40 @@ const QuickPhotoModal = ({ isOpen, onClose, onSuccess }) => {
     // Validate file type
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
     if (!allowedTypes.includes(file.type)) {
+      console.log('[QuickPhoto] Invalid file type:', file.type);
+      if (onDebug) onDebug(`QP invalid type: ${file.type}`);
       setError('Nieprawidłowy typ pliku. Dozwolone: JPG, PNG, GIF, WebP');
       return;
     }
 
+    console.log('[QuickPhoto] File validation passed, reading...');
+    if (onDebug) onDebug('QP reading file');
     setError('');
     setProcessingPhoto(true);
     setPhoto(file);
 
     const reader = new FileReader();
     reader.onload = (e) => {
+      console.log('[QuickPhoto] File loaded successfully');
+      // CRITICAL: Check if component is still mounted before updating state
+      if (!isMountedRef.current) {
+        console.log('[QuickPhoto] Component unmounted, ignoring FileReader result');
+        return;
+      }
+      if (onDebug) onDebug('QP file loaded -> step 2');
       setPhotoPreview(e.target.result);
       setProcessingPhoto(false);
       // AUTO-ADVANCE to step 2 after photo is selected
       setStep(2);
     };
     reader.onerror = () => {
+      console.log('[QuickPhoto] File read error');
+      // CRITICAL: Check if component is still mounted
+      if (!isMountedRef.current) {
+        console.log('[QuickPhoto] Component unmounted, ignoring error');
+        return;
+      }
+      if (onDebug) onDebug('QP read error');
       setError('Błąd podczas wczytywania zdjęcia');
       setProcessingPhoto(false);
     };
@@ -158,7 +217,7 @@ const QuickPhotoModal = ({ isOpen, onClose, onSuccess }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4">
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between bg-gradient-to-r from-green-500 to-emerald-500">

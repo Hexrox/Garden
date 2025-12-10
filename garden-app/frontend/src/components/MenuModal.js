@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import {
   X,
@@ -13,7 +13,6 @@ import {
   Image,
   Camera
 } from 'lucide-react';
-import QuickPhotoModal from './modals/QuickPhotoModal';
 
 /**
  * Komponent MenuModal
@@ -21,15 +20,13 @@ import QuickPhotoModal from './modals/QuickPhotoModal';
  * Eleganckie menu modalne zapewniające dostęp do wszystkich funkcji aplikacji
  * Układ siatki, zoptymalizowany na urządzenia mobilne, przejrzyste kategorie
  */
-const MenuModal = ({ isOpen, onClose }) => {
-  const [showQuickPhoto, setShowQuickPhoto] = useState(false);
-
+const MenuModal = ({ isOpen, onClose, onQuickPhotoClick }) => {
   if (!isOpen) return null;
 
   const menuItems = [
     {
       id: 'quick-photo',
-      action: () => setShowQuickPhoto(true),
+      action: onQuickPhotoClick,
       icon: Camera,
       label: 'Dodaj zdjęcie',
       description: 'Szybkie foto',
@@ -140,7 +137,13 @@ const MenuModal = ({ isOpen, onClose }) => {
               const Component = item.path ? Link : 'button';
               const props = item.path
                 ? { to: item.path, onClick: onClose }
-                : { onClick: () => { item.action(); onClose(); }, type: 'button' };
+                : {
+                    onClick: (e) => {
+                      e.stopPropagation(); // CRITICAL: Stop event from bubbling to background
+                      item.action();
+                    },
+                    type: 'button'
+                  };
 
               return (
                 <Component
@@ -188,16 +191,6 @@ const MenuModal = ({ isOpen, onClose }) => {
           </div>
         </div>
       </div>
-
-      {/* Quick Photo Modal */}
-      <QuickPhotoModal
-        isOpen={showQuickPhoto}
-        onClose={() => setShowQuickPhoto(false)}
-        onSuccess={() => {
-          // Możemy dodać toast notification tutaj
-          console.log('Zdjęcie dodane pomyślnie!');
-        }}
-      />
     </div>
   );
 };
