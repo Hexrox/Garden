@@ -30,11 +30,11 @@ const Export = () => {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-gray-900">Eksport danych</h1>
+      <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Eksport danych</h1>
 
-      <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-xl font-semibold mb-4">Poletka</h2>
-        <p className="text-gray-600 mb-4">Eksportuj wszystkie poletka do pliku</p>
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">Poletka</h2>
+        <p className="text-gray-600 dark:text-gray-400 mb-4">Eksportuj wszystkie poletka do pliku</p>
         <div className="flex space-x-4">
           <button
             onClick={() => handleExport('plots/json', 'plots.json')}
@@ -53,9 +53,9 @@ const Export = () => {
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-xl font-semibold mb-4">Historia oprysków</h2>
-        <p className="text-gray-600 mb-4">Eksportuj całą historię oprysków</p>
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">Historia oprysków</h2>
+        <p className="text-gray-600 dark:text-gray-400 mb-4">Eksportuj całą historię oprysków</p>
         <div className="flex space-x-4">
           <button
             onClick={() => handleExport('sprays/json', 'spray_history.json')}
@@ -74,9 +74,9 @@ const Export = () => {
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-xl font-semibold mb-4">Kompletny eksport</h2>
-        <p className="text-gray-600 mb-4">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">Kompletny eksport</h2>
+        <p className="text-gray-600 dark:text-gray-400 mb-4">
           Eksportuj wszystkie dane (poletka, grządki, opryski) do jednego pliku JSON
         </p>
         <button

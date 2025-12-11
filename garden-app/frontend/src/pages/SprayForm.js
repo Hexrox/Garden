@@ -147,7 +147,7 @@ const SprayForm = () => {
   if (loadingBed) {
     return (
       <div className="flex justify-center items-center py-12">
-        <div className="text-gray-500">Ładowanie...</div>
+        <div className="text-gray-500 dark:text-gray-400">Ładowanie...</div>
       </div>
     );
   }
@@ -155,7 +155,7 @@ const SprayForm = () => {
   if (!bedInfo) {
     return (
       <div className="text-center py-12">
-        <p className="text-red-600">Nie znaleziono grządki</p>
+        <p className="text-red-600 dark:text-red-400">Nie znaleziono grządki</p>
       </div>
     );
   }
@@ -163,23 +163,23 @@ const SprayForm = () => {
   return (
     <div className="max-w-2xl mx-auto">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Dodaj oprysk</h1>
-        <p className="text-gray-600 mt-1">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Dodaj oprysk</h1>
+        <p className="text-gray-600 dark:text-gray-400 mt-1">
           Rząd {bedInfo.row_number} - {bedInfo.plant_name || 'Bez nazwy'}
         </p>
       </div>
 
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
         <form onSubmit={handleSubmit} className="space-y-6">
           {error && (
-            <div className="bg-red-50 border border-red-400 text-red-700 px-4 py-3 rounded">
+            <div className="bg-red-50 dark:bg-red-900/30 border border-red-400 dark:border-red-800 text-red-700 dark:text-red-200 px-4 py-3 rounded">
               {error}
             </div>
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="md:col-span-2">
-              <label htmlFor="spray_name" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="spray_name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Nazwa środka ochrony roślin *
               </label>
               <input
@@ -188,7 +188,7 @@ const SprayForm = () => {
                 name="spray_name"
                 required
                 maxLength={100}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
                 placeholder="np. Topsin M 500 SC"
                 value={formData.spray_name}
                 onChange={handleInputChange}
@@ -196,13 +196,13 @@ const SprayForm = () => {
             </div>
 
             <div>
-              <label htmlFor="spray_type" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="spray_type" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Rodzaj środka
               </label>
               <select
                 id="spray_type"
                 name="spray_type"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
                 value={formData.spray_type}
                 onChange={handleInputChange}
               >
@@ -219,7 +219,7 @@ const SprayForm = () => {
             </div>
 
             <div>
-              <label htmlFor="spray_date" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="spray_date" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Data oprysku *
               </label>
               <input
@@ -228,14 +228,14 @@ const SprayForm = () => {
                 name="spray_date"
                 required
                 max={new Date().toISOString().split('T')[0]}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
                 value={formData.spray_date}
                 onChange={handleInputChange}
               />
             </div>
 
             <div>
-              <label htmlFor="withdrawal_period" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="withdrawal_period" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Okres karencji (dni) *
               </label>
               <input
@@ -245,24 +245,24 @@ const SprayForm = () => {
                 required
                 min="0"
                 max="365"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
                 placeholder="0"
                 value={formData.withdrawal_period}
                 onChange={handleInputChange}
               />
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                 Liczba dni przed bezpiecznym zbiorem
               </p>
             </div>
 
             {safeHarvestDate && (
               <div className="md:col-span-2">
-                <div className="bg-green-50 border border-green-200 rounded-md p-4">
-                  <p className="text-sm font-medium text-green-800">
+                <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md p-4">
+                  <p className="text-sm font-medium text-green-800 dark:text-green-200">
                     📅 Bezpieczny zbiór od: <span className="font-bold">{safeHarvestDate}</span>
                   </p>
                   {parseInt(formData.withdrawal_period) > 0 && (
-                    <p className="text-xs text-green-700 mt-1">
+                    <p className="text-xs text-green-700 dark:text-green-300 mt-1">
                       System utworzy przypomnienie 3 dni przed końcem karencji
                     </p>
                   )}
@@ -271,7 +271,7 @@ const SprayForm = () => {
             )}
 
             <div>
-              <label htmlFor="dosage" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="dosage" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Dawkowanie
               </label>
               <input
@@ -279,7 +279,7 @@ const SprayForm = () => {
                 id="dosage"
                 name="dosage"
                 maxLength={100}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
                 placeholder="np. 2ml/1L wody"
                 value={formData.dosage}
                 onChange={handleInputChange}
@@ -287,7 +287,7 @@ const SprayForm = () => {
             </div>
 
             <div>
-              <label htmlFor="weather_conditions" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="weather_conditions" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Warunki pogodowe
               </label>
               <input
@@ -295,7 +295,7 @@ const SprayForm = () => {
                 id="weather_conditions"
                 name="weather_conditions"
                 maxLength={100}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
                 placeholder="np. Słonecznie, 20°C, bez wiatru"
                 value={formData.weather_conditions}
                 onChange={handleInputChange}
@@ -303,7 +303,7 @@ const SprayForm = () => {
             </div>
 
             <div className="md:col-span-2">
-              <label htmlFor="note" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="note" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Dodatkowe notatki
               </label>
               <textarea
@@ -311,7 +311,7 @@ const SprayForm = () => {
                 name="note"
                 rows="3"
                 maxLength={500}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
                 placeholder="Powód oprysku, obserwacje, etc..."
                 value={formData.note}
                 onChange={handleInputChange}
@@ -319,18 +319,18 @@ const SprayForm = () => {
             </div>
           </div>
 
-          <div className="flex space-x-4 pt-4 border-t">
+          <div className="flex space-x-4 pt-4 border-t border-gray-200 dark:border-gray-700">
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Zapisywanie...' : 'Dodaj oprysk'}
             </button>
             <button
               type="button"
               onClick={() => navigate(`/plots/${bedInfo.plot_id}`)}
-              className="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+              className="px-6 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
             >
               Anuluj
             </button>

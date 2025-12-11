@@ -30,8 +30,8 @@ class ErrorBoundary extends React.Component {
             <div className="flex items-center mb-4">
               <div className="text-4xl mr-4">⚠️</div>
               <div>
-                <h1 className="text-2xl font-bold text-red-600">Coś poszło nie tak</h1>
-                <p className="text-gray-600">Przepraszamy za niedogodności</p>
+                <h1 className="text-2xl font-bold text-red-600 dark:text-red-400">Coś poszło nie tak</h1>
+                <p className="text-gray-600 dark:text-gray-400">Przepraszamy za niedogodności</p>
               </div>
             </div>
 
@@ -43,15 +43,15 @@ class ErrorBoundary extends React.Component {
 
             {process.env.NODE_ENV === 'development' && this.state.error && (
               <details className="mb-4">
-                <summary className="cursor-pointer text-sm font-medium text-gray-700 hover:text-gray-900">
+                <summary className="cursor-pointer text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">
                   Szczegóły błędu (tylko w trybie development)
                 </summary>
-                <div className="mt-2 p-4 bg-gray-50 rounded text-xs font-mono overflow-auto">
-                  <p className="text-red-600 font-bold mb-2">
+                <div className="mt-2 p-4 bg-gray-50 dark:bg-gray-700 rounded text-xs font-mono overflow-auto">
+                  <p className="text-red-600 dark:text-red-400 font-bold mb-2">
                     {this.state.error.toString()}
                   </p>
                   {this.state.errorInfo && (
-                    <pre className="text-gray-700 whitespace-pre-wrap">
+                    <pre className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
                       {this.state.errorInfo.componentStack}
                     </pre>
                   )}
