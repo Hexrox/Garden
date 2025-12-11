@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { X, ChevronLeft, ChevronRight, Trash2, Edit2, Download } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Trash2, Edit2, Download, Edit } from 'lucide-react';
+import EditPhotoModal from '../modals/EditPhotoModal';
 
-const PhotoLightbox = ({ photo, photos, onClose, onNavigate, onDelete, onUpdateCaption }) => {
+const PhotoLightbox = ({ photo, photos, onClose, onNavigate, onDelete, onUpdateCaption, onPhotoUpdated }) => {
   const [isEditingCaption, setIsEditingCaption] = useState(false);
   const [caption, setCaption] = useState(photo.caption || '');
+  const [showEditModal, setShowEditModal] = useState(false);
 
   useEffect(() => {
     const handleKeyPress = (e) => {
@@ -168,6 +170,14 @@ const PhotoLightbox = ({ photo, photos, onClose, onNavigate, onDelete, onUpdateC
           {/* Actions */}
           <div className="space-y-2">
             <button
+              onClick={() => setShowEditModal(true)}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
+            >
+              <Edit size={18} />
+              Edytuj zdjęcie
+            </button>
+
+            <button
               onClick={handleDownload}
               className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
             >
@@ -189,6 +199,19 @@ const PhotoLightbox = ({ photo, photos, onClose, onNavigate, onDelete, onUpdateC
           </div>
         </div>
       </div>
+
+      {/* Edit Photo Modal */}
+      <EditPhotoModal
+        photo={photo}
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        onSuccess={() => {
+          setShowEditModal(false);
+          if (onPhotoUpdated) {
+            onPhotoUpdated();
+          }
+        }}
+      />
     </div>
   );
 };

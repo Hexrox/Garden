@@ -4,6 +4,7 @@ import axios from '../config/axios';
 import GalleryGrid from '../components/gallery/GalleryGrid';
 import GalleryFilters from '../components/gallery/GalleryFilters';
 import PhotoLightbox from '../components/gallery/PhotoLightbox';
+import QuickPhotoModal from '../components/modals/QuickPhotoModal';
 
 const Gallery = () => {
   const [photos, setPhotos] = useState([]);
@@ -11,6 +12,7 @@ const Gallery = () => {
   const [loading, setLoading] = useState(true);
   const [selectedPhoto, setSelectedPhoto] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
+  const [showQuickPhoto, setShowQuickPhoto] = useState(false);
   const [filters, setFilters] = useState({
     plant: '',
     plot: '',
@@ -142,10 +144,7 @@ const Gallery = () => {
 
         <div className="flex gap-2">
           <button
-            onClick={() => {
-              // TODO: Open upload modal
-              alert('Funkcja dodawania zdjęć w przygotowaniu');
-            }}
+            onClick={() => setShowQuickPhoto(true)}
             className="px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white transition-colors"
           >
             <Upload size={18} />
@@ -276,7 +275,6 @@ const Gallery = () => {
         <GalleryGrid
           photos={photos}
           onPhotoClick={handlePhotoClick}
-          onDeletePhoto={handleDeletePhoto}
         />
       ) : (
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-12 text-center">
@@ -317,8 +315,23 @@ const Gallery = () => {
           }}
           onDelete={handleDeletePhoto}
           onUpdateCaption={handleUpdateCaption}
+          onPhotoUpdated={() => {
+            loadGallery();
+            loadStats();
+          }}
         />
       )}
+
+      {/* Quick Photo Modal */}
+      <QuickPhotoModal
+        isOpen={showQuickPhoto}
+        onClose={() => setShowQuickPhoto(false)}
+        onSuccess={() => {
+          setShowQuickPhoto(false);
+          loadGallery();
+          loadStats();
+        }}
+      />
     </div>
   );
 };

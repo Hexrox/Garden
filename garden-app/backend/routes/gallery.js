@@ -134,25 +134,90 @@ router.get('/stats', auth, (req, res) => {
   });
 });
 
-// Update photo caption
+// Update photo metadata (caption, bed, plot, tag, date)
 router.put('/:photoId', auth, (req, res) => {
-  const { caption } = req.body;
+  const { caption, bed_id, tag, taken_date } = req.body;
+  const photoId = req.params.photoId;
 
-  db.run(
-    `UPDATE plant_photos
-     SET caption = ?
-     WHERE id = ? AND user_id = ?`,
-    [caption, req.params.photoId, req.user.id],
-    function (err) {
-      if (err) {
-        return res.status(500).json({ error: 'Błąd aktualizacji' });
+  // If bed_id is provided, fetch bed info to update related fields
+  if (bed_id) {
+    db.get(
+      `SELECT b.*, p.name as plot_name, p.user_id
+       FROM beds b
+       JOIN plots p ON b.plot_id = p.id
+       WHERE b.id = ? AND p.user_id = ?`,
+      [bed_id, req.user.id],
+      (err, bed) => {
+        if (err) {
+          return res.status(500).json({ error: 'Błąd serwera' });
+        }
+        if (!bed) {
+          return res.status(404).json({ error: 'Grządka nie znaleziona' });
+        }
+
+        // Update with bed context
+        db.run(
+          `UPDATE plant_photos
+           SET caption = ?,
+               bed_id = ?,
+               bed_row_number = ?,
+               bed_plant_name = ?,
+               bed_plant_variety = ?,
+               plot_name = ?,
+               tag = ?,
+               taken_date = ?
+           WHERE id = ? AND user_id = ?`,
+          [
+            caption,
+            bed_id,
+            bed.row_number,
+            bed.plant_name,
+            bed.plant_variety,
+            bed.plot_name,
+            tag || null,
+            taken_date || null,
+            photoId,
+            req.user.id
+          ],
+          function (err) {
+            if (err) {
+              console.error('Update photo error:', err);
+              return res.status(500).json({ error: 'Błąd aktualizacji' });
+            }
+            if (this.changes === 0) {
+              return res.status(404).json({ error: 'Zdjęcie nie znalezione' });
+            }
+            res.json({ message: 'Zdjęcie zaktualizowane' });
+          }
+        );
       }
-      if (this.changes === 0) {
-        return res.status(404).json({ error: 'Zdjęcie nie znalezione' });
+    );
+  } else {
+    // Update without bed context (general photo or remove bed assignment)
+    db.run(
+      `UPDATE plant_photos
+       SET caption = ?,
+           bed_id = NULL,
+           bed_row_number = NULL,
+           bed_plant_name = NULL,
+           bed_plant_variety = NULL,
+           plot_name = NULL,
+           tag = ?,
+           taken_date = ?
+       WHERE id = ? AND user_id = ?`,
+      [caption, tag || null, taken_date || null, photoId, req.user.id],
+      function (err) {
+        if (err) {
+          console.error('Update photo error:', err);
+          return res.status(500).json({ error: 'Błąd aktualizacji' });
+        }
+        if (this.changes === 0) {
+          return res.status(404).json({ error: 'Zdjęcie nie znalezione' });
+        }
+        res.json({ message: 'Zdjęcie zaktualizowane' });
       }
-      res.json({ message: 'Opis zaktualizowany' });
-    }
-  );
+    );
+  }
 });
 
 // Delete photo

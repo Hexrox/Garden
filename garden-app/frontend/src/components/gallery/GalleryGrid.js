@@ -1,7 +1,7 @@
 import React from 'react';
-import { Trash2, AlertCircle } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 
-const GalleryGrid = ({ photos, onPhotoClick, onDeletePhoto }) => {
+const GalleryGrid = ({ photos, onPhotoClick }) => {
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -45,18 +45,11 @@ const GalleryGrid = ({ photos, onPhotoClick, onDeletePhoto }) => {
               </div>
             )}
 
-            {/* Hover overlay */}
-            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-200 flex items-center justify-center opacity-0 group-hover:opacity-100">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDeletePhoto(photo.id);
-                }}
-                className="p-2 bg-red-600 hover:bg-red-700 rounded-lg text-white transition-colors"
-                title="Usuń zdjęcie"
-              >
-                <Trash2 size={18} />
-              </button>
+            {/* Hover overlay - just indicates clickable */}
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-200 flex items-center justify-center opacity-0 group-hover:opacity-100">
+              <div className="text-white text-sm font-medium">
+                🔍 Kliknij aby powiększyć
+              </div>
             </div>
           </div>
 
