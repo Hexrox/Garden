@@ -24,7 +24,8 @@ router.get('/', auth, (req, res) => {
       p.*,
       CASE
         WHEN p.bed_id IS NOT NULL THEN 'active'
-        ELSE 'deleted'
+        WHEN p.bed_id IS NULL AND (p.bed_plant_name IS NOT NULL OR p.bed_row_number IS NOT NULL) THEN 'deleted'
+        ELSE 'general'
       END as status
     FROM plant_photos p
     WHERE p.user_id = ?
@@ -58,8 +59,9 @@ router.get('/', auth, (req, res) => {
     params.push(tag);
   }
 
+  // Filter deleted photos (from removed beds) but keep general photos
   if (show_deleted !== 'true') {
-    query += ` AND p.bed_id IS NOT NULL`; // Only active beds
+    query += ` AND NOT (p.bed_id IS NULL AND (p.bed_plant_name IS NOT NULL OR p.bed_row_number IS NOT NULL))`;
   }
 
   query += ` ORDER BY p.created_at DESC LIMIT ? OFFSET ?`;
