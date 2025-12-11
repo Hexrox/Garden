@@ -8,12 +8,6 @@ const BottomNav = () => {
   const location = useLocation();
   // FIXED: Use single state instead of two booleans to avoid race conditions
   const [activeModal, setActiveModal] = useState(null); // null | 'menu' | 'quickPhoto'
-  const [debugLog, setDebugLog] = useState([]);
-
-  const addDebugLog = (message) => {
-    console.log(message);
-    setDebugLog(prev => [...prev.slice(-4), `${new Date().toLocaleTimeString()}: ${message}`]);
-  };
 
   const navItems = [
     {
@@ -105,40 +99,18 @@ const BottomNav = () => {
         </div>
       </nav>
 
-      {/* Debug Log Panel */}
-      {debugLog.length > 0 && (
-        <div className="fixed top-0 left-0 right-0 bg-black/90 text-white p-2 text-xs z-[999] max-h-32 overflow-y-auto">
-          {debugLog.map((log, i) => (
-            <div key={i} className="border-b border-gray-700 py-1">{log}</div>
-          ))}
-        </div>
-      )}
-
       {/* Menu Modal */}
       <MenuModal
         isOpen={activeModal === 'menu'}
-        onClose={() => {
-          addDebugLog('MenuModal onClose');
-          setActiveModal(null);
-        }}
-        onQuickPhotoClick={() => {
-          addDebugLog('QuickPhoto clicked');
-          setActiveModal('quickPhoto');
-        }}
+        onClose={() => setActiveModal(null)}
+        onQuickPhotoClick={() => setActiveModal('quickPhoto')}
       />
 
       {/* Quick Photo Modal */}
       <QuickPhotoModal
         isOpen={activeModal === 'quickPhoto'}
-        onClose={() => {
-          addDebugLog('QuickPhoto onClose');
-          setActiveModal(null);
-        }}
-        onSuccess={() => {
-          addDebugLog('QuickPhoto SUCCESS!');
-          setActiveModal(null);
-        }}
-        onDebug={addDebugLog}
+        onClose={() => setActiveModal(null)}
+        onSuccess={() => setActiveModal(null)}
       />
     </>
   );

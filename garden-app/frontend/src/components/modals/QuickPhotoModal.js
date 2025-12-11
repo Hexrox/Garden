@@ -17,7 +17,7 @@ const PHOTO_TAGS = [
   { emoji: '📸', label: 'Ogólne', value: 'ogólne' }
 ];
 
-const QuickPhotoModal = ({ isOpen, onClose, onSuccess, onDebug }) => {
+const QuickPhotoModal = ({ isOpen, onClose, onSuccess }) => {
   const [step, setStep] = useState(1);
   const [photo, setPhoto] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
@@ -39,26 +39,18 @@ const QuickPhotoModal = ({ isOpen, onClose, onSuccess, onDebug }) => {
     isMountedRef.current = true;
     return () => {
       isMountedRef.current = false;
-      console.log('[QuickPhoto] Component unmounting');
     };
   }, []);
 
   // Reset state when modal closes
   useEffect(() => {
-    console.log('[QuickPhoto] isOpen changed:', isOpen);
-    if (onDebug) onDebug(`QP isOpen: ${isOpen}`);
-
     if (isOpen) {
       // Modal opened - load plots if needed
       if (plots.length === 0) {
-        console.log('[QuickPhoto] Loading plots...');
-        if (onDebug) onDebug('QP loading plots');
         loadPlots();
       }
     } else {
       // Modal closed - RESET ALL STATE
-      console.log('[QuickPhoto] Modal closed - resetting state');
-      if (onDebug) onDebug('QP resetting');
       setStep(1);
       setPhoto(null);
       setPhotoPreview(null);
@@ -70,7 +62,7 @@ const QuickPhotoModal = ({ isOpen, onClose, onSuccess, onDebug }) => {
       setUploading(false);
       setProcessingPhoto(false);
     }
-  }, [isOpen]); // ONLY isOpen - removed plots.length and onDebug
+  }, [isOpen]);
 
   useEffect(() => {
     if (selectedPlot) {
@@ -100,23 +92,12 @@ const QuickPhotoModal = ({ isOpen, onClose, onSuccess, onDebug }) => {
   };
 
   const handlePhotoSelect = (e) => {
-    console.log('[QuickPhoto] handlePhotoSelect called');
-    if (onDebug) onDebug('QP file select');
     const file = e.target.files[0];
-    if (!file) {
-      console.log('[QuickPhoto] No file selected');
-      if (onDebug) onDebug('QP no file');
-      return;
-    }
-
-    console.log('[QuickPhoto] File selected:', file.name, file.size, 'bytes');
-    if (onDebug) onDebug(`QP file: ${file.name}`);
+    if (!file) return;
 
     // Validate file size (5MB limit)
     const maxSize = 5 * 1024 * 1024;
     if (file.size > maxSize) {
-      console.log('[QuickPhoto] File too large');
-      if (onDebug) onDebug('QP file too large');
       setError('Plik jest za duży. Maksymalny rozmiar: 5MB');
       return;
     }
@@ -124,40 +105,26 @@ const QuickPhotoModal = ({ isOpen, onClose, onSuccess, onDebug }) => {
     // Validate file type
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
     if (!allowedTypes.includes(file.type)) {
-      console.log('[QuickPhoto] Invalid file type:', file.type);
-      if (onDebug) onDebug(`QP invalid type: ${file.type}`);
       setError('Nieprawidłowy typ pliku. Dozwolone: JPG, PNG, GIF, WebP');
       return;
     }
 
-    console.log('[QuickPhoto] File validation passed, reading...');
-    if (onDebug) onDebug('QP reading file');
     setError('');
     setProcessingPhoto(true);
     setPhoto(file);
 
     const reader = new FileReader();
     reader.onload = (e) => {
-      console.log('[QuickPhoto] File loaded successfully');
       // CRITICAL: Check if component is still mounted before updating state
-      if (!isMountedRef.current) {
-        console.log('[QuickPhoto] Component unmounted, ignoring FileReader result');
-        return;
-      }
-      if (onDebug) onDebug('QP file loaded -> step 2');
+      if (!isMountedRef.current) return;
       setPhotoPreview(e.target.result);
       setProcessingPhoto(false);
       // AUTO-ADVANCE to step 2 after photo is selected
       setStep(2);
     };
     reader.onerror = () => {
-      console.log('[QuickPhoto] File read error');
       // CRITICAL: Check if component is still mounted
-      if (!isMountedRef.current) {
-        console.log('[QuickPhoto] Component unmounted, ignoring error');
-        return;
-      }
-      if (onDebug) onDebug('QP read error');
+      if (!isMountedRef.current) return;
       setError('Błąd podczas wczytywania zdjęcia');
       setProcessingPhoto(false);
     };

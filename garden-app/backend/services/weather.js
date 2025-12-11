@@ -956,9 +956,10 @@ class WeatherService {
       return new Promise((resolve, reject) => {
         db.run(
           `INSERT OR REPLACE INTO weather_history
-           (date, temperature, temp_min, temp_max, humidity, rain, wind_speed, description)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+           (user_id, date, temp_avg, temp_min, temp_max, humidity_avg, total_rain, wind_speed_avg, description)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
+            1, // Default user_id for now
             today,
             weather.temperature,
             todayForecast.tempMin || weather.temperature - 2,
@@ -1013,7 +1014,7 @@ class WeatherService {
   async getHistoricalRain(days = 14) {
     return new Promise((resolve, reject) => {
       db.get(
-        `SELECT COALESCE(SUM(rain), 0) as total_rain
+        `SELECT COALESCE(SUM(total_rain), 0) as total_rain
          FROM weather_history
          WHERE date >= DATE('now', '-' || ? || ' days')`,
         [days],
@@ -1035,7 +1036,7 @@ class WeatherService {
   async getHistoricalHumidity(days = 14) {
     return new Promise((resolve, reject) => {
       db.get(
-        `SELECT COALESCE(AVG(humidity), 0) as avg_humidity
+        `SELECT COALESCE(AVG(humidity_avg), 0) as avg_humidity
          FROM weather_history
          WHERE date >= DATE('now', '-' || ? || ' days')`,
         [days],
