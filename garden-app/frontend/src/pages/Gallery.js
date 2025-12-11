@@ -142,6 +142,17 @@ const Gallery = () => {
 
         <div className="flex gap-2">
           <button
+            onClick={() => {
+              // TODO: Open upload modal
+              alert('Funkcja dodawania zdjęć w przygotowaniu');
+            }}
+            className="px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white transition-colors"
+          >
+            <Upload size={18} />
+            Dodaj zdjęcie
+          </button>
+
+          <button
             onClick={() => setShowFilters(!showFilters)}
             className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors ${
               showFilters

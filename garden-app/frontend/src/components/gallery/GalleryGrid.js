@@ -18,7 +18,9 @@ const GalleryGrid = ({ photos, onPhotoClick, onDeletePhoto }) => {
 
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-      {photos.map((photo) => (
+      {photos.map((photo) => {
+        const imgUrl = `${process.env.REACT_APP_API_URL || ''}/${photo.photo_path}`;
+        return (
         <div
           key={photo.id}
           className="group relative bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow hover:shadow-lg transition-all duration-200 cursor-pointer"
@@ -27,7 +29,7 @@ const GalleryGrid = ({ photos, onPhotoClick, onDeletePhoto }) => {
           {/* Image */}
           <div className="aspect-square bg-gray-100 dark:bg-gray-700 relative overflow-hidden">
             <img
-              src={`${process.env.REACT_APP_API_URL || ''}/${photo.photo_path}`}
+              src={imgUrl}
               alt={photo.caption || photo.bed_plant_name || 'Zdjęcie'}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
               loading="lazy"
@@ -86,7 +88,8 @@ const GalleryGrid = ({ photos, onPhotoClick, onDeletePhoto }) => {
             </p>
           </div>
         </div>
-      ))}
+        );
+      })}
     </div>
   );
 };
