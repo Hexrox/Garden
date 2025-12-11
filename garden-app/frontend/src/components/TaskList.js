@@ -276,8 +276,8 @@ const TaskList = () => {
                     <div className="flex items-center space-x-2 mb-1">
                       <span className="text-lg">{getTaskIcon(task.task_type)}</span>
                       <h4
-                        className={`font-medium text-gray-900 ${
-                          task.completed ? 'line-through text-gray-500' : ''
+                        className={`font-medium text-gray-900 dark:text-white ${
+                          task.completed ? 'line-through text-gray-500 dark:text-gray-400' : ''
                         }`}
                       >
                         {task.description}
