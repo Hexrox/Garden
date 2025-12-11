@@ -25,6 +25,17 @@ const Gallery = () => {
     loadStats();
   }, [filters]);
 
+  // Listen for new photos added via QuickPhoto modal
+  useEffect(() => {
+    const handlePhotoAdded = () => {
+      loadGallery();
+      loadStats();
+    };
+
+    window.addEventListener('photoAdded', handlePhotoAdded);
+    return () => window.removeEventListener('photoAdded', handlePhotoAdded);
+  }, []);
+
   const loadGallery = async () => {
     try {
       setLoading(true);

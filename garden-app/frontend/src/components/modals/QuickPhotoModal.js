@@ -152,7 +152,9 @@ const QuickPhotoModal = ({ isOpen, onClose, onSuccess }) => {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 
-      // Success
+      // Success - notify other components that new photo was added
+      window.dispatchEvent(new CustomEvent('photoAdded'));
+
       if (onSuccess) onSuccess();
       handleClose();
     } catch (err) {
