@@ -209,4 +209,24 @@ router.get('/profile', auth, (req, res) => {
   );
 });
 
+// Complete onboarding
+router.put('/complete-onboarding', require('../middleware/auth'), (req, res) => {
+  db.run(
+    'UPDATE users SET onboarding_completed = 1, onboarding_step = 5 WHERE id = ?',
+    [req.user.id],
+    function(err) {
+      if (err) {
+        console.error('Error completing onboarding:', err);
+        return res.status(500).json({ error: 'Błąd podczas aktualizacji' });
+      }
+
+      if (this.changes === 0) {
+        return res.status(404).json({ error: 'Użytkownik nie znaleziony' });
+      }
+
+      res.json({ message: 'Onboarding ukończony pomyślnie' });
+    }
+  );
+});
+
 module.exports = router;

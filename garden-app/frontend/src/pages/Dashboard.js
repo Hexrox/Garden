@@ -7,6 +7,8 @@ import WeatherWidget from '../components/WeatherWidget';
 import TaskList from '../components/TaskList';
 import UpcomingHarvests from '../components/UpcomingHarvests';
 import SuccessionWidget from '../components/SuccessionWidget';
+import OnboardingWizard from '../components/onboarding/OnboardingWizard';
+import WelcomeCard from '../components/onboarding/WelcomeCard';
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -19,10 +21,64 @@ const Dashboard = () => {
   const [activeSprays, setActiveSprays] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Onboarding states
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showWelcomeCard, setShowWelcomeCard] = useState(false);
+  const [onboardingCompleted, setOnboardingCompleted] = useState(false);
+
   useEffect(() => {
     loadDashboardData();
+    checkOnboardingStatus();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const checkOnboardingStatus = async () => {
+    try {
+      const response = await axios.get('/api/auth/profile');
+      const completed = response.data.onboarding_completed === 1;
+      setOnboardingCompleted(completed);
+
+      // Show onboarding wizard if not completed
+      if (!completed) {
+        setShowOnboarding(true);
+      } else {
+        // Show welcome card if completed (it auto-hides when all tasks done)
+        const dismissed = localStorage.getItem('welcomeCardDismissed');
+        setShowWelcomeCard(!dismissed);
+      }
+    } catch (error) {
+      console.error('Error checking onboarding status:', error);
+    }
+  };
+
+  const handleOnboardingComplete = async () => {
+    try {
+      await axios.put('/api/auth/complete-onboarding');
+      setShowOnboarding(false);
+      setOnboardingCompleted(true);
+      setShowWelcomeCard(true);
+    } catch (error) {
+      console.error('Error completing onboarding:', error);
+      // Still hide wizard even on error
+      setShowOnboarding(false);
+      setShowWelcomeCard(true);
+    }
+  };
+
+  const handleOnboardingSkip = () => {
+    setShowOnboarding(false);
+    setShowWelcomeCard(true);
+  };
+
+  const handleWelcomeCardDismiss = () => {
+    localStorage.setItem('welcomeCardDismissed', 'true');
+    setShowWelcomeCard(false);
+  };
+
+  const handleShowTour = () => {
+    setShowWelcomeCard(false);
+    setShowOnboarding(true);
+  };
 
   const loadDashboardData = async () => {
     try {
@@ -79,6 +135,15 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-4 md:space-y-6">
+      {/* Onboarding Wizard */}
+      {showOnboarding && (
+        <OnboardingWizard
+          isOpen={showOnboarding}
+          onComplete={handleOnboardingComplete}
+          onSkip={handleOnboardingSkip}
+        />
+      )}
+
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
@@ -94,6 +159,14 @@ const Dashboard = () => {
           <span className="hidden sm:inline">Kalendarz Ogrodnika</span>
         </Link>
       </div>
+
+      {/* Welcome Card */}
+      {showWelcomeCard && onboardingCompleted && (
+        <WelcomeCard
+          onDismiss={handleWelcomeCardDismiss}
+          onShowTour={handleShowTour}
+        />
+      )}
 
       {/* Widgets Row - Weather, Tasks, Harvests */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
@@ -254,6 +327,45 @@ const Dashboard = () => {
         </div>
       </div>
 
+      {/* FAQ Section */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow transition-colors overflow-hidden">
+        <div className="px-6 py-4 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-b border-green-200 dark:border-green-800">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+            <span>❓</span> Często zadawane pytania
+          </h2>
+        </div>
+        <div className="divide-y divide-gray-200 dark:divide-gray-700">
+          <FAQItem
+            question="Od czego zacząć?"
+            answer="Rozpocznij od stworzenia swojego pierwszego poletka (ogród, balkon, działka). Następnie dodaj grządki z roślinami, które chcesz uprawiać. Aplikacja automatycznie obliczy daty zbiorów i zasugeruje najlepsze momenty na prace ogrodnicze!"
+          />
+          <FAQItem
+            question="Czym różni się poletko od grządki?"
+            answer="Poletko to fizyczna lokalizacja (np. 'Ogród za domem', 'Balkon od południa'). Grządka to konkretna roślina lub grupa roślin na tym poletku (np. Rząd 1: Pomidory, Rząd 2: Ogórki)."
+          />
+          <FAQItem
+            question="Jak działa kalendarz księżycowy?"
+            answer="Kalendarz księżycowy pokazuje najlepsze dni do siewu, sadzenia i zbioru według faz Księżyca. Dni korzystne oznaczone są zielonym kolorem, a niekorzystne - czerwonym. To sprawdzone metody ogrodnicze!"
+          />
+          <FAQItem
+            question="Co to są rośliny towarzyszące?"
+            answer="To system podpowiedzi pokazujący, które rośliny dobrze rosną obok siebie (np. pomidor + bazylia), a których należy unikać (np. pomidor + kapusta). Zobaczysz te podpowiedzi podczas edycji grządki!"
+          />
+          <FAQItem
+            question="Jak działają automatyczne zadania?"
+            answer="Aplikacja automatycznie generuje zadania na podstawie Twoich roślin: przypomnienia o zbiorze, podlewaniu, czy upływie karencji po oprysku. Wszystko w jednym miejscu!"
+          />
+          <FAQItem
+            question="Czy mogę śledzić postępy zdjęciami?"
+            answer="Tak! W galerii możesz dodawać zdjęcia swoich roślin, tagować je i śledzić jak rosną w czasie. To wspaniała pamiątka sezonu ogrodniczego!"
+          />
+          <FAQItem
+            question="Skąd aplikacja wie o pogodzie?"
+            answer="Po ustawieniu lokalizacji w profilu, aplikacja pobiera aktualne dane pogodowe i prognozy dla Twojej okolicy. Możesz zobaczyć temperaturę, opady i wiatr!"
+          />
+        </div>
+      </div>
+
       {/* Footer with Privacy Policy link */}
       <div className="mt-8 text-center pb-4">
         <a
@@ -265,6 +377,32 @@ const Dashboard = () => {
           📄 Polityka prywatności
         </a>
       </div>
+    </div>
+  );
+};
+
+// FAQ Item Component
+const FAQItem = ({ question, answer }) => {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <div className="px-6 py-4">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full flex items-start justify-between text-left"
+      >
+        <span className="text-sm font-medium text-gray-900 dark:text-white pr-4">
+          {question}
+        </span>
+        <span className={`flex-shrink-0 text-green-600 dark:text-green-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}>
+          ▼
+        </span>
+      </button>
+      {isOpen && (
+        <p className="mt-2 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+          {answer}
+        </p>
+      )}
     </div>
   );
 };
