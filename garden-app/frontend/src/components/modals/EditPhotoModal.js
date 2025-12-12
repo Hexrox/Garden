@@ -111,13 +111,13 @@ const EditPhotoModal = ({ photo, isOpen, onClose, onSuccess }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={onClose}>
+    <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4 overflow-y-auto" onClick={onClose}>
       <div
-        className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+        className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-2xl w-full my-auto max-h-[95vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
-        <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between">
+        {/* Header - sticky */}
+        <div className="flex-shrink-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between rounded-t-2xl">
           <h2 className="text-xl font-bold text-gray-900 dark:text-white">
             Edytuj zdjęcie
           </h2>
@@ -129,8 +129,8 @@ const EditPhotoModal = ({ photo, isOpen, onClose, onSuccess }) => {
           </button>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+        {/* Form - scrollable */}
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6">
           {error && (
             <div className="p-3 bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200 rounded-lg text-sm">
               {error}
@@ -140,7 +140,7 @@ const EditPhotoModal = ({ photo, isOpen, onClose, onSuccess }) => {
           {/* Preview */}
           <div className="aspect-video bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden">
             <img
-              src={`${process.env.REACT_APP_API_URL || ''}/${photo.photo_path}`}
+              src={`${process.env.REACT_APP_API_URL || ''}/${photo.medium_path || photo.photo_path}`}
               alt={photo.caption || 'Zdjęcie'}
               className="w-full h-full object-contain"
             />
@@ -264,8 +264,8 @@ const EditPhotoModal = ({ photo, isOpen, onClose, onSuccess }) => {
             )}
           </div>
 
-          {/* Actions */}
-          <div className="flex gap-3">
+          {/* Actions - sticky bottom with extra padding */}
+          <div className="flex flex-col sm:flex-row gap-3 pt-4 pb-2">
             <button
               type="submit"
               disabled={loading}

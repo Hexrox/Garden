@@ -141,6 +141,10 @@ db.serialize(() => {
     }
   });
 
+  // Add columns for image thumbnails (performance optimization)
+  db.run(`ALTER TABLE plant_photos ADD COLUMN thumb_path TEXT`, (err) => {});
+  db.run(`ALTER TABLE plant_photos ADD COLUMN medium_path TEXT`, (err) => {});
+
   // Migrate existing plant_photos data (fill context for existing photos)
   db.run(`
     UPDATE plant_photos

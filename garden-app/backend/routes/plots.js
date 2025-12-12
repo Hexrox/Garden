@@ -236,6 +236,53 @@ router.put('/plots/:id',
   }
 );
 
+// Reorder beds within a plot (drag & drop)
+router.put('/plots/:id/reorder-beds', auth, (req, res) => {
+  const { beds } = req.body; // Array of {id, row_number}
+
+  if (!beds || !Array.isArray(beds) || beds.length === 0) {
+    return res.status(400).json({ error: 'Nieprawidłowe dane' });
+  }
+
+  // Verify plot ownership first
+  db.get(
+    'SELECT id FROM plots WHERE id = ? AND user_id = ?',
+    [req.params.id, req.user.id],
+    (err, plot) => {
+      if (err) {
+        return res.status(500).json({ error: 'Błąd serwera' });
+      }
+      if (!plot) {
+        return res.status(404).json({ error: 'Poletko nie znalezione' });
+      }
+
+      // Update each bed's row_number
+      const updatePromises = beds.map(bed => {
+        return new Promise((resolve, reject) => {
+          db.run(
+            `UPDATE beds SET row_number = ?
+             WHERE id = ? AND plot_id = ?`,
+            [bed.row_number, bed.id, req.params.id],
+            function (err) {
+              if (err) reject(err);
+              else resolve(this.changes);
+            }
+          );
+        });
+      });
+
+      Promise.all(updatePromises)
+        .then(() => {
+          res.json({ message: 'Kolejność grządek zaktualizowana' });
+        })
+        .catch(err => {
+          console.error('Reorder beds error:', err);
+          res.status(500).json({ error: 'Błąd podczas zmiany kolejności' });
+        });
+    }
+  );
+});
+
 // Delete plot
 router.delete('/plots/:id', auth, (req, res) => {
   db.run('DELETE FROM plots WHERE id = ? AND user_id = ?', [req.params.id, req.user.id], function (err) {

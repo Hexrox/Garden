@@ -30,6 +30,7 @@ const calendarRoutes = require('./routes/calendar');
 const adminRoutes = require('./routes/admin');
 const galleryRoutes = require('./routes/gallery');
 const publicProfileRoutes = require('./routes/publicProfile');
+const searchRoutes = require('./routes/search');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -211,6 +212,7 @@ app.use('/api/succession', successionRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/calendar', calendarRoutes);
 app.use('/api/gallery', galleryRoutes);
+app.use('/api/search', searchRoutes);
 app.use('/api', publicProfileRoutes);
 
 // 404 handler

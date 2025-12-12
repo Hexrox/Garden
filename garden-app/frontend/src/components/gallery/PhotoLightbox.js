@@ -6,6 +6,17 @@ const PhotoLightbox = ({ photo, photos, onClose, onNavigate, onDelete, onUpdateC
   const [isEditingCaption, setIsEditingCaption] = useState(false);
   const [caption, setCaption] = useState(photo.caption || '');
   const [showEditModal, setShowEditModal] = useState(false);
+  const [touchStart, setTouchStart] = useState(null);
+  const [touchEnd, setTouchEnd] = useState(null);
+
+  // Minimum swipe distance (in px)
+  const minSwipeDistance = 50;
+
+  // Update caption when photo changes
+  useEffect(() => {
+    setCaption(photo.caption || '');
+    setIsEditingCaption(false);
+  }, [photo.id]);
 
   useEffect(() => {
     const handleKeyPress = (e) => {
@@ -18,6 +29,31 @@ const PhotoLightbox = ({ photo, photos, onClose, onNavigate, onDelete, onUpdateC
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, [onClose, onNavigate]);
 
+  // Swipe handlers
+  const onTouchStart = (e) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const onTouchMove = (e) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+
+    if (isLeftSwipe && photos.length > 1) {
+      onNavigate('next');
+    }
+    if (isRightSwipe && photos.length > 1) {
+      onNavigate('prev');
+    }
+  };
+
   const handleSaveCaption = () => {
     onUpdateCaption(photo.id, caption);
     setIsEditingCaption(false);
@@ -25,6 +61,7 @@ const PhotoLightbox = ({ photo, photos, onClose, onNavigate, onDelete, onUpdateC
 
   const handleDownload = () => {
     const link = document.createElement('a');
+    // Always download original for full quality
     link.href = `${process.env.REACT_APP_API_URL || ''}/${photo.photo_path}`;
     link.download = `garden-${photo.id}.jpg`;
     link.click();
@@ -42,27 +79,29 @@ const PhotoLightbox = ({ photo, photos, onClose, onNavigate, onDelete, onUpdateC
   };
 
   return (
-    <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4">
-      {/* Close button */}
+    <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4 overflow-y-auto">
+      {/* Close button - larger on mobile */}
       <button
         onClick={onClose}
-        className="absolute top-4 right-4 p-2 bg-white/10 hover:bg-white/20 rounded-lg text-white transition-colors z-10"
+        className="fixed top-4 right-4 p-3 sm:p-2 bg-black/60 hover:bg-black/80 backdrop-blur-sm rounded-full sm:rounded-lg text-white transition-colors z-10 shadow-lg border-2 border-white/20"
       >
-        <X size={24} />
+        <X size={28} className="sm:w-6 sm:h-6" />
       </button>
 
-      {/* Navigation */}
+      {/* Navigation arrows - desktop only, positioned on image sides */}
       {photos.length > 1 && (
         <>
           <button
             onClick={() => onNavigate('prev')}
-            className="absolute left-4 p-3 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors"
+            className="hidden lg:flex fixed left-4 top-1/2 -translate-y-1/2 items-center justify-center w-12 h-12 bg-black/40 hover:bg-black/60 backdrop-blur-sm rounded-full text-white transition-all hover:scale-110"
+            title="Poprzednie zdjęcie (←)"
           >
             <ChevronLeft size={32} />
           </button>
           <button
             onClick={() => onNavigate('next')}
-            className="absolute right-4 p-3 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors"
+            className="hidden lg:flex fixed right-4 top-1/2 -translate-y-1/2 items-center justify-center w-12 h-12 bg-black/40 hover:bg-black/60 backdrop-blur-sm rounded-full text-white transition-all hover:scale-110"
+            title="Następne zdjęcie (→)"
           >
             <ChevronRight size={32} />
           </button>
@@ -70,18 +109,57 @@ const PhotoLightbox = ({ photo, photos, onClose, onNavigate, onDelete, onUpdateC
       )}
 
       {/* Content */}
-      <div className="max-w-7xl w-full max-h-[90vh] flex flex-col lg:flex-row gap-4 overflow-hidden">
-        {/* Image */}
-        <div className="flex-1 flex items-center justify-center">
+      <div className="max-w-7xl w-full my-auto flex flex-col lg:flex-row gap-4 lg:max-h-[90vh]">
+        {/* Image with swipe support */}
+        <div
+          className="flex-shrink-0 flex items-center justify-center lg:flex-1 relative"
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={onTouchEnd}
+        >
           <img
-            src={`${process.env.REACT_APP_API_URL || ''}/${photo.photo_path}`}
+            src={`${process.env.REACT_APP_API_URL || ''}/${photo.medium_path || photo.photo_path}`}
             alt={photo.caption || photo.bed_plant_name || 'Zdjęcie'}
-            className="max-w-full max-h-[80vh] object-contain rounded-lg"
+            className="max-w-full max-h-[50vh] lg:max-h-[80vh] object-contain rounded-lg"
           />
+
+          {/* Photo counter */}
+          {photos.length > 1 && (
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-3 py-1.5 bg-black/60 backdrop-blur-sm text-white text-sm rounded-full">
+              {photos.findIndex(p => p.id === photo.id) + 1} / {photos.length}
+            </div>
+          )}
+
+          {/* Swipe hint - pokazuje się przez chwilę */}
+          {photos.length > 1 && (
+            <div className="lg:hidden absolute inset-x-0 bottom-16 flex justify-center gap-2 text-white/60 text-xs animate-pulse">
+              <span>← przesuń →</span>
+            </div>
+          )}
         </div>
 
-        {/* Details */}
-        <div className="lg:w-96 bg-white dark:bg-gray-800 rounded-lg p-6 overflow-y-auto">
+        {/* Details - scrollable on all devices */}
+        <div className="w-full lg:w-96 bg-white dark:bg-gray-800 rounded-lg p-6 overflow-y-auto max-h-[60vh] lg:max-h-full flex-shrink-0">
+          {/* Mobile navigation buttons */}
+          {photos.length > 1 && (
+            <div className="lg:hidden flex gap-2 mb-4">
+              <button
+                onClick={() => onNavigate('prev')}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+              >
+                <ChevronLeft size={20} />
+                Poprzednie
+              </button>
+              <button
+                onClick={() => onNavigate('next')}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+              >
+                Następne
+                <ChevronRight size={20} />
+              </button>
+            </div>
+          )}
+
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
             {photo.bed_plant_name || 'Zdjęcie z galerii'}
             {photo.bed_plant_variety && (
@@ -195,6 +273,15 @@ const PhotoLightbox = ({ photo, photos, onClose, onNavigate, onDelete, onUpdateC
             >
               <Trash2 size={18} />
               Usuń zdjęcie
+            </button>
+
+            {/* Mobile close button at bottom */}
+            <button
+              onClick={onClose}
+              className="lg:hidden w-full flex items-center justify-center gap-2 px-4 py-3 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors font-medium"
+            >
+              <X size={20} />
+              Zamknij
             </button>
           </div>
         </div>

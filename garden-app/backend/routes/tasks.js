@@ -578,4 +578,40 @@ router.post('/generate', auth, async (req, res) => {
   }
 });
 
+/**
+ * PUT /api/tasks/reorder
+ * Reorder tasks (drag & drop) - updates priority based on new order
+ */
+router.put('/reorder', auth, (req, res) => {
+  const { tasks } = req.body; // Array of {id, priority}
+
+  if (!tasks || !Array.isArray(tasks) || tasks.length === 0) {
+    return res.status(400).json({ error: 'Nieprawidłowe dane' });
+  }
+
+  // Update each task's priority
+  const updatePromises = tasks.map(task => {
+    return new Promise((resolve, reject) => {
+      db.run(
+        `UPDATE tasks SET priority = ?
+         WHERE id = ? AND user_id = ?`,
+        [task.priority, task.id, req.user.id],
+        function (err) {
+          if (err) reject(err);
+          else resolve(this.changes);
+        }
+      );
+    });
+  });
+
+  Promise.all(updatePromises)
+    .then(() => {
+      res.json({ message: 'Kolejność zadań zaktualizowana' });
+    })
+    .catch(err => {
+      console.error('Reorder tasks error:', err);
+      res.status(500).json({ error: 'Błąd podczas zmiany kolejności' });
+    });
+});
+
 module.exports = router;

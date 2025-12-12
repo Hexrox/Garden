@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Image as ImageIcon, Filter, Upload, X } from 'lucide-react';
+import { Image as ImageIcon, Filter, Upload, X, CheckSquare, Trash2, Download } from 'lucide-react';
 import axios from '../config/axios';
 import GalleryGrid from '../components/gallery/GalleryGrid';
 import GalleryFilters from '../components/gallery/GalleryFilters';
@@ -10,9 +10,16 @@ const Gallery = () => {
   const [photos, setPhotos] = useState([]);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [page, setPage] = useState(0);
   const [selectedPhoto, setSelectedPhoto] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
   const [showQuickPhoto, setShowQuickPhoto] = useState(false);
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedPhotos, setSelectedPhotos] = useState([]);
+  const [dragActive, setDragActive] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [filters, setFilters] = useState({
     plant: '',
     plot: '',
@@ -22,15 +29,24 @@ const Gallery = () => {
     show_deleted: false,
   });
 
+  const PHOTOS_PER_PAGE = 20;
+
   useEffect(() => {
-    loadGallery();
+    // Reset to page 0 when filters change
+    setPage(0);
+    setPhotos([]);
+    setHasMore(true);
+    loadGallery(0, true);
     loadStats();
   }, [filters]);
 
   // Listen for new photos added via QuickPhoto modal
   useEffect(() => {
     const handlePhotoAdded = () => {
-      loadGallery();
+      setPage(0);
+      setPhotos([]);
+      setHasMore(true);
+      loadGallery(0, true);
       loadStats();
     };
 
@@ -38,10 +54,35 @@ const Gallery = () => {
     return () => window.removeEventListener('photoAdded', handlePhotoAdded);
   }, []);
 
-  const loadGallery = async () => {
+  // Infinite scroll detection
+  useEffect(() => {
+    const handleScroll = () => {
+      // Check if user scrolled near bottom (within 200px)
+      const scrolledToBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 200;
+
+      if (scrolledToBottom && hasMore && !loading && !loadingMore) {
+        loadGallery();
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [hasMore, loading, loadingMore, page]);
+
+  const loadGallery = async (pageNum = page, reset = false) => {
+    if (!hasMore && !reset) return;
+
     try {
-      setLoading(true);
+      if (reset) {
+        setLoading(true);
+      } else {
+        setLoadingMore(true);
+      }
+
       const params = new URLSearchParams();
+      params.append('limit', PHOTOS_PER_PAGE);
+      params.append('offset', pageNum * PHOTOS_PER_PAGE);
+
       if (filters.plant) params.append('plant', filters.plant);
       if (filters.plot) params.append('plot', filters.plot);
       if (filters.year) params.append('year', filters.year);
@@ -50,11 +91,22 @@ const Gallery = () => {
       if (filters.show_deleted) params.append('show_deleted', 'true');
 
       const response = await axios.get(`/api/gallery?${params.toString()}`);
-      setPhotos(response.data);
+      const newPhotos = response.data;
+
+      if (reset) {
+        setPhotos(newPhotos);
+      } else {
+        setPhotos(prev => [...prev, ...newPhotos]);
+      }
+
+      // If we got less than PHOTOS_PER_PAGE, there's no more
+      setHasMore(newPhotos.length === PHOTOS_PER_PAGE);
+      setPage(pageNum + 1);
     } catch (error) {
       console.error('Error loading gallery:', error);
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
   };
 
@@ -111,6 +163,134 @@ const Gallery = () => {
     setFilters({ plant: '', plot: '', year: '', source_type: '', tag: '', show_deleted: false });
   };
 
+  const toggleSelectionMode = () => {
+    setSelectionMode(!selectionMode);
+    setSelectedPhotos([]);
+  };
+
+  const togglePhotoSelection = (photoId) => {
+    setSelectedPhotos(prev =>
+      prev.includes(photoId)
+        ? prev.filter(id => id !== photoId)
+        : [...prev, photoId]
+    );
+  };
+
+  const selectAllPhotos = () => {
+    setSelectedPhotos(photos.map(p => p.id));
+  };
+
+  const deselectAllPhotos = () => {
+    setSelectedPhotos([]);
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedPhotos.length === 0) return;
+
+    const count = selectedPhotos.length;
+    if (!window.confirm(`Czy na pewno chcesz usunąć ${count} ${count === 1 ? 'zdjęcie' : count < 5 ? 'zdjęcia' : 'zdjęć'}?`)) {
+      return;
+    }
+
+    try {
+      await axios.delete('/api/gallery/bulk', {
+        data: { photoIds: selectedPhotos }
+      });
+
+      setPhotos(photos.filter(p => !selectedPhotos.includes(p.id)));
+      setSelectedPhotos([]);
+      setSelectionMode(false);
+      loadStats();
+    } catch (error) {
+      alert('Błąd podczas usuwania zdjęć');
+      console.error(error);
+    }
+  };
+
+  // Drag & Drop handlers
+  const handleDragEnter = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
+      setDragActive(true);
+    }
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.target === e.currentTarget) {
+      setDragActive(false);
+    }
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+
+    const files = Array.from(e.dataTransfer.files).filter(file =>
+      file.type.startsWith('image/')
+    );
+
+    if (files.length === 0) {
+      alert('Przeciągnij tylko pliki zdjęć (JPG, PNG, etc.)');
+      return;
+    }
+
+    await uploadMultiplePhotos(files);
+  };
+
+  const uploadMultiplePhotos = async (files) => {
+    setUploading(true);
+
+    try {
+      let successCount = 0;
+      let errorCount = 0;
+
+      for (const file of files) {
+        try {
+          const formData = new FormData();
+          formData.append('photo', file);
+          formData.append('tag', 'ogólne');
+          formData.append('caption', file.name.replace(/\.[^/.]+$/, ''));
+
+          await axios.post('/api/gallery/quick', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+          });
+
+          successCount++;
+        } catch (error) {
+          console.error(`Error uploading ${file.name}:`, error);
+          errorCount++;
+        }
+      }
+
+      if (successCount > 0) {
+        // Refresh gallery
+        setPage(0);
+        setPhotos([]);
+        setHasMore(true);
+        loadGallery(0, true);
+        loadStats();
+      }
+
+      if (errorCount > 0) {
+        alert(`Wysłano ${successCount} zdjęć, ${errorCount} nie udało się przesłać`);
+      }
+    } catch (error) {
+      alert('Błąd podczas wysyłania zdjęć');
+      console.error(error);
+    } finally {
+      setUploading(false);
+    }
+  };
+
   if (loading && !photos.length) {
     return (
       <div className="text-center py-12 text-gray-500 dark:text-gray-400">
@@ -120,7 +300,39 @@ const Gallery = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div
+      className="space-y-6 relative"
+      onDragEnter={handleDragEnter}
+      onDragLeave={handleDragLeave}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+    >
+      {/* Drag & Drop Overlay */}
+      {dragActive && (
+        <div className="fixed inset-0 z-50 bg-blue-600/90 flex items-center justify-center">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-12 text-center max-w-md">
+            <Upload size={64} className="mx-auto mb-4 text-blue-600 dark:text-blue-400" />
+            <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+              Upuść zdjęcia tutaj
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400">
+              Wszystkie zdjęcia zostaną dodane do galerii
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Uploading Overlay */}
+      {uploading && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 text-center">
+            <div className="inline-block w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+            <p className="text-lg font-semibold text-gray-900 dark:text-white">
+              Wysyłanie zdjęć...
+            </p>
+          </div>
+        </div>
+      )}
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
@@ -143,32 +355,98 @@ const Gallery = () => {
         </div>
 
         <div className="flex gap-2">
-          <button
-            onClick={() => setShowQuickPhoto(true)}
-            className="px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white transition-colors"
-          >
-            <Upload size={18} />
-            Dodaj zdjęcie
-          </button>
+          {!selectionMode && (
+            <>
+              <button
+                onClick={() => setShowQuickPhoto(true)}
+                className="px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white transition-colors"
+              >
+                <Upload size={18} />
+                Dodaj zdjęcie
+              </button>
 
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors ${
-              showFilters
-                ? 'bg-purple-600 text-white'
-                : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
-            }`}
-          >
-            <Filter size={18} />
-            Filtry
-            {Object.values(filters).some(v => v) && (
-              <span className="ml-1 px-2 py-0.5 bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 rounded-full text-xs">
-                ✓
-              </span>
-            )}
-          </button>
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors ${
+                  showFilters
+                    ? 'bg-purple-600 text-white'
+                    : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
+                }`}
+              >
+                <Filter size={18} />
+                Filtry
+                {Object.values(filters).some(v => v) && (
+                  <span className="ml-1 px-2 py-0.5 bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 rounded-full text-xs">
+                    ✓
+                  </span>
+                )}
+              </button>
+
+              <button
+                onClick={toggleSelectionMode}
+                className="px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              >
+                <CheckSquare size={18} />
+                Zaznacz
+              </button>
+            </>
+          )}
+
+          {selectionMode && (
+            <>
+              <button
+                onClick={toggleSelectionMode}
+                className="px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 bg-gray-600 hover:bg-gray-700 text-white transition-colors"
+              >
+                <X size={18} />
+                Anuluj
+              </button>
+            </>
+          )}
         </div>
       </div>
+
+      {/* Selection Toolbar */}
+      {selectionMode && (
+        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <span className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                Zaznaczono: <span className="font-bold">{selectedPhotos.length}</span> zdjęć
+              </span>
+
+              <div className="flex gap-2">
+                <button
+                  onClick={selectAllPhotos}
+                  className="px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                >
+                  Zaznacz wszystkie
+                </button>
+                {selectedPhotos.length > 0 && (
+                  <button
+                    onClick={deselectAllPhotos}
+                    className="px-3 py-1.5 text-sm bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors"
+                  >
+                    Odznacz wszystkie
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {selectedPhotos.length > 0 && (
+              <div className="flex gap-2">
+                <button
+                  onClick={handleBulkDelete}
+                  className="px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white transition-colors"
+                >
+                  <Trash2 size={18} />
+                  Usuń zaznaczone ({selectedPhotos.length})
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Filters */}
       {showFilters && (
@@ -272,10 +550,42 @@ const Gallery = () => {
 
       {/* Gallery Grid */}
       {photos.length > 0 ? (
-        <GalleryGrid
-          photos={photos}
-          onPhotoClick={handlePhotoClick}
-        />
+        <>
+          <GalleryGrid
+            photos={photos}
+            onPhotoClick={handlePhotoClick}
+            selectedPhotos={selectedPhotos}
+            onSelectPhoto={togglePhotoSelection}
+            selectionMode={selectionMode}
+          />
+
+          {/* Loading more indicator */}
+          {loadingMore && (
+            <div className="text-center py-8">
+              <div className="inline-block w-8 h-8 border-4 border-green-600 border-t-transparent rounded-full animate-spin"></div>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">Ładowanie kolejnych zdjęć...</p>
+            </div>
+          )}
+
+          {/* Load more button (backup for infinite scroll) */}
+          {!loadingMore && hasMore && (
+            <div className="text-center py-8">
+              <button
+                onClick={() => loadGallery()}
+                className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors"
+              >
+                Załaduj więcej zdjęć
+              </button>
+            </div>
+          )}
+
+          {/* End of gallery message */}
+          {!hasMore && photos.length > 0 && (
+            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+              <p>🎉 To wszystko! Wyświetlono wszystkie zdjęcia.</p>
+            </div>
+          )}
+        </>
       ) : (
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-12 text-center">
           <div className="w-20 h-20 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">

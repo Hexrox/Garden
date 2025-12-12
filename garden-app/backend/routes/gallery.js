@@ -6,6 +6,7 @@ const auth = require('../middleware/auth');
 const upload = require('../middleware/upload');
 const fs = require('fs');
 const path = require('path');
+const { generateThumbnails, deleteAllVersions } = require('../utils/imageProcessor');
 
 // Allowed photo tags
 const ALLOWED_TAGS = ['warzywa', 'kwiaty', 'zioła', 'owoce', 'siew', 'zbiór',
@@ -220,6 +221,48 @@ router.put('/:photoId', auth, (req, res) => {
   }
 });
 
+// Bulk delete photos
+router.delete('/bulk', auth, (req, res) => {
+  const { photoIds } = req.body;
+
+  if (!photoIds || !Array.isArray(photoIds) || photoIds.length === 0) {
+    return res.status(400).json({ error: 'Brak ID zdjęć do usunięcia' });
+  }
+
+  // Get all photos to delete their files
+  const placeholders = photoIds.map(() => '?').join(',');
+  db.all(
+    `SELECT photo_path FROM plant_photos WHERE id IN (${placeholders}) AND user_id = ?`,
+    [...photoIds, req.user.id],
+    (err, photos) => {
+      if (err) {
+        return res.status(500).json({ error: 'Błąd serwera' });
+      }
+
+      // Delete from database
+      db.run(
+        `DELETE FROM plant_photos WHERE id IN (${placeholders}) AND user_id = ?`,
+        [...photoIds, req.user.id],
+        function (err) {
+          if (err) {
+            return res.status(500).json({ error: 'Błąd usuwania' });
+          }
+
+          // Delete all versions of files from disk
+          photos.forEach(photo => {
+            deleteAllVersions(photo.photo_path);
+          });
+
+          res.json({
+            message: 'Zdjęcia usunięte',
+            deletedCount: this.changes
+          });
+        }
+      );
+    }
+  );
+});
+
 // Delete photo
 router.delete('/:photoId', auth, (req, res) => {
   // First get photo path to delete file
@@ -243,17 +286,8 @@ router.delete('/:photoId', auth, (req, res) => {
             return res.status(500).json({ error: 'Błąd usuwania' });
           }
 
-          // Delete file from disk
-          const fs = require('fs');
-          const path = require('path');
-          const filePath = path.join(__dirname, '..', photo.photo_path);
-
-          fs.unlink(filePath, (err) => {
-            if (err) {
-              console.error('Error deleting file:', err);
-              // Don't fail - file might already be deleted
-            }
-          });
+          // Delete all versions of the file from disk (original, thumb, medium)
+          deleteAllVersions(photo.photo_path);
 
           res.json({ message: 'Zdjęcie usunięte' });
         }
@@ -268,7 +302,7 @@ router.post('/quick', auth, upload.single('photo'), [
   body('caption').optional().trim().isLength({ max: 200 }).escape().withMessage('Opis może mieć maksymalnie 200 znaków'),
   body('bed_id').optional().isInt().withMessage('Nieprawidłowe ID grządki'),
   body('plot_id').optional().isInt().withMessage('Nieprawidłowe ID poletka')
-], (req, res) => {
+], async (req, res) => {
   // Validate input
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -286,7 +320,21 @@ router.post('/quick', auth, upload.single('photo'), [
   }
 
   const { tag, caption, bed_id, plot_id } = req.body;
-  const photoPath = `uploads/${req.file.filename}`;
+
+  // Generate thumbnails
+  let thumbnails;
+  try {
+    thumbnails = await generateThumbnails(req.file.path, req.file.filename);
+  } catch (error) {
+    console.error('Error generating thumbnails:', error);
+    // Clean up uploaded file on error
+    if (req.file && req.file.path) {
+      fs.unlink(req.file.path, (err) => {
+        if (err) console.error('Failed to cleanup file:', err);
+      });
+    }
+    return res.status(500).json({ error: 'Błąd przetwarzania zdjęcia' });
+  }
 
   // If bed_id provided, get context from bed
   if (bed_id) {
@@ -307,13 +355,15 @@ router.post('/quick', auth, upload.single('photo'), [
         // Insert with bed context
         db.run(
           `INSERT INTO plant_photos (
-            user_id, bed_id, photo_path, caption, tag, source_type,
+            user_id, bed_id, photo_path, thumb_path, medium_path, caption, tag, source_type,
             bed_row_number, bed_plant_name, bed_plant_variety, plot_name, taken_date
-          ) VALUES (?, ?, ?, ?, ?, 'quick', ?, ?, ?, ?, date('now'))`,
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, 'quick', ?, ?, ?, ?, date('now'))`,
           [
             req.user.id,
             bed_id,
-            photoPath,
+            thumbnails.original,
+            thumbnails.thumb,
+            thumbnails.medium,
             caption || null,
             tag || null,
             bed.row_number,
@@ -356,9 +406,9 @@ router.post('/quick', auth, upload.single('photo'), [
 
         db.run(
           `INSERT INTO plant_photos (
-            user_id, photo_path, caption, tag, source_type, plot_name, taken_date
-          ) VALUES (?, ?, ?, ?, 'quick', ?, date('now'))`,
-          [req.user.id, photoPath, caption || null, tag || null, plot.name],
+            user_id, photo_path, thumb_path, medium_path, caption, tag, source_type, plot_name, taken_date
+          ) VALUES (?, ?, ?, ?, ?, ?, 'quick', ?, date('now'))`,
+          [req.user.id, thumbnails.original, thumbnails.thumb, thumbnails.medium, caption || null, tag || null, plot.name],
           function (err) {
             if (err) {
               // Clean up uploaded file on database error
@@ -382,9 +432,9 @@ router.post('/quick', auth, upload.single('photo'), [
     // No location context - general photo
     db.run(
       `INSERT INTO plant_photos (
-        user_id, photo_path, caption, tag, source_type, taken_date
-      ) VALUES (?, ?, ?, ?, 'quick', date('now'))`,
-      [req.user.id, photoPath, caption || null, tag || null],
+        user_id, photo_path, thumb_path, medium_path, caption, tag, source_type, taken_date
+      ) VALUES (?, ?, ?, ?, ?, ?, 'quick', date('now'))`,
+      [req.user.id, thumbnails.original, thumbnails.thumb, thumbnails.medium, caption || null, tag || null],
       function (err) {
         if (err) {
           // Clean up uploaded file on database error

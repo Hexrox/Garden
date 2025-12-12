@@ -26,6 +26,7 @@ import AdminPanel from './pages/AdminPanel';
 import Gallery from './pages/Gallery';
 import PublicProfile from './pages/PublicProfile';
 import NotFound from './pages/NotFound';
+import GlobalSearch from './components/GlobalSearch';
 
 // Protected Route Component
 const ProtectedRoute = ({ children, forceRender }) => {
@@ -64,8 +65,9 @@ const PublicRoute = ({ children, forceRender }) => {
 };
 
 function AppRoutes() {
-  const { loading } = useAuth();
+  const { loading, isAuthenticated } = useAuth();
   const [forceRender, setForceRender] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
 
   // Safety timeout: If loading takes too long, force render the app
   // This is an additional safety net on top of AuthContext timeouts
@@ -90,8 +92,28 @@ function AppRoutes() {
     }
   }, [loading, forceRender]);
 
+  // Global search keyboard shortcut (Ctrl+K or Cmd+K)
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        if (isAuthenticated) {
+          setShowSearch(true);
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isAuthenticated]);
+
   return (
     <Router>
+      {/* Global Search Modal */}
+      {isAuthenticated && (
+        <GlobalSearch isOpen={showSearch} onClose={() => setShowSearch(false)} />
+      )}
+
       <Routes>
         {/* Public Routes */}
         <Route
