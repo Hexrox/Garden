@@ -284,6 +284,20 @@ db.serialize(() => {
     }
   });
 
+  // Add onboarding_completed flag
+  db.run(`ALTER TABLE users ADD COLUMN onboarding_completed BOOLEAN DEFAULT 0`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding onboarding_completed column:', err.message);
+    }
+  });
+
+  // Add onboarding_step to track current step
+  db.run(`ALTER TABLE users ADD COLUMN onboarding_step INTEGER DEFAULT 0`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding onboarding_step column:', err.message);
+    }
+  });
+
   // Add role column for RBAC
   db.run(`ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'user'`, (err) => {
     if (err && !err.message.includes('duplicate column')) {
@@ -483,6 +497,165 @@ db.serialize(() => {
   db.run('CREATE INDEX IF NOT EXISTS idx_profile_views_username ON profile_views(username)');
   db.run('CREATE INDEX IF NOT EXISTS idx_profile_views_date ON profile_views(viewed_at)');
   db.run('CREATE INDEX IF NOT EXISTS idx_weather_history_date ON weather_history(date)');
+
+  // ==========================================
+  // COMPANION PLANTING FEATURE
+  // ==========================================
+
+  // Companion plants table (good and bad plant combinations)
+  db.run(`CREATE TABLE IF NOT EXISTS companion_plants (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    plant_name TEXT NOT NULL,
+    companion_name TEXT NOT NULL,
+    relationship TEXT CHECK(relationship IN ('good', 'bad')) NOT NULL,
+    reason TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )`);
+
+  // Create index for fast lookups
+  db.run('CREATE INDEX IF NOT EXISTS idx_companion_plant_name ON companion_plants(plant_name)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_companion_relationship ON companion_plants(plant_name, relationship)');
+
+  // Populate companion plants data (only if empty)
+  db.get('SELECT COUNT(*) as count FROM companion_plants', (err, row) => {
+    if (err) {
+      console.error('Error checking companion_plants:', err.message);
+      return;
+    }
+
+    if (row.count === 0) {
+      console.log('📗 Populating companion plants database...');
+
+      const companionData = [
+        // Pomidor
+        { plant: 'pomidor', companion: 'bazylia', relationship: 'good', reason: 'Bazylia odstrasza szkodniki i poprawia smak' },
+        { plant: 'pomidor', companion: 'marchew', relationship: 'good', reason: 'Marchew poluzowuje glebę dla korzeni' },
+        { plant: 'pomidor', companion: 'cebula', relationship: 'good', reason: 'Cebula odstrasza szkodniki' },
+        { plant: 'pomidor', companion: 'sałata', relationship: 'good', reason: 'Sałata zacieniа glebę i zmniejsza parowanie' },
+        { plant: 'pomidor', companion: 'kapusta', relationship: 'bad', reason: 'Konkurują o te same składniki odżywcze' },
+        { plant: 'pomidor', companion: 'ogórek', relationship: 'bad', reason: 'Ryzyko przeniesienia chorób' },
+        { plant: 'pomidor', companion: 'ziemniak', relationship: 'bad', reason: 'Wspólne choroby (zaraza ziemniaka)' },
+
+        // Ogórek
+        { plant: 'ogórek', companion: 'fasola', relationship: 'good', reason: 'Fasola wzbogaca glebę w azot' },
+        { plant: 'ogórek', companion: 'koper', relationship: 'good', reason: 'Koper przyciąga pożyteczne owady' },
+        { plant: 'ogórek', companion: 'rzodkiewka', relationship: 'good', reason: 'Odstrasza szkodniki' },
+        { plant: 'ogórek', companion: 'pomidor', relationship: 'bad', reason: 'Ryzyko przeniesienia chorób' },
+        { plant: 'ogórek', companion: 'ziemniak', relationship: 'bad', reason: 'Konkurencja o wodę i składniki' },
+
+        // Marchew
+        { plant: 'marchew', companion: 'cebula', relationship: 'good', reason: 'Odstrasza muchę marchewkową' },
+        { plant: 'marchew', companion: 'pomidor', relationship: 'good', reason: 'Pomidor odstrasza szkodniki marchewki' },
+        { plant: 'marchew', companion: 'groszek', relationship: 'good', reason: 'Groszek wzbogaca glebę w azot' },
+        { plant: 'marchew', companion: 'koper', relationship: 'bad', reason: 'Konkurencja korzeniowa' },
+
+        // Cebula
+        { plant: 'cebula', companion: 'marchew', relationship: 'good', reason: 'Odstrasza muchę cebulową' },
+        { plant: 'cebula', companion: 'pomidor', relationship: 'good', reason: 'Pomidor odstrasza szkodniki cebuli' },
+        { plant: 'cebula', companion: 'sałata', relationship: 'good', reason: 'Efektywne wykorzystanie przestrzeni' },
+        { plant: 'cebula', companion: 'fasola', relationship: 'bad', reason: 'Cebula hamuje wzrost fasoli' },
+        { plant: 'cebula', companion: 'groszek', relationship: 'bad', reason: 'Negatywny wpływ na wzrost grochu' },
+
+        // Fasola
+        { plant: 'fasola', companion: 'kukurydza', relationship: 'good', reason: 'Kukurydza jest podporą dla fasoli pnącej' },
+        { plant: 'fasola', companion: 'dynia', relationship: 'good', reason: 'Tradycyjne "Trzy Siostry"' },
+        { plant: 'fasola', companion: 'kapusta', relationship: 'good', reason: 'Fasola dostarcza azot, kapusta go wykorzystuje' },
+        { plant: 'fasola', companion: 'cebula', relationship: 'bad', reason: 'Cebula hamuje wzrost fasoli' },
+        { plant: 'fasola', companion: 'czosnek', relationship: 'bad', reason: 'Hamuje wzrost fasoli' },
+
+        // Kapusta
+        { plant: 'kapusta', companion: 'fasola', relationship: 'good', reason: 'Fasola dostarcza azot' },
+        { plant: 'kapusta', companion: 'ogórek', relationship: 'good', reason: 'Dobre sąsiedztwo bez konkurencji' },
+        { plant: 'kapusta', companion: 'sałata', relationship: 'good', reason: 'Efektywne wykorzystanie przestrzeni' },
+        { plant: 'kapusta', companion: 'pomidor', relationship: 'bad', reason: 'Konkurencja o składniki odżywcze' },
+        { plant: 'kapusta', companion: 'truskawka', relationship: 'bad', reason: 'Negatywny wpływ na wzrost' },
+
+        // Ziemniak
+        { plant: 'ziemniak', companion: 'fasola', relationship: 'good', reason: 'Fasola odstrasza stonkę' },
+        { plant: 'ziemniak', companion: 'kapusta', relationship: 'good', reason: 'Dobre sąsiedztwo' },
+        { plant: 'ziemniak', companion: 'pomidor', relationship: 'bad', reason: 'Wspólne choroby (zaraza ziemniaka)' },
+        { plant: 'ziemniak', companion: 'ogórek', relationship: 'bad', reason: 'Konkurencja o wodę i składniki' },
+
+        // Papryka
+        { plant: 'papryka', companion: 'bazylia', relationship: 'good', reason: 'Bazylia odstrasza szkodniki' },
+        { plant: 'papryka', companion: 'cebula', relationship: 'good', reason: 'Cebula odstrasza szkodniki' },
+        { plant: 'papryka', companion: 'fasola', relationship: 'bad', reason: 'Konkurencja o składniki odżywcze' },
+
+        // Sałata
+        { plant: 'sałata', companion: 'marchew', relationship: 'good', reason: 'Nie konkurują o miejsce' },
+        { plant: 'sałata', companion: 'ogórek', relationship: 'good', reason: 'Sałata rośnie szybko, ogórek później' },
+        { plant: 'sałata', companion: 'rzodkiewka', relationship: 'good', reason: 'Szybki wzrost, nie przeszkadzają sobie' },
+        { plant: 'sałata', companion: 'pietruszka', relationship: 'bad', reason: 'Konkurencja korzeniowa' },
+
+        // Bazylia
+        { plant: 'bazylia', companion: 'pomidor', relationship: 'good', reason: 'Poprawia smak i odstrasza szkodniki' },
+        { plant: 'bazylia', companion: 'papryka', relationship: 'good', reason: 'Odstrasza szkodniki' },
+
+        // Czosnek
+        { plant: 'czosnek', companion: 'pomidor', relationship: 'good', reason: 'Odstrasza szkodniki' },
+        { plant: 'czosnek', companion: 'marchew', relationship: 'good', reason: 'Odstrasza szkodniki' },
+        { plant: 'czosnek', companion: 'fasola', relationship: 'bad', reason: 'Hamuje wzrost fasoli' },
+        { plant: 'czosnek', companion: 'groszek', relationship: 'bad', reason: 'Hamuje wzrost grochu' },
+
+        // Groszek
+        { plant: 'groszek', companion: 'marchew', relationship: 'good', reason: 'Groszek wzbogaca glebę w azot' },
+        { plant: 'groszek', companion: 'rzodkiewka', relationship: 'good', reason: 'Dobre sąsiedztwo' },
+        { plant: 'groszek', companion: 'cebula', relationship: 'bad', reason: 'Cebula hamuje wzrost grochu' },
+        { plant: 'groszek', companion: 'czosnek', relationship: 'bad', reason: 'Hamuje wzrost grochu' },
+
+        // Dynia
+        { plant: 'dynia', companion: 'kukurydza', relationship: 'good', reason: 'Tradycyjne "Trzy Siostry"' },
+        { plant: 'dynia', companion: 'fasola', relationship: 'good', reason: 'Tradycyjne "Trzy Siostry"' },
+        { plant: 'dynia', companion: 'ziemniak', relationship: 'bad', reason: 'Konkurencja o miejsce i składniki' },
+
+        // Cukinia
+        { plant: 'cukinia', companion: 'fasola', relationship: 'good', reason: 'Fasola wzbogaca glebę w azot' },
+        { plant: 'cukinia', companion: 'kukurydza', relationship: 'good', reason: 'Dobry zacień dla gleby' },
+        { plant: 'cukinia', companion: 'ziemniak', relationship: 'bad', reason: 'Konkurencja o miejsce' },
+
+        // Rzodkiewka
+        { plant: 'rzodkiewka', companion: 'sałata', relationship: 'good', reason: 'Szybki wzrost, nie konkurują' },
+        { plant: 'rzodkiewka', companion: 'ogórek', relationship: 'good', reason: 'Odstrasza szkodniki' },
+        { plant: 'rzodkiewka', companion: 'groszek', relationship: 'good', reason: 'Dobre sąsiedztwo' },
+
+        // Pietruszka
+        { plant: 'pietruszka', companion: 'pomidor', relationship: 'good', reason: 'Odstrasza szkodniki' },
+        { plant: 'pietruszka', companion: 'sałata', relationship: 'bad', reason: 'Konkurencja korzeniowa' },
+
+        // Koper
+        { plant: 'koper', companion: 'ogórek', relationship: 'good', reason: 'Przyciąga pożyteczne owady' },
+        { plant: 'koper', companion: 'kapusta', relationship: 'good', reason: 'Odstrasza szkodniki kapusty' },
+        { plant: 'koper', companion: 'marchew', relationship: 'bad', reason: 'Konkurencja korzeniowa' },
+
+        // Kukurydza
+        { plant: 'kukurydza', companion: 'fasola', relationship: 'good', reason: 'Tradycyjne "Trzy Siostry"' },
+        { plant: 'kukurydza', companion: 'dynia', relationship: 'good', reason: 'Tradycyjne "Trzy Siostry"' },
+        { plant: 'kukurydza', companion: 'pomidor', relationship: 'bad', reason: 'Przyciągają te same szkodniki' },
+
+        // Truskawka
+        { plant: 'truskawka', companion: 'cebula', relationship: 'good', reason: 'Cebula odstrasza szkodniki' },
+        { plant: 'truskawka', companion: 'szpinak', relationship: 'good', reason: 'Szpinak wzbogaca glebę' },
+        { plant: 'truskawka', companion: 'kapusta', relationship: 'bad', reason: 'Kapusta hamuje wzrost truskawek' }
+      ];
+
+      const stmt = db.prepare(`
+        INSERT INTO companion_plants (plant_name, companion_name, relationship, reason)
+        VALUES (?, ?, ?, ?)
+      `);
+
+      companionData.forEach(data => {
+        stmt.run(data.plant, data.companion, data.relationship, data.reason);
+      });
+
+      stmt.finalize((err) => {
+        if (err) {
+          console.error('Error populating companion_plants:', err.message);
+        } else {
+          console.log(`✅ Added ${companionData.length} companion plant relationships`);
+        }
+      });
+    }
+  });
 
   console.log('✅ Database tables and indexes created successfully');
 });

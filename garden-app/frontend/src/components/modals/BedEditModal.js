@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { X } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, CheckCircle2, XCircle, Lightbulb } from 'lucide-react';
 import PlantSelector from '../PlantSelector';
+import axios from '../../config/axios';
 
 /**
  * BedEditModal - Edycja grządki
@@ -15,6 +16,34 @@ const BedEditModal = ({ bed, onClose, onSave }) => {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [companions, setCompanions] = useState({ good: [], bad: [] });
+  const [loadingCompanions, setLoadingCompanions] = useState(false);
+
+  // Fetch companion plants when plant_name changes
+  useEffect(() => {
+    const fetchCompanions = async () => {
+      if (!formData.plant_name || formData.plant_name.trim() === '') {
+        setCompanions({ good: [], bad: [] });
+        return;
+      }
+
+      setLoadingCompanions(true);
+      try {
+        const response = await axios.get(`/api/plants/companions/${formData.plant_name.toLowerCase()}`);
+        setCompanions({
+          good: response.data.good || [],
+          bad: response.data.bad || []
+        });
+      } catch (err) {
+        // Silently fail if no companions found
+        setCompanions({ good: [], bad: [] });
+      } finally {
+        setLoadingCompanions(false);
+      }
+    };
+
+    fetchCompanions();
+  }, [formData.plant_name]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -71,6 +100,87 @@ const BedEditModal = ({ bed, onClose, onSave }) => {
                 }}
               />
             </div>
+
+            {/* Companion Planting Suggestions */}
+            {formData.plant_name && (companions.good.length > 0 || companions.bad.length > 0) && (
+              <div className="md:col-span-2 bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/10 dark:to-blue-900/10 rounded-lg p-4 border border-green-200 dark:border-green-800">
+                <div className="flex items-start gap-2 mb-3">
+                  <Lightbulb className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-gray-900 dark:text-white text-sm mb-1">
+                      🌿 Rośliny towarzyszące
+                    </h4>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">
+                      Niektóre rośliny pomagają sobie nawzajem, inne przeszkadzają
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {/* Good Companions */}
+                  {companions.good.length > 0 && (
+                    <div className="bg-white dark:bg-gray-800 rounded-lg p-3">
+                      <div className="flex items-center gap-1.5 mb-2">
+                        <CheckCircle2 className="w-4 h-4 text-green-600 dark:text-green-400" />
+                        <h5 className="text-sm font-semibold text-green-800 dark:text-green-300">
+                          Dobrze rośnie obok:
+                        </h5>
+                      </div>
+                      <ul className="space-y-1.5 text-xs">
+                        {companions.good.slice(0, 4).map((c, idx) => (
+                          <li key={idx} className="flex items-start gap-1.5">
+                            <span className="text-green-600 dark:text-green-400 mt-0.5">✓</span>
+                            <div className="flex-1">
+                              <span className="font-medium text-gray-900 dark:text-white capitalize">{c.name}</span>
+                              <span className="text-gray-600 dark:text-gray-400"> - {c.reason}</span>
+                            </div>
+                          </li>
+                        ))}
+                        {companions.good.length > 4 && (
+                          <li className="text-gray-500 dark:text-gray-400 italic">
+                            +{companions.good.length - 4} więcej...
+                          </li>
+                        )}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Bad Companions */}
+                  {companions.bad.length > 0 && (
+                    <div className="bg-white dark:bg-gray-800 rounded-lg p-3">
+                      <div className="flex items-center gap-1.5 mb-2">
+                        <XCircle className="w-4 h-4 text-red-600 dark:text-red-400" />
+                        <h5 className="text-sm font-semibold text-red-800 dark:text-red-300">
+                          Unikaj sadzenia obok:
+                        </h5>
+                      </div>
+                      <ul className="space-y-1.5 text-xs">
+                        {companions.bad.slice(0, 4).map((c, idx) => (
+                          <li key={idx} className="flex items-start gap-1.5">
+                            <span className="text-red-600 dark:text-red-400 mt-0.5">✗</span>
+                            <div className="flex-1">
+                              <span className="font-medium text-gray-900 dark:text-white capitalize">{c.name}</span>
+                              <span className="text-gray-600 dark:text-gray-400"> - {c.reason}</span>
+                            </div>
+                          </li>
+                        ))}
+                        {companions.bad.length > 4 && (
+                          <li className="text-gray-500 dark:text-gray-400 italic">
+                            +{companions.bad.length - 4} więcej...
+                          </li>
+                        )}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {loadingCompanions && formData.plant_name && (
+              <div className="md:col-span-2 text-center text-sm text-gray-500 dark:text-gray-400 py-2">
+                Ładowanie podpowiedzi...
+              </div>
+            )}
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">

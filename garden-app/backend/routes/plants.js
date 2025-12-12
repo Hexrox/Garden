@@ -279,4 +279,38 @@ router.delete('/:id', auth, (req, res) => {
   );
 });
 
+// Get companion plant suggestions for a given plant name
+router.get('/companions/:plantName', auth, (req, res) => {
+  const plantName = req.params.plantName.toLowerCase().trim();
+
+  if (!plantName) {
+    return res.status(400).json({ error: 'Nazwa rośliny jest wymagana' });
+  }
+
+  // Get both good and bad companions
+  db.all(
+    `SELECT companion_name, relationship, reason
+     FROM companion_plants
+     WHERE LOWER(plant_name) = ?
+     ORDER BY relationship DESC, companion_name ASC`,
+    [plantName],
+    (err, rows) => {
+      if (err) {
+        console.error('Error fetching companion plants:', err);
+        return res.status(500).json({ error: 'Błąd podczas pobierania roślin towarzyszących' });
+      }
+
+      // Separate good and bad companions
+      const goodCompanions = rows.filter(r => r.relationship === 'good');
+      const badCompanions = rows.filter(r => r.relationship === 'bad');
+
+      res.json({
+        plant: plantName,
+        good: goodCompanions.map(c => ({ name: c.companion_name, reason: c.reason })),
+        bad: badCompanions.map(c => ({ name: c.companion_name, reason: c.reason }))
+      });
+    }
+  );
+});
+
 module.exports = router;
