@@ -35,10 +35,6 @@ const PlotDetail = () => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [openMenuId, setOpenMenuId] = useState(null);
 
-  // Drag & drop state
-  const [draggedBed, setDraggedBed] = useState(null);
-  const [dragOverBed, setDragOverBed] = useState(null);
-
   useEffect(() => {
     loadPlotDetails();
   }, [id]);
@@ -139,50 +135,10 @@ const PlotDetail = () => {
     setOpenMenuId(null);
   };
 
-  // Drag & Drop handlers
-  const handleDragStart = (e, bed) => {
-    setDraggedBed(bed);
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/html', e.currentTarget);
-    e.currentTarget.style.opacity = '0.4';
-  };
-
-  const handleDragEnd = (e) => {
-    e.currentTarget.style.opacity = '1';
-    setDraggedBed(null);
-    setDragOverBed(null);
-  };
-
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-  };
-
-  const handleDragEnter = (e, bed) => {
-    setDragOverBed(bed);
-  };
-
-  const handleDrop = async (e, targetBed) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    if (!draggedBed || draggedBed.id === targetBed.id) {
-      return;
-    }
-
-    // Create new beds array with swapped row_numbers
-    const updatedBeds = plot.beds.map(bed => {
-      if (bed.id === draggedBed.id) {
-        return { ...bed, row_number: targetBed.row_number };
-      }
-      if (bed.id === targetBed.id) {
-        return { ...bed, row_number: draggedBed.row_number };
-      }
-      return bed;
-    });
-
+  // Handle reorder from BedGridView
+  const handleReorderBeds = async (updatedBeds) => {
     // Optimistic update
-    setPlot({ ...plot, beds: updatedBeds.sort((a, b) => a.row_number - b.row_number) });
+    setPlot({ ...plot, beds: updatedBeds });
 
     // Send to backend
     try {
@@ -191,12 +147,10 @@ const PlotDetail = () => {
       });
     } catch (error) {
       console.error('Error reordering beds:', error);
+      alert('Błąd podczas zapisywania kolejności');
       // Reload on error to restore original order
       loadPlotDetails();
     }
-
-    setDraggedBed(null);
-    setDragOverBed(null);
   };
 
   if (loading) return <div className="text-center py-12 text-gray-500 dark:text-gray-400">Ładowanie...</div>;
@@ -331,10 +285,7 @@ const PlotDetail = () => {
       {/* Visual Grid Overview - NEW FEATURE! */}
       {plot.beds && plot.beds.length > 0 && (
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 transition-colors">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            Przegląd wizualny
-          </h2>
-          <BedGridView beds={plot.beds} />
+          <BedGridView beds={plot.beds} onReorder={handleReorderBeds} />
         </div>
       )}
 
@@ -349,15 +300,7 @@ const PlotDetail = () => {
             {plot.beds.map((bed) => (
               <div
                 key={bed.id}
-                draggable
-                onDragStart={(e) => handleDragStart(e, bed)}
-                onDragEnd={handleDragEnd}
-                onDragOver={handleDragOver}
-                onDragEnter={(e) => handleDragEnter(e, bed)}
-                onDrop={(e) => handleDrop(e, bed)}
-                className={`px-6 py-4 cursor-move transition-all ${
-                  dragOverBed?.id === bed.id ? 'bg-blue-50 dark:bg-blue-900/20 border-t-2 border-blue-500' : ''
-                }`}
+                className="px-6 py-4"
               >
                 <div className="flex justify-between items-start">
                   <div className="flex-1">

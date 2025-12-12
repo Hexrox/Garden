@@ -1,5 +1,5 @@
-import React from 'react';
-import { Sprout, Calendar, Droplets, Package } from 'lucide-react';
+import React, { useState } from 'react';
+import { Sprout, Calendar, Droplets, Package, Edit2, Save, X } from 'lucide-react';
 import { Badge } from '../../components/ui/Badge';
 
 /**
@@ -9,7 +9,11 @@ import { Badge } from '../../components/ui/Badge';
  * Color-coded by status for at-a-glance overview.
  * Perfect for hobby gardeners who want simple visualization.
  */
-const BedGridView = ({ beds = [], onBedClick }) => {
+const BedGridView = ({ beds = [], onBedClick, onReorder }) => {
+  const [editMode, setEditMode] = useState(false);
+  const [localBeds, setLocalBeds] = useState([]);
+  const [draggedBed, setDraggedBed] = useState(null);
+  const [dragOverBed, setDragOverBed] = useState(null);
   if (!beds || beds.length === 0) {
     return (
       <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-12 text-center border-2 border-dashed border-gray-300 dark:border-gray-700">
@@ -25,7 +29,79 @@ const BedGridView = ({ beds = [], onBedClick }) => {
   }
 
   // Sort beds by row number
-  const sortedBeds = [...beds].sort((a, b) => a.row_number - b.row_number);
+  const sortedBeds = editMode ? localBeds : [...beds].sort((a, b) => a.row_number - b.row_number);
+
+  // Enter edit mode
+  const handleEditClick = () => {
+    setLocalBeds([...beds].sort((a, b) => a.row_number - b.row_number));
+    setEditMode(true);
+  };
+
+  // Cancel edit mode
+  const handleCancelEdit = () => {
+    setEditMode(false);
+    setLocalBeds([]);
+    setDraggedBed(null);
+    setDragOverBed(null);
+  };
+
+  // Save reordered beds
+  const handleSaveEdit = () => {
+    if (onReorder) {
+      // Update row_numbers based on new order
+      const updatedBeds = localBeds.map((bed, index) => ({
+        ...bed,
+        row_number: index + 1
+      }));
+      onReorder(updatedBeds);
+    }
+    setEditMode(false);
+    setLocalBeds([]);
+  };
+
+  // Drag & Drop handlers
+  const handleDragStart = (e, bed) => {
+    setDraggedBed(bed);
+    e.dataTransfer.effectAllowed = 'move';
+    e.currentTarget.style.opacity = '0.4';
+  };
+
+  const handleDragEnd = (e) => {
+    e.currentTarget.style.opacity = '1';
+    setDraggedBed(null);
+    setDragOverBed(null);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDragEnter = (e, bed) => {
+    setDragOverBed(bed);
+  };
+
+  const handleDrop = (e, targetBed) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!draggedBed || draggedBed.id === targetBed.id) {
+      return;
+    }
+
+    // Find indices
+    const draggedIndex = localBeds.findIndex(b => b.id === draggedBed.id);
+    const targetIndex = localBeds.findIndex(b => b.id === targetBed.id);
+
+    // Reorder array
+    const newBeds = [...localBeds];
+    const [removed] = newBeds.splice(draggedIndex, 1);
+    newBeds.splice(targetIndex, 0, removed);
+
+    setLocalBeds(newBeds);
+    setDraggedBed(null);
+    setDragOverBed(null);
+  };
 
   // Get bed status for color coding
   const getBedStatus = (bed) => {
@@ -93,11 +169,51 @@ const BedGridView = ({ beds = [], onBedClick }) => {
     <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-          Układ grządek
-        </h3>
-        <div className="text-sm text-gray-600 dark:text-gray-400">
-          {beds.length} {beds.length === 1 ? 'grządka' : 'grządek'}
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+            Układ grządek
+          </h3>
+          {editMode && (
+            <p className="text-sm text-blue-600 dark:text-blue-400 mt-1">
+              ✋ Przeciągnij kwadraciki żeby zmienić kolejność
+            </p>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2">
+          {!editMode ? (
+            <>
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                {beds.length} {beds.length === 1 ? 'grządka' : 'grządek'}
+              </div>
+              {beds.length > 1 && (
+                <button
+                  onClick={handleEditClick}
+                  className="px-3 py-1.5 text-sm font-medium text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-lg transition-colors flex items-center gap-1.5"
+                >
+                  <Edit2 size={14} />
+                  Edytuj układ
+                </button>
+              )}
+            </>
+          ) : (
+            <div className="flex gap-2">
+              <button
+                onClick={handleCancelEdit}
+                className="px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors flex items-center gap-1.5"
+              >
+                <X size={14} />
+                Anuluj
+              </button>
+              <button
+                onClick={handleSaveEdit}
+                className="px-3 py-1.5 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors flex items-center gap-1.5"
+              >
+                <Save size={14} />
+                Zapisz
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -121,11 +237,18 @@ const BedGridView = ({ beds = [], onBedClick }) => {
           return (
             <button
               key={bed.id}
-              onClick={() => onBedClick && onBedClick(bed)}
+              draggable={editMode}
+              onDragStart={editMode ? (e) => handleDragStart(e, bed) : undefined}
+              onDragEnd={editMode ? handleDragEnd : undefined}
+              onDragOver={editMode ? handleDragOver : undefined}
+              onDragEnter={editMode ? (e) => handleDragEnter(e, bed) : undefined}
+              onDrop={editMode ? (e) => handleDrop(e, bed) : undefined}
+              onClick={() => !editMode && onBedClick && onBedClick(bed)}
               className={`
                 relative p-4 rounded-lg border-2 transition-all duration-200
                 ${config.bg} ${config.hoverBg}
-                hover:shadow-md hover:-translate-y-0.5
+                ${editMode ? 'cursor-move' : 'hover:shadow-md hover:-translate-y-0.5'}
+                ${dragOverBed?.id === bed.id ? 'ring-4 ring-blue-500 dark:ring-blue-400 scale-105' : ''}
                 focus:outline-none focus:ring-2 focus:ring-green-500
                 text-left
               `}
