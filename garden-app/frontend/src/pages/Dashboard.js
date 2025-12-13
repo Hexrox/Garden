@@ -9,6 +9,7 @@ import UpcomingHarvests from '../components/UpcomingHarvests';
 import SuccessionWidget from '../components/SuccessionWidget';
 import OnboardingWizard from '../components/onboarding/OnboardingWizard';
 import WelcomeCard from '../components/onboarding/WelcomeCard';
+import EmailVerificationBanner from '../components/EmailVerificationBanner';
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -134,15 +135,17 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="space-y-4 md:space-y-6">
-      {/* Onboarding Wizard */}
-      {showOnboarding && (
-        <OnboardingWizard
-          isOpen={showOnboarding}
-          onComplete={handleOnboardingComplete}
-          onSkip={handleOnboardingSkip}
-        />
-      )}
+    <>
+      <EmailVerificationBanner user={user} />
+      <div className="space-y-4 md:space-y-6">
+        {/* Onboarding Wizard */}
+        {showOnboarding && (
+          <OnboardingWizard
+            isOpen={showOnboarding}
+            onComplete={handleOnboardingComplete}
+            onSkip={handleOnboardingSkip}
+          />
+        )}
 
       <div className="flex justify-between items-center">
         <div>
@@ -378,6 +381,7 @@ const Dashboard = () => {
         </a>
       </div>
     </div>
+    </>
   );
 };
 

@@ -7,6 +7,10 @@ import ErrorBoundary from './components/ErrorBoundary';
 import CookieConsent from './components/CookieConsent';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
+import VerifyEmail from './pages/VerifyEmail';
+import RestoreAccount from './pages/RestoreAccount';
 import Dashboard from './pages/Dashboard';
 import PlotsList from './pages/PlotsList';
 import PlotDetail from './pages/PlotDetail';
@@ -132,6 +136,12 @@ function AppRoutes() {
             </PublicRoute>
           }
         />
+
+        {/* Password Reset & Email Verification Routes (public) */}
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password/:token" element={<ResetPassword />} />
+        <Route path="/verify-email/:token" element={<VerifyEmail />} />
+        <Route path="/restore-account/:token" element={<RestoreAccount />} />
 
         {/* Protected Routes */}
         <Route

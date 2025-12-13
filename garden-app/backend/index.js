@@ -180,12 +180,36 @@ const publicLimiter = rateLimit({
   legacyHeaders: false
 });
 
+// Password reset rate limiter - max 3 próby na godzinę
+const passwordResetLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1h
+  max: 3,
+  message: { error: 'Zbyt wiele prób resetowania hasła. Spróbuj ponownie za godzinę.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => process.env.NODE_ENV === 'development'
+});
+
+// Email verification rate limiter - max 5 prób na godzinę
+const emailVerificationLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1h
+  max: 5,
+  message: { error: 'Zbyt wiele prób weryfikacji email. Spróbuj ponownie za godzinę.' },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
 // Apply rate limiting to all /api routes
 app.use('/api', apiLimiter);
 app.use('/api', mutationLimiter);
 
 // Stricter rate limiting for public profiles (prevent scraping)
 app.use('/api/g', publicLimiter);
+
+// Apply security rate limiters to specific endpoints
+app.use('/api/auth/forgot-password', passwordResetLimiter);
+app.use('/api/auth/reset-password', passwordResetLimiter);
+app.use('/api/auth/resend-verification', emailVerificationLimiter);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

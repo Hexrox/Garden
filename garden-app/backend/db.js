@@ -844,6 +844,98 @@ db.serialize(() => {
     }
   });
 
+  // ==========================================
+  // SECURITY FEATURES
+  // ==========================================
+
+  // Add email verification columns to users table
+  db.run(`ALTER TABLE users ADD COLUMN email_verified BOOLEAN DEFAULT 0`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding email_verified column:', err.message);
+    }
+  });
+
+  db.run(`ALTER TABLE users ADD COLUMN email_verification_token TEXT`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding email_verification_token column:', err.message);
+    }
+  });
+
+  db.run(`ALTER TABLE users ADD COLUMN email_verification_expires DATETIME`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding email_verification_expires column:', err.message);
+    }
+  });
+
+  // Add password reset columns to users table
+  db.run(`ALTER TABLE users ADD COLUMN password_reset_token TEXT`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding password_reset_token column:', err.message);
+    }
+  });
+
+  db.run(`ALTER TABLE users ADD COLUMN password_reset_expires DATETIME`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding password_reset_expires column:', err.message);
+    }
+  });
+
+  // Add soft delete columns to users table
+  db.run(`ALTER TABLE users ADD COLUMN deleted_at DATETIME`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding deleted_at column:', err.message);
+    }
+  });
+
+  db.run(`ALTER TABLE users ADD COLUMN deletion_scheduled_for DATETIME`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding deletion_scheduled_for column:', err.message);
+    }
+  });
+
+  // Password reset tokens history table
+  db.run(`CREATE TABLE IF NOT EXISTS password_reset_tokens (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    token TEXT NOT NULL,
+    expires_at DATETIME NOT NULL,
+    used_at DATETIME,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    ip_address TEXT,
+    user_agent TEXT,
+    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+  )`);
+
+  // Deleted accounts archive table
+  db.run(`CREATE TABLE IF NOT EXISTS deleted_accounts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    username TEXT NOT NULL,
+    email TEXT NOT NULL,
+    deletion_reason TEXT,
+    deleted_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    restore_token TEXT,
+    permanent_delete_at DATETIME NOT NULL,
+    restored_at DATETIME,
+    UNIQUE(user_id)
+  )`);
+
+  // Create indexes for security tables
+  db.run('CREATE INDEX IF NOT EXISTS idx_reset_token ON password_reset_tokens(token)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_reset_user_id ON password_reset_tokens(user_id)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_reset_expires ON password_reset_tokens(expires_at)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_deleted_restore_token ON deleted_accounts(restore_token)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_deleted_permanent_at ON deleted_accounts(permanent_delete_at)');
+
+  // Mark existing users as verified (backward compatibility)
+  db.run(`UPDATE users SET email_verified = 1 WHERE email_verified IS NULL OR email_verified = 0`, (err) => {
+    if (err) {
+      console.error('Error updating existing users email_verified:', err.message);
+    } else {
+      console.log('✅ Marked existing users as email verified');
+    }
+  });
+
   console.log('✅ Database tables and indexes created successfully');
 });
 

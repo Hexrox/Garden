@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import axios from '../config/axios';
 import { useAuth } from '../context/AuthContext';
 import { Share2, Eye, Check, X, Image as ImageIcon, TrendingUp, Users, Calendar } from 'lucide-react';
@@ -468,6 +469,19 @@ const Profile = () => {
   const handleOpenPublicProfile = () => {
     if (publicProfile.username) {
       window.open(`/g/${publicProfile.username}`, '_blank');
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    try {
+      await axios.delete('/api/auth/account');
+      alert('Konto zostało oznaczone do usunięcia. Sprawdź swoją skrzynkę email aby je przywrócić w ciągu 30 dni.');
+      // Wyloguj użytkownika
+      localStorage.removeItem('token');
+      window.location.href = '/login';
+    } catch (error) {
+      console.error('Error deleting account:', error);
+      alert('Wystąpił błąd podczas usuwania konta');
     }
   };
 
@@ -1212,6 +1226,62 @@ const Profile = () => {
             </div>
           </>
         )}
+      </div>
+
+      {/* Security & Account Section */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+          Bezpieczeństwo i Konto
+        </h2>
+
+        <div className="space-y-6">
+          {/* Change Password */}
+          <div className="border-b border-gray-200 dark:border-gray-700 pb-6">
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+              Zmiana hasła
+            </h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              Możesz zresetować swoje hasło używając linku wysłanego na email.
+            </p>
+            <Link
+              to="/forgot-password"
+              className="inline-flex items-center px-4 py-2 border-2 border-green-600 dark:border-green-500 rounded-lg text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors"
+            >
+              Zmień hasło
+            </Link>
+          </div>
+
+          {/* Delete Account */}
+          <div>
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-4">
+              <h3 className="text-lg font-medium text-red-900 dark:text-red-200 mb-2">
+                ⚠️ Strefa niebezpieczna
+              </h3>
+              <p className="text-sm text-red-800 dark:text-red-300 mb-2">
+                Usunięcie konta spowoduje:
+              </p>
+              <ul className="text-sm text-red-800 dark:text-red-300 list-disc list-inside space-y-1 mb-3">
+                <li>Oznaczenie konta do usunięcia (30 dni na przywrócenie)</li>
+                <li>Ukrycie wszystkich Twoich danych</li>
+                <li>Po 30 dniach: permanentne usunięcie wszystkich danych</li>
+              </ul>
+              <p className="text-xs text-red-700 dark:text-red-400">
+                Otrzymasz email z linkiem do przywrócenia konta.
+              </p>
+            </div>
+
+            <button
+              onClick={() => {
+                if (window.confirm('Czy na pewno chcesz usunąć swoje konto? Będziesz mieć 30 dni na przywrócenie.')) {
+                  handleDeleteAccount();
+                }
+              }}
+              className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors"
+            >
+              Usuń moje konto
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Photo Selector Modal */}

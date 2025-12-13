@@ -86,7 +86,14 @@ const Login = () => {
             </button>
           </div>
 
-          <div className="text-center">
+          <div className="flex items-center justify-between mt-4">
+            <Link
+              to="/forgot-password"
+              className="text-sm text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300"
+            >
+              Zapomniałeś hasła?
+            </Link>
+
             <p className="text-sm text-gray-600 dark:text-gray-400">
               Nie masz konta?{' '}
               <Link to="/register" className="font-medium text-green-600 dark:text-green-400 hover:text-green-500 dark:hover:text-green-300">
