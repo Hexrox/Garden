@@ -1,20 +1,17 @@
 import React, { useState } from 'react';
 import { X, ChevronRight, ChevronLeft, Check, MapPin, Sprout, Camera, Sparkles } from 'lucide-react';
 import axios from '../../config/axios';
-import TemplateSelectionStep from './TemplateSelectionStep';
 
 const OnboardingWizard = ({ isOpen, onComplete, onSkip }) => {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     interests: [],
-    selectedTemplate: null,
-    skipTemplate: false,
     location: '',
     city: '',
     hasGeolocation: false
   });
 
-  const totalSteps = 6;
+  const totalSteps = 5;
 
   const handleNext = () => {
     if (step < totalSteps) {
@@ -31,14 +28,6 @@ const OnboardingWizard = ({ isOpen, onComplete, onSkip }) => {
   const handleComplete = async () => {
     try {
       await axios.put('/api/auth/complete-onboarding');
-
-      // Jeśli wybrano szablon, utwórz plot z szablonu
-      if (formData.selectedTemplate && !formData.skipTemplate) {
-        await axios.post(`/api/templates/${formData.selectedTemplate.id}/create-plot`, {
-          autoPlantDate: false
-        });
-      }
-
       onComplete();
     } catch (error) {
       console.error('Error completing onboarding:', error);
@@ -111,11 +100,10 @@ const OnboardingWizard = ({ isOpen, onComplete, onSkip }) => {
 
           <h2 className="text-2xl font-bold mb-2">
             {step === 1 && "👋 Witaj w Garden App!"}
-            {step === 2 && "🌿 Gotowe szablony ogrodów"}
-            {step === 3 && "🌍 Twoja lokalizacja"}
-            {step === 4 && "🌱 Pierwsze poletko"}
-            {step === 5 && "🌿 Pierwsza grządka"}
-            {step === 6 && "✨ Poznaj możliwości!"}
+            {step === 2 && "🌍 Twoja lokalizacja"}
+            {step === 3 && "🌱 Pierwsze poletko"}
+            {step === 4 && "🌿 Pierwsza grządka"}
+            {step === 5 && "✨ Poznaj możliwości!"}
           </h2>
           <p className="text-green-100">
             Krok {step} z {totalSteps}
@@ -180,22 +168,8 @@ const OnboardingWizard = ({ isOpen, onComplete, onSkip }) => {
             </div>
           )}
 
-          {/* Step 2: Template Selection */}
+          {/* Step 2: Location */}
           {step === 2 && (
-            <TemplateSelectionStep
-              interests={formData.interests}
-              selectedTemplate={formData.selectedTemplate}
-              onSelectTemplate={(template) =>
-                setFormData(prev => ({ ...prev, selectedTemplate: template, skipTemplate: false }))
-              }
-              onSkipTemplate={() =>
-                setFormData(prev => ({ ...prev, selectedTemplate: null, skipTemplate: true }))
-              }
-            />
-          )}
-
-          {/* Step 3: Location */}
-          {step === 3 && (
             <div className="space-y-6">
               <div className="text-center">
                 <div className="w-20 h-20 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -255,8 +229,8 @@ const OnboardingWizard = ({ isOpen, onComplete, onSkip }) => {
             </div>
           )}
 
-          {/* Step 4: First Plot */}
-          {step === 4 && (
+          {/* Step 3: First Plot */}
+          {step === 3 && (
             <div className="space-y-6">
               <div className="text-center">
                 <div className="w-20 h-20 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -303,8 +277,8 @@ const OnboardingWizard = ({ isOpen, onComplete, onSkip }) => {
             </div>
           )}
 
-          {/* Step 5: First Bed */}
-          {step === 5 && (
+          {/* Step 4: First Bed */}
+          {step === 4 && (
             <div className="space-y-6">
               <div className="text-center">
                 <div className="w-20 h-20 bg-orange-100 dark:bg-orange-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -355,8 +329,8 @@ const OnboardingWizard = ({ isOpen, onComplete, onSkip }) => {
             </div>
           )}
 
-          {/* Step 6: Features Showcase */}
-          {step === 6 && (
+          {/* Step 5: Features Showcase */}
+          {step === 5 && (
             <div className="space-y-6">
               <div className="text-center">
                 <div className="w-20 h-20 bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">

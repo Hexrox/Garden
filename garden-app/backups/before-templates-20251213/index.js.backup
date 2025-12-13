@@ -31,7 +31,6 @@ const adminRoutes = require('./routes/admin');
 const galleryRoutes = require('./routes/gallery');
 const publicProfileRoutes = require('./routes/publicProfile');
 const searchRoutes = require('./routes/search');
-const templateRoutes = require('./routes/templates');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -215,7 +214,6 @@ app.use('/api/calendar', calendarRoutes);
 app.use('/api/gallery', galleryRoutes);
 app.use('/api/search', searchRoutes);
 app.use('/api', publicProfileRoutes);
-app.use('/api/templates', templateRoutes);
 
 // 404 handler
 app.use((req, res) => {
