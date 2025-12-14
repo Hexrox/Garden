@@ -1,6 +1,9 @@
 const sqlite3 = require('sqlite3').verbose();
 const db = new sqlite3.Database('garden.db');
 
+// CRITICAL: Enable foreign keys for CASCADE DELETE to work
+db.run('PRAGMA foreign_keys = ON;');
+
 db.serialize(() => {
   // Users table
   db.run(`CREATE TABLE IF NOT EXISTS users (
