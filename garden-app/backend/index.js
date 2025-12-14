@@ -40,13 +40,8 @@ const PORT = process.env.PORT || 3001;
 // Set to 1 to trust first proxy (nginx) for X-Forwarded-For header
 app.set('trust proxy', 1);
 
-// HTTPS enforcement (production only)
-app.use((req, res, next) => {
-  if (req.header('x-forwarded-proto') !== 'https' && process.env.NODE_ENV === 'production') {
-    return res.redirect(301, `https://${req.header('host')}${req.url}`);
-  }
-  next();
-});
+// HTTPS enforcement handled by nginx reverse proxy
+// No need to enforce here as backend is only accessible via nginx
 
 // Security middleware with CSP
 app.use(helmet({
