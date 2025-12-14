@@ -35,15 +35,33 @@ const Dashboard = () => {
 
   const checkOnboardingStatus = async () => {
     try {
-      const response = await axios.get('/api/auth/profile');
-      const completed = response.data.onboarding_completed === 1;
+      // Check both onboarding status AND if user has any data
+      const [profileRes, plotsRes] = await Promise.all([
+        axios.get('/api/auth/profile'),
+        axios.get('/api/plots')
+      ]);
+
+      const completed = profileRes.data.onboarding_completed === 1;
+      const hasData = plotsRes.data.length > 0;
       setOnboardingCompleted(completed);
 
-      // Show onboarding wizard if not completed
-      if (!completed) {
+      if (!completed && !hasData) {
+        // New user without data - show onboarding
         setShowOnboarding(true);
+      } else if (!completed && hasData) {
+        // User has data but onboarding not marked complete
+        // Auto-complete it (user already knows the app)
+        try {
+          await axios.put('/api/auth/complete-onboarding');
+          setOnboardingCompleted(true);
+        } catch (error) {
+          console.error('Error auto-completing onboarding:', error);
+        }
+        // Show welcome card for existing users
+        const dismissed = localStorage.getItem('welcomeCardDismissed');
+        setShowWelcomeCard(!dismissed);
       } else {
-        // Show welcome card if completed (it auto-hides when all tasks done)
+        // Onboarding completed - show welcome card if not dismissed
         const dismissed = localStorage.getItem('welcomeCardDismissed');
         setShowWelcomeCard(!dismissed);
       }
@@ -66,7 +84,16 @@ const Dashboard = () => {
     }
   };
 
-  const handleOnboardingSkip = () => {
+  const handleOnboardingSkip = async () => {
+    try {
+      // CRITICAL: Mark onboarding as completed in database
+      // Without this, onboarding will show again on next login
+      await axios.put('/api/auth/complete-onboarding');
+      setOnboardingCompleted(true);
+    } catch (error) {
+      console.error('Error completing onboarding:', error);
+      // Still close wizard even on error
+    }
     setShowOnboarding(false);
     setShowWelcomeCard(true);
   };

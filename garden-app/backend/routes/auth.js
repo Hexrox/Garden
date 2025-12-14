@@ -214,16 +214,20 @@ router.put('/dark-mode', auth, (req, res) => {
 });
 
 // Update user profile (frost dates, hardiness zone, location)
-router.put('/profile', auth, (req, res) => {
+// Handler function for both /profile and /update-profile endpoints
+const updateProfileHandler = (req, res) => {
   // SECURITY: Explicit whitelist of allowed fields
-  const ALLOWED_FIELDS = ['hardiness_zone', 'first_frost_date', 'last_frost_date', 'location'];
+  const ALLOWED_FIELDS = [
+    'hardiness_zone', 'first_frost_date', 'last_frost_date',
+    'location', 'latitude', 'longitude', 'city'
+  ];
 
   const updateFields = [];
   const values = [];
 
-  // Only process whitelisted fields
+  // Only process whitelisted fields that are defined (not null/undefined)
   ALLOWED_FIELDS.forEach(field => {
-    if (req.body[field] !== undefined) {
+    if (req.body[field] !== undefined && req.body[field] !== null) {
       updateFields.push(`${field} = ?`);
       values.push(req.body[field]);
     }
@@ -247,7 +251,11 @@ router.put('/profile', auth, (req, res) => {
       res.json({ message: 'Profil zaktualizowany pomyślnie' });
     }
   );
-});
+};
+
+// Both endpoints use the same handler
+router.put('/profile', auth, updateProfileHandler);
+router.put('/update-profile', auth, updateProfileHandler); // Alias for onboarding
 
 // Get user profile
 router.get('/profile', auth, (req, res) => {
