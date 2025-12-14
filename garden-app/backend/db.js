@@ -343,6 +343,43 @@ db.serialize(() => {
     }
   });
 
+  // Add recurring tasks columns
+  db.run(`ALTER TABLE tasks ADD COLUMN is_recurring BOOLEAN DEFAULT 0`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding is_recurring column:', err.message);
+    }
+  });
+
+  db.run(`ALTER TABLE tasks ADD COLUMN recurrence_frequency INTEGER`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding recurrence_frequency column:', err.message);
+    }
+  });
+
+  db.run(`ALTER TABLE tasks ADD COLUMN recurrence_times TEXT`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding recurrence_times column:', err.message);
+    }
+  });
+
+  db.run(`ALTER TABLE tasks ADD COLUMN next_occurrence DATE`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding next_occurrence column:', err.message);
+    }
+  });
+
+  db.run(`ALTER TABLE tasks ADD COLUMN recurrence_end_date DATE`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding recurrence_end_date column:', err.message);
+    }
+  });
+
+  db.run(`ALTER TABLE tasks ADD COLUMN parent_task_id INTEGER`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding parent_task_id column:', err.message);
+    }
+  });
+
   // Weather history table (for monthly statistics)
   db.run(`CREATE TABLE IF NOT EXISTS weather_history (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -379,6 +416,8 @@ db.serialize(() => {
   db.run('CREATE INDEX IF NOT EXISTS idx_tasks_user_id ON tasks(user_id)');
   db.run('CREATE INDEX IF NOT EXISTS idx_tasks_due_date ON tasks(due_date)');
   db.run('CREATE INDEX IF NOT EXISTS idx_tasks_completed ON tasks(completed)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_tasks_parent_id ON tasks(parent_task_id)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_tasks_is_recurring ON tasks(is_recurring)');
   db.run('CREATE INDEX IF NOT EXISTS idx_plants_user_id ON plants(user_id)');
   db.run('CREATE INDEX IF NOT EXISTS idx_plants_name ON plants(name)');
   db.run('CREATE INDEX IF NOT EXISTS idx_plant_photos_bed_id ON plant_photos(bed_id)');

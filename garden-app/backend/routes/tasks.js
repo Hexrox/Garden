@@ -86,10 +86,14 @@ router.post('/', auth, (req, res) => {
     }
 
     if (recurrence_times) {
-      const validTimes = ['anytime', 'morning', 'afternoon', 'evening'];
-      const times = JSON.parse(recurrence_times);
-      if (!Array.isArray(times) || !times.every(t => validTimes.includes(t))) {
-        return res.status(400).json({ error: 'Nieprawidłowe recurrence_times' });
+      try {
+        const validTimes = ['anytime', 'morning', 'afternoon', 'evening'];
+        const times = JSON.parse(recurrence_times);
+        if (!Array.isArray(times) || !times.every(t => validTimes.includes(t))) {
+          return res.status(400).json({ error: 'Nieprawidłowe recurrence_times' });
+        }
+      } catch (parseError) {
+        return res.status(400).json({ error: 'Nieprawidłowy format recurrence_times (wymagany JSON array)' });
       }
     }
   }
@@ -97,9 +101,10 @@ router.post('/', auth, (req, res) => {
   // Oblicz next_occurrence dla recurring tasks
   let next_occurrence = null;
   if (is_recurring && recurrence_frequency) {
-    const nextDate = new Date();
-    nextDate.setDate(nextDate.getDate() + recurrence_frequency);
-    next_occurrence = nextDate.toISOString().split('T')[0];
+    // Oblicz od due_date jeśli podano, w przeciwnym razie od dziś
+    const baseDate = due_date ? new Date(due_date) : new Date();
+    baseDate.setDate(baseDate.getDate() + recurrence_frequency);
+    next_occurrence = baseDate.toISOString().split('T')[0];
   }
 
   db.run(
@@ -308,10 +313,10 @@ router.post('/:id/complete', auth, (req, res) => {
                 }
               }
 
-              // Oblicz due_date dla następnego zadania
-              const nextDate = new Date();
-              nextDate.setDate(nextDate.getDate() + parentTask.recurrence_frequency);
-              const nextDueDate = nextDate.toISOString().split('T')[0];
+              // Oblicz due_date dla następnego zadania od oryginalnej due_date (zachowaj regularność)
+              const lastDueDate = new Date(task.due_date || Date.now());
+              lastDueDate.setDate(lastDueDate.getDate() + parentTask.recurrence_frequency);
+              const nextDueDate = lastDueDate.toISOString().split('T')[0];
 
               // Utwórz następne zadanie
               db.run(
@@ -806,13 +811,17 @@ router.put('/:id/recurring', auth, (req, res) => {
       }
 
       if (recurrence_times !== undefined) {
-        const validTimes = ['anytime', 'morning', 'afternoon', 'evening'];
-        const times = JSON.parse(recurrence_times);
-        if (!Array.isArray(times) || !times.every(t => validTimes.includes(t))) {
-          return res.status(400).json({ error: 'Nieprawidłowe recurrence_times' });
+        try {
+          const validTimes = ['anytime', 'morning', 'afternoon', 'evening'];
+          const times = JSON.parse(recurrence_times);
+          if (!Array.isArray(times) || !times.every(t => validTimes.includes(t))) {
+            return res.status(400).json({ error: 'Nieprawidłowe recurrence_times' });
+          }
+          updates.push('recurrence_times = ?');
+          params.push(recurrence_times);
+        } catch (parseError) {
+          return res.status(400).json({ error: 'Nieprawidłowy format recurrence_times (wymagany JSON array)' });
         }
-        updates.push('recurrence_times = ?');
-        params.push(recurrence_times);
       }
 
       if (recurrence_end_date !== undefined) {
