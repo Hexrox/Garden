@@ -256,11 +256,16 @@ app.use((err, req, res, next) => {
 });
 
 app.listen(PORT, () => {
+  // Display correct URL based on environment
+  const serverUrl = process.env.NODE_ENV === 'production'
+    ? 'https://gardenapp.pl'
+    : `http://localhost:${PORT}`;
+
   console.log('');
   console.log('🌱 =======================================');
   console.log('🌱 Garden App v2.0 Backend');
   console.log('🌱 =======================================');
-  console.log(`🌱 Server running on http://localhost:${PORT}`);
+  console.log(`🌱 Server running on ${serverUrl}`);
   console.log(`🌱 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🌱 CORS allowed origins: ${allowedOrigins.join(', ')}`);
   console.log('🌱 =======================================');
