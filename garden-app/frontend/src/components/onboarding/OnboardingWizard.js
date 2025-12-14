@@ -14,7 +14,7 @@ const OnboardingWizard = ({ isOpen, onComplete, onSkip }) => {
     hasGeolocation: false
   });
 
-  const totalSteps = 6;
+  const totalSteps = 7;
 
   const handleNext = () => {
     if (step < totalSteps) {
@@ -98,31 +98,32 @@ const OnboardingWizard = ({ isOpen, onComplete, onSkip }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="relative w-full max-w-2xl bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4">
+      <div className="relative w-full max-w-2xl bg-white dark:bg-gray-800 rounded-lg sm:rounded-2xl shadow-2xl overflow-hidden max-h-[95vh] flex flex-col">
         {/* Header */}
-        <div className="bg-gradient-to-r from-green-600 to-emerald-600 p-6 text-white">
+        <div className="bg-gradient-to-r from-green-600 to-emerald-600 p-4 sm:p-6 text-white flex-shrink-0">
           <button
             onClick={onSkip}
-            className="absolute top-4 right-4 p-2 hover:bg-white/20 rounded-lg transition-colors"
+            className="absolute top-3 right-3 sm:top-4 sm:right-4 p-1.5 sm:p-2 hover:bg-white/20 rounded-lg transition-colors z-10"
           >
-            <X size={20} />
+            <X size={18} className="sm:w-5 sm:h-5" />
           </button>
 
-          <h2 className="text-2xl font-bold mb-2">
+          <h2 className="text-lg sm:text-2xl font-bold mb-1 sm:mb-2 pr-8">
             {step === 1 && "👋 Witaj w Garden App!"}
             {step === 2 && "🌿 Gotowe szablony ogrodów"}
             {step === 3 && "🌍 Twoja lokalizacja"}
             {step === 4 && "🌱 Pierwsze poletko"}
             {step === 5 && "🌿 Pierwsza grządka"}
             {step === 6 && "✨ Poznaj możliwości!"}
+            {step === 7 && "✅ System zadań i cykliczność"}
           </h2>
-          <p className="text-green-100">
+          <p className="text-sm sm:text-base text-green-100">
             Krok {step} z {totalSteps}
           </p>
 
           {/* Progress bar */}
-          <div className="mt-4 h-2 bg-white/20 rounded-full overflow-hidden">
+          <div className="mt-3 sm:mt-4 h-1.5 sm:h-2 bg-white/20 rounded-full overflow-hidden">
             <div
               className="h-full bg-white transition-all duration-300"
               style={{ width: `${(step / totalSteps) * 100}%` }}
@@ -131,7 +132,7 @@ const OnboardingWizard = ({ isOpen, onComplete, onSkip }) => {
         </div>
 
         {/* Content */}
-        <div className="p-8">
+        <div className="p-4 sm:p-6 md:p-8 overflow-y-auto flex-1">
           {/* Step 1: Interests */}
           {step === 1 && (
             <div className="space-y-6">
@@ -398,6 +399,130 @@ const OnboardingWizard = ({ isOpen, onComplete, onSkip }) => {
 
               <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 rounded-xl p-6 text-center">
                 <p className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                  Jeszcze jeden krok! →
+                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Poznaj system zadań i cykliczność
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Step 7: Task System & Recurring Tasks */}
+          {step === 7 && (
+            <div className="space-y-6">
+              <div className="text-center">
+                <div className="w-20 h-20 bg-gradient-to-br from-purple-400 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Check className="w-10 h-10 text-white" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                  Zadania - nigdy nie zapomnisz!
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400">
+                  Garden App przypomni Ci o wszystkich ważnych czynnościach
+                </p>
+              </div>
+
+              {/* Jak powstają zadania */}
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
+                <h4 className="font-bold text-blue-900 dark:text-blue-200 mb-3 flex items-center gap-2">
+                  <span className="text-2xl">🤖</span>
+                  Automatyczne zadania
+                </h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-start gap-2">
+                    <span className="text-blue-600 dark:text-blue-400 font-bold">•</span>
+                    <p className="text-blue-800 dark:text-blue-300">
+                      <strong>Podlewanie:</strong> Gdy roślina nie była podlewana 3+ dni
+                    </p>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="text-blue-600 dark:text-blue-400 font-bold">•</span>
+                    <p className="text-blue-800 dark:text-blue-300">
+                      <strong>Zbiory:</strong> 60+ dni po posadzeniu - czas zbierać!
+                    </p>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="text-blue-600 dark:text-blue-400 font-bold">•</span>
+                    <p className="text-blue-800 dark:text-blue-300">
+                      <strong>Opryski:</strong> Przypomnienie zgodnie z karencją
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Zadania cykliczne */}
+              <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-xl p-4">
+                <h4 className="font-bold text-purple-900 dark:text-purple-200 mb-3 flex items-center gap-2">
+                  <span className="text-2xl">🔄</span>
+                  Zadania cykliczne - NOWOŚĆ!
+                </h4>
+                <p className="text-sm text-purple-800 dark:text-purple-300 mb-3">
+                  Niektóre czynności musisz powtarzać regularnie. Ustaw cykliczność!
+                </p>
+
+                <div className="space-y-3">
+                  <div className="bg-white/50 dark:bg-gray-800/50 rounded-lg p-3">
+                    <p className="text-sm font-semibold text-purple-900 dark:text-purple-200 mb-2">
+                      📝 Przykład: Podlewanie pomidorów
+                    </p>
+                    <div className="space-y-1 text-xs text-purple-700 dark:text-purple-300">
+                      <div className="flex items-center gap-2">
+                        <span className="bg-purple-200 dark:bg-purple-800 px-2 py-1 rounded">Co 2 dni</span>
+                        <span>+</span>
+                        <span className="bg-purple-200 dark:bg-purple-800 px-2 py-1 rounded">Rano</span>
+                      </div>
+                      <p className="text-purple-600 dark:text-purple-400 italic">
+                        → Zadanie pojawi się automatycznie co 2 dni o poranku!
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="bg-white/50 dark:bg-gray-800/50 rounded-lg p-3">
+                    <p className="text-sm font-semibold text-purple-900 dark:text-purple-200 mb-2">
+                      💧 Przykład: Podlewanie ogórków (intensywnie)
+                    </p>
+                    <div className="space-y-1 text-xs text-purple-700 dark:text-purple-300">
+                      <div className="flex items-center gap-2">
+                        <span className="bg-purple-200 dark:bg-purple-800 px-2 py-1 rounded">Codziennie</span>
+                        <span>+</span>
+                        <span className="bg-purple-200 dark:bg-purple-800 px-2 py-1 rounded">Rano + Wieczór</span>
+                      </div>
+                      <p className="text-purple-600 dark:text-purple-400 italic">
+                        → 2 zadania dziennie: rano i wieczorem!
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-3 p-3 bg-green-100/50 dark:bg-green-900/20 rounded-lg border border-green-300 dark:border-green-700">
+                  <p className="text-xs text-green-800 dark:text-green-200">
+                    <strong>💡 Wskazówka:</strong> Gdy ukończysz cykliczne zadanie, następne pojawi się automatycznie!
+                  </p>
+                </div>
+              </div>
+
+              {/* Pory dnia */}
+              <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
+                <div className="bg-orange-100 dark:bg-orange-900/30 rounded-lg p-2 sm:p-3 text-center">
+                  <div className="text-xl sm:text-2xl mb-0.5 sm:mb-1">🌅</div>
+                  <p className="text-[10px] sm:text-xs font-semibold text-orange-900 dark:text-orange-200">Rano</p>
+                  <p className="text-[9px] sm:text-xs text-orange-700 dark:text-orange-400">6-12</p>
+                </div>
+                <div className="bg-yellow-100 dark:bg-yellow-900/30 rounded-lg p-2 sm:p-3 text-center">
+                  <div className="text-xl sm:text-2xl mb-0.5 sm:mb-1">☀️</div>
+                  <p className="text-[10px] sm:text-xs font-semibold text-yellow-900 dark:text-yellow-200">Popołudnie</p>
+                  <p className="text-[9px] sm:text-xs text-yellow-700 dark:text-yellow-400">12-18</p>
+                </div>
+                <div className="bg-indigo-100 dark:bg-indigo-900/30 rounded-lg p-2 sm:p-3 text-center">
+                  <div className="text-xl sm:text-2xl mb-0.5 sm:mb-1">🌙</div>
+                  <p className="text-[10px] sm:text-xs font-semibold text-indigo-900 dark:text-indigo-200">Wieczór</p>
+                  <p className="text-[9px] sm:text-xs text-indigo-700 dark:text-indigo-400">18-22</p>
+                </div>
+              </div>
+
+              <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 rounded-xl p-6 text-center">
+                <p className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
                   🎉 Wszystko gotowe!
                 </p>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -409,31 +534,32 @@ const OnboardingWizard = ({ isOpen, onComplete, onSkip }) => {
         </div>
 
         {/* Footer */}
-        <div className="border-t border-gray-200 dark:border-gray-700 p-6 flex items-center justify-between bg-gray-50 dark:bg-gray-900">
+        <div className="border-t border-gray-200 dark:border-gray-700 p-3 sm:p-4 md:p-6 flex items-center justify-between bg-gray-50 dark:bg-gray-900 flex-shrink-0">
           <button
             onClick={onSkip}
-            className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+            className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
           >
-            Pomiń przewodnik
+            <span className="hidden sm:inline">Pomiń przewodnik</span>
+            <span className="sm:hidden">Pomiń</span>
           </button>
 
-          <div className="flex gap-2">
+          <div className="flex gap-1.5 sm:gap-2">
             {step > 1 && (
               <button
                 onClick={handleBack}
-                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center gap-2"
+                className="px-3 sm:px-4 py-1.5 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center gap-1 sm:gap-2 text-sm sm:text-base"
               >
-                <ChevronLeft size={16} />
-                Wstecz
+                <ChevronLeft size={14} className="sm:w-4 sm:h-4" />
+                <span className="hidden sm:inline">Wstecz</span>
               </button>
             )}
 
             <button
               onClick={step === 2 && !formData.hasGeolocation ? saveCity : handleNext}
-              className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
+              className="px-4 sm:px-6 py-1.5 sm:py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors flex items-center gap-1 sm:gap-2 text-sm sm:text-base"
             >
               {step === totalSteps ? 'Zakończ' : 'Dalej'}
-              <ChevronRight size={16} />
+              <ChevronRight size={14} className="sm:w-4 sm:h-4" />
             </button>
           </div>
         </div>

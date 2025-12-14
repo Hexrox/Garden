@@ -60,23 +60,23 @@ export const AuthProvider = ({ children }) => {
       // Set default authorization header
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
-      // Get user data from token (decode JWT payload)
-      try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        setUser({
-          id: payload.id,
-          username: payload.username,
-          email: payload.email
-        });
-      } catch (error) {
-        console.error('Invalid token:', error);
-        // CRITICAL FIX: Set loading to false immediately to prevent infinite loading state
-        // This happens when token is corrupted/expired and can't be decoded
-        setLoading(false);
-        clearTimeout(fallbackTimeout);
-        logout();
-        return;
-      }
+      // Fetch full user data from backend (includes email, email_verified, etc.)
+      const fetchUserData = async () => {
+        try {
+          const response = await axios.get('/api/auth/me');
+          setUser(response.data.user);
+          setLoading(false);
+          clearTimeout(fallbackTimeout);
+        } catch (error) {
+          console.error('Failed to fetch user data:', error);
+          // Token is invalid or expired - logout
+          setLoading(false);
+          clearTimeout(fallbackTimeout);
+          logout();
+        }
+      };
+
+      fetchUserData();
 
       // Setup axios interceptor for 401 errors
       const interceptor = axios.interceptors.response.use(
@@ -89,9 +89,6 @@ export const AuthProvider = ({ children }) => {
           return Promise.reject(error);
         }
       );
-
-      setLoading(false);
-      clearTimeout(fallbackTimeout);
 
       // Cleanup interceptor on unmount or token change
       return () => {

@@ -776,4 +776,42 @@ router.post('/account/restore', async (req, res) => {
   }
 });
 
+// ==========================================
+// GET CURRENT USER
+// ==========================================
+
+// GET /auth/me - Get current user data (requires auth)
+router.get('/me', auth, (req, res) => {
+  const userId = req.user.id;
+
+  db.get(
+    `SELECT id, username, email, email_verified, role, created_at,
+            hardiness_zone, first_frost_date, last_frost_date,
+            location, latitude, longitude, city, dark_mode,
+            public_profile_enabled, public_bio, public_username,
+            public_display_name, profile_photo, onboarding_completed
+     FROM users
+     WHERE id = ? AND deleted_at IS NULL`,
+    [userId],
+    (err, user) => {
+      if (err) {
+        console.error('Error fetching user:', err);
+        return res.status(500).json({ error: 'Błąd serwera' });
+      }
+
+      if (!user) {
+        return res.status(404).json({ error: 'Użytkownik nie znaleziony' });
+      }
+
+      // Convert SQLite boolean (0/1) to JavaScript boolean
+      user.email_verified = Boolean(user.email_verified);
+      user.dark_mode = Boolean(user.dark_mode);
+      user.public_profile_enabled = Boolean(user.public_profile_enabled);
+      user.onboarding_completed = Boolean(user.onboarding_completed);
+
+      res.json({ user });
+    }
+  );
+});
+
 module.exports = router;

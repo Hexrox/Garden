@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from '../config/axios';
-import { CheckSquare, Plus, Calendar, AlertCircle, Sparkles, Trash2, Check } from 'lucide-react';
+import { CheckSquare, Plus, Calendar, AlertCircle, Sparkles, Trash2, Check, Repeat } from 'lucide-react';
 
 /**
  * Strona Zadań
@@ -20,7 +20,10 @@ const Tasks = () => {
     description: '',
     due_date: new Date().toISOString().split('T')[0],
     priority: 1,
-    task_type: 'custom'
+    task_type: 'custom',
+    is_recurring: false,
+    recurrence_frequency: 1,
+    recurrence_times: ['anytime']
   });
 
   useEffect(() => {
@@ -63,18 +66,33 @@ const Tasks = () => {
   const createTask = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('/api/tasks', newTask);
+      const taskData = { ...newTask };
+
+      // Jeśli recurring, konwertuj recurrence_times na JSON string
+      if (taskData.is_recurring) {
+        taskData.recurrence_times = JSON.stringify(taskData.recurrence_times);
+      } else {
+        // Usuń recurring fields jeśli nie recurring
+        delete taskData.is_recurring;
+        delete taskData.recurrence_frequency;
+        delete taskData.recurrence_times;
+      }
+
+      await axios.post('/api/tasks', taskData);
       setNewTask({
         description: '',
         due_date: new Date().toISOString().split('T')[0],
         priority: 1,
-        task_type: 'custom'
+        task_type: 'custom',
+        is_recurring: false,
+        recurrence_frequency: 1,
+        recurrence_times: ['anytime']
       });
       setShowForm(false);
       fetchTasks();
     } catch (err) {
       console.error('Error creating task:', err);
-      alert('Błąd podczas tworzenia zadania');
+      alert(err.response?.data?.error || 'Błąd podczas tworzenia zadania');
     }
   };
 
@@ -224,6 +242,113 @@ const Tasks = () => {
                 </div>
               </div>
 
+              {/* Recurring Section */}
+              <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={newTask.is_recurring}
+                    onChange={(e) => setNewTask({ ...newTask, is_recurring: e.target.checked })}
+                    className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                  />
+                  <Repeat size={16} className="text-purple-600 dark:text-purple-400" />
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Zadanie cykliczne
+                  </span>
+                  <span className="text-xs text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/30 px-2 py-0.5 rounded">
+                    NOWOŚĆ
+                  </span>
+                </label>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 ml-6">
+                  Zadanie będzie automatycznie powtarzane
+                </p>
+              </div>
+
+              {newTask.is_recurring && (
+                <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-4 space-y-4">
+                  <h4 className="font-medium text-purple-900 dark:text-purple-200 flex items-center gap-2">
+                    <Repeat size={16} />
+                    Ustawienia cykliczności
+                  </h4>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-2 text-purple-900 dark:text-purple-200">
+                      Częstotliwość
+                    </label>
+                    <div className="grid grid-cols-4 gap-2">
+                      {[1, 2, 3, 7].map(days => (
+                        <button
+                          key={days}
+                          type="button"
+                          onClick={() => setNewTask({ ...newTask, recurrence_frequency: days })}
+                          className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                            newTask.recurrence_frequency === days
+                              ? 'bg-purple-600 text-white'
+                              : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-purple-300 dark:border-purple-700 hover:bg-purple-100 dark:hover:bg-purple-900/30'
+                          }`}
+                        >
+                          {days === 1 ? 'Codziennie' : `Co ${days} dni`}
+                        </button>
+                      ))}
+                    </div>
+                    <input
+                      type="number"
+                      min="1"
+                      max="365"
+                      value={newTask.recurrence_frequency}
+                      onChange={(e) => setNewTask({ ...newTask, recurrence_frequency: parseInt(e.target.value) || 1 })}
+                      className="mt-2 w-full px-3 py-2 border border-purple-300 dark:border-purple-700 rounded-lg dark:bg-gray-700 dark:text-white text-sm"
+                      placeholder="Lub wpisz liczbę dni..."
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-2 text-purple-900 dark:text-purple-200">
+                      Pory dnia
+                    </label>
+                    <div className="space-y-2">
+                      {[
+                        { value: 'anytime', label: 'Bez określonej pory', icon: '🕐' },
+                        { value: 'morning', label: 'Rano (6-12)', icon: '🌅' },
+                        { value: 'afternoon', label: 'Popołudnie (12-18)', icon: '☀️' },
+                        { value: 'evening', label: 'Wieczór (18-22)', icon: '🌙' }
+                      ].map(time => (
+                        <label
+                          key={time.value}
+                          className="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={newTask.recurrence_times.includes(time.value)}
+                            onChange={(e) => {
+                              if (time.value === 'anytime') {
+                                setNewTask({ ...newTask, recurrence_times: e.target.checked ? ['anytime'] : [] });
+                              } else {
+                                const newTimes = e.target.checked
+                                  ? [...newTask.recurrence_times.filter(t => t !== 'anytime'), time.value]
+                                  : newTask.recurrence_times.filter(t => t !== time.value);
+                                setNewTask({ ...newTask, recurrence_times: newTimes.length ? newTimes : ['anytime'] });
+                              }
+                            }}
+                            className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                          />
+                          <span className="text-lg">{time.icon}</span>
+                          <span className="text-sm text-purple-900 dark:text-purple-200">{time.label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="bg-purple-100 dark:bg-purple-900/30 rounded-lg p-3 text-xs text-purple-800 dark:text-purple-200">
+                    <strong>💡 Podgląd:</strong> Zadanie będzie się powtarzać <strong>co {newTask.recurrence_frequency} {newTask.recurrence_frequency === 1 ? 'dzień' : 'dni'}</strong>
+                    {newTask.recurrence_times.includes('anytime') ? '' : ` o ${newTask.recurrence_times.map(t => {
+                      const labels = { morning: 'rano', afternoon: 'po południu', evening: 'wieczorem' };
+                      return labels[t];
+                    }).join(', ')}`}.
+                  </div>
+                </div>
+              )}
+
               <div className="flex gap-2">
                 <button
                   type="submit"
@@ -305,11 +430,25 @@ const Tasks = () => {
                     <div className="flex items-start gap-2">
                       <span className="text-xl">{getTaskIcon(task.task_type)}</span>
                       <div className="flex-1">
-                        <p className={`font-medium text-gray-900 dark:text-gray-100 ${
-                          task.completed ? 'line-through' : ''
-                        }`}>
-                          {task.description}
-                        </p>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className={`font-medium text-gray-900 dark:text-gray-100 ${
+                            task.completed ? 'line-through' : ''
+                          }`}>
+                            {task.description}
+                          </p>
+                          {task.is_recurring && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-xs font-medium rounded">
+                              <Repeat size={12} />
+                              Co {task.recurrence_frequency} {task.recurrence_frequency === 1 ? 'dzień' : 'dni'}
+                            </span>
+                          )}
+                          {task.parent_task_id && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs font-medium rounded">
+                              <Repeat size={12} />
+                              Auto
+                            </span>
+                          )}
+                        </div>
                         {task.due_date && (
                           <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 mt-1">
                             <Calendar size={12} />

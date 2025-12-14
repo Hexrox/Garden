@@ -58,7 +58,17 @@ router.get('/today', auth, (req, res) => {
  * Utwórz nowe zadanie
  */
 router.post('/', auth, (req, res) => {
-  const { task_type, description, due_date, priority, bed_id } = req.body;
+  const {
+    task_type,
+    description,
+    due_date,
+    priority,
+    bed_id,
+    is_recurring,
+    recurrence_frequency,
+    recurrence_times,
+    recurrence_end_date
+  } = req.body;
 
   if (!task_type || !description) {
     return res.status(400).json({ error: 'Wymagane: task_type i description' });
@@ -69,10 +79,48 @@ router.post('/', auth, (req, res) => {
     return res.status(400).json({ error: 'Nieprawidłowy task_type' });
   }
 
+  // Walidacja recurring fields
+  if (is_recurring) {
+    if (!recurrence_frequency || recurrence_frequency < 1) {
+      return res.status(400).json({ error: 'recurrence_frequency musi być >= 1' });
+    }
+
+    if (recurrence_times) {
+      const validTimes = ['anytime', 'morning', 'afternoon', 'evening'];
+      const times = JSON.parse(recurrence_times);
+      if (!Array.isArray(times) || !times.every(t => validTimes.includes(t))) {
+        return res.status(400).json({ error: 'Nieprawidłowe recurrence_times' });
+      }
+    }
+  }
+
+  // Oblicz next_occurrence dla recurring tasks
+  let next_occurrence = null;
+  if (is_recurring && recurrence_frequency) {
+    const nextDate = new Date();
+    nextDate.setDate(nextDate.getDate() + recurrence_frequency);
+    next_occurrence = nextDate.toISOString().split('T')[0];
+  }
+
   db.run(
-    `INSERT INTO tasks (user_id, task_type, description, due_date, priority, bed_id)
-     VALUES (?, ?, ?, ?, ?, ?)`,
-    [req.user.id, task_type, description, due_date || null, priority || 1, bed_id || null],
+    `INSERT INTO tasks (
+      user_id, task_type, description, due_date, priority, bed_id,
+      is_recurring, recurrence_frequency, recurrence_times,
+      next_occurrence, recurrence_end_date
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      req.user.id,
+      task_type,
+      description,
+      due_date || null,
+      priority || 1,
+      bed_id || null,
+      is_recurring ? 1 : 0,
+      recurrence_frequency || null,
+      recurrence_times || null,
+      next_occurrence,
+      recurrence_end_date || null
+    ],
     function (err) {
       if (err) {
         return res.status(500).json({ error: err.message });
@@ -216,12 +264,101 @@ router.post('/:id/complete', auth, (req, res) => {
             );
           }
 
-          db.get('SELECT * FROM tasks WHERE id = ?', [req.params.id], (err, updatedTask) => {
-            if (err) {
-              return res.status(500).json({ error: err.message });
+          // Jeśli to zadanie cykliczne lub pochodzi z cyklicznego, utwórz następne
+          const handleRecurring = () => {
+            // Znajdź parent task (recurring template)
+            const parentId = task.parent_task_id || (task.is_recurring ? task.id : null);
+
+            if (!parentId) {
+              // To nie jest recurring task, zwróć normalne response
+              db.get('SELECT * FROM tasks WHERE id = ?', [req.params.id], (err, updatedTask) => {
+                if (err) {
+                  return res.status(500).json({ error: err.message });
+                }
+                res.json(updatedTask);
+              });
+              return;
             }
-            res.json(updatedTask);
-          });
+
+            // Pobierz parent task (recurring template)
+            db.get('SELECT * FROM tasks WHERE id = ?', [parentId], (err, parentTask) => {
+              if (err || !parentTask || !parentTask.is_recurring) {
+                // Brak parent lub nie jest recurring, zwróć normalne response
+                db.get('SELECT * FROM tasks WHERE id = ?', [req.params.id], (err, updatedTask) => {
+                  if (err) {
+                    return res.status(500).json({ error: err.message });
+                  }
+                  res.json(updatedTask);
+                });
+                return;
+              }
+
+              // Sprawdź czy nie przekroczyliśmy recurrence_end_date
+              if (parentTask.recurrence_end_date) {
+                const endDate = new Date(parentTask.recurrence_end_date);
+                if (new Date() >= endDate) {
+                  console.log('Recurring task ended (past recurrence_end_date)');
+                  db.get('SELECT * FROM tasks WHERE id = ?', [req.params.id], (err, updatedTask) => {
+                    if (err) {
+                      return res.status(500).json({ error: err.message });
+                    }
+                    res.json(updatedTask);
+                  });
+                  return;
+                }
+              }
+
+              // Oblicz due_date dla następnego zadania
+              const nextDate = new Date();
+              nextDate.setDate(nextDate.getDate() + parentTask.recurrence_frequency);
+              const nextDueDate = nextDate.toISOString().split('T')[0];
+
+              // Utwórz następne zadanie
+              db.run(
+                `INSERT INTO tasks (
+                  user_id, task_type, description, due_date, priority, bed_id,
+                  parent_task_id, auto_generated
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, 1)`,
+                [
+                  req.user.id,
+                  parentTask.task_type,
+                  parentTask.description,
+                  nextDueDate,
+                  parentTask.priority || 1,
+                  parentTask.bed_id || null,
+                  parentId
+                ],
+                function (insertErr) {
+                  if (insertErr) {
+                    console.error('Błąd tworzenia następnego recurring task:', insertErr);
+                  } else {
+                    console.log(`✅ Utworzono następne recurring task (ID: ${this.lastID}) na ${nextDueDate}`);
+                  }
+
+                  // Aktualizuj next_occurrence w parent task
+                  db.run(
+                    'UPDATE tasks SET next_occurrence = ? WHERE id = ?',
+                    [nextDueDate, parentId],
+                    (updateErr) => {
+                      if (updateErr) {
+                        console.error('Błąd aktualizacji next_occurrence:', updateErr);
+                      }
+                    }
+                  );
+
+                  // Zwróć ukończone zadanie
+                  db.get('SELECT * FROM tasks WHERE id = ?', [req.params.id], (err, updatedTask) => {
+                    if (err) {
+                      return res.status(500).json({ error: err.message });
+                    }
+                    res.json(updatedTask);
+                  });
+                }
+              );
+            });
+          };
+
+          handleRecurring();
         }
       );
     }
@@ -612,6 +749,144 @@ router.put('/reorder', auth, (req, res) => {
       console.error('Reorder tasks error:', err);
       res.status(500).json({ error: 'Błąd podczas zmiany kolejności' });
     });
+});
+
+/**
+ * GET /api/tasks/recurring
+ * Pobierz wszystkie recurring tasks (szablony) użytkownika
+ */
+router.get('/recurring', auth, (req, res) => {
+  db.all(
+    `SELECT * FROM tasks
+     WHERE user_id = ? AND is_recurring = 1
+     ORDER BY created_at DESC`,
+    [req.user.id],
+    (err, rows) => {
+      if (err) {
+        return res.status(500).json({ error: err.message });
+      }
+      res.json(rows);
+    }
+  );
+});
+
+/**
+ * PUT /api/tasks/:id/recurring
+ * Zaktualizuj recurring task (szablon)
+ */
+router.put('/:id/recurring', auth, (req, res) => {
+  const { recurrence_frequency, recurrence_times, recurrence_end_date } = req.body;
+
+  db.get(
+    'SELECT * FROM tasks WHERE id = ? AND user_id = ? AND is_recurring = 1',
+    [req.params.id, req.user.id],
+    (err, task) => {
+      if (err) {
+        return res.status(500).json({ error: err.message });
+      }
+      if (!task) {
+        return res.status(404).json({ error: 'Recurring task nie znaleziony' });
+      }
+
+      const updates = [];
+      const params = [];
+
+      if (recurrence_frequency !== undefined) {
+        if (recurrence_frequency < 1) {
+          return res.status(400).json({ error: 'recurrence_frequency musi być >= 1' });
+        }
+        updates.push('recurrence_frequency = ?');
+        params.push(recurrence_frequency);
+
+        // Przelicz next_occurrence
+        const nextDate = new Date();
+        nextDate.setDate(nextDate.getDate() + recurrence_frequency);
+        updates.push('next_occurrence = ?');
+        params.push(nextDate.toISOString().split('T')[0]);
+      }
+
+      if (recurrence_times !== undefined) {
+        const validTimes = ['anytime', 'morning', 'afternoon', 'evening'];
+        const times = JSON.parse(recurrence_times);
+        if (!Array.isArray(times) || !times.every(t => validTimes.includes(t))) {
+          return res.status(400).json({ error: 'Nieprawidłowe recurrence_times' });
+        }
+        updates.push('recurrence_times = ?');
+        params.push(recurrence_times);
+      }
+
+      if (recurrence_end_date !== undefined) {
+        updates.push('recurrence_end_date = ?');
+        params.push(recurrence_end_date);
+      }
+
+      if (updates.length === 0) {
+        return res.status(400).json({ error: 'Brak danych do aktualizacji' });
+      }
+
+      params.push(req.params.id);
+      params.push(req.user.id);
+
+      db.run(
+        `UPDATE tasks SET ${updates.join(', ')} WHERE id = ? AND user_id = ?`,
+        params,
+        function (err) {
+          if (err) {
+            return res.status(500).json({ error: err.message });
+          }
+
+          db.get('SELECT * FROM tasks WHERE id = ?', [req.params.id], (err, updated) => {
+            if (err) {
+              return res.status(500).json({ error: err.message });
+            }
+            res.json(updated);
+          });
+        }
+      );
+    }
+  );
+});
+
+/**
+ * DELETE /api/tasks/:id/recurring
+ * Usuń recurring task (szablon) + wszystkie przyszłe instancje
+ */
+router.delete('/:id/recurring', auth, (req, res) => {
+  db.get(
+    'SELECT * FROM tasks WHERE id = ? AND user_id = ? AND is_recurring = 1',
+    [req.params.id, req.user.id],
+    (err, task) => {
+      if (err) {
+        return res.status(500).json({ error: err.message });
+      }
+      if (!task) {
+        return res.status(404).json({ error: 'Recurring task nie znaleziony' });
+      }
+
+      // Usuń wszystkie nieukończone zadania potomne
+      db.run(
+        'DELETE FROM tasks WHERE parent_task_id = ? AND completed = 0',
+        [req.params.id],
+        (deleteChildrenErr) => {
+          if (deleteChildrenErr) {
+            console.error('Błąd usuwania zadań potomnych:', deleteChildrenErr);
+          }
+
+          // Usuń recurring template
+          db.run(
+            'DELETE FROM tasks WHERE id = ? AND user_id = ?',
+            [req.params.id, req.user.id],
+            function (err) {
+              if (err) {
+                return res.status(500).json({ error: err.message });
+              }
+              res.json({ message: 'Recurring task i przyszłe instancje usunięte' });
+            }
+          );
+        }
+      );
+    }
+  );
 });
 
 module.exports = router;
