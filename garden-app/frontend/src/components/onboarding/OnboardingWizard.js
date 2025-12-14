@@ -555,7 +555,7 @@ const OnboardingWizard = ({ isOpen, onComplete, onSkip }) => {
             )}
 
             <button
-              onClick={step === 2 && !formData.hasGeolocation ? saveCity : handleNext}
+              onClick={step === 3 && !formData.hasGeolocation && formData.city ? saveCity : handleNext}
               className="px-4 sm:px-6 py-1.5 sm:py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors flex items-center gap-1 sm:gap-2 text-sm sm:text-base"
             >
               {step === totalSteps ? 'Zakończ' : 'Dalej'}
