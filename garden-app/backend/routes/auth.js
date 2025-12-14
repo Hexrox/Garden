@@ -67,9 +67,27 @@ router.post('/register',
               'UPDATE users SET email_verification_token = ?, email_verification_expires = ? WHERE id = ?',
               [emailToken, emailExpiresAt.toISOString(), userId],
               async (emailErr) => {
-                if (!emailErr) {
+                if (emailErr) {
+                  console.error('❌ Failed to save email verification token:', emailErr);
+                  return;
+                }
+
+                // Send verification email
+                try {
                   const verificationLink = `${process.env.FRONTEND_URL}/verify-email/${emailToken}`;
-                  await sendEmailVerification(email, verificationLink, username);
+                  const result = await sendEmailVerification(email, verificationLink, username);
+
+                  if (result.success) {
+                    console.log('✅ Verification email sent to:', email, '| Message ID:', result.messageId);
+                  } else {
+                    console.error('❌ Failed to send verification email to:', email);
+                    console.error('Error:', result.error);
+                    // User is created but email failed - log for manual follow-up
+                    console.error('⚠️  ACTION REQUIRED: User', username, '(ID:', userId, ') created but verification email not sent');
+                  }
+                } catch (emailSendError) {
+                  console.error('❌ Exception while sending verification email:', emailSendError);
+                  console.error('⚠️  ACTION REQUIRED: User', username, '(ID:', userId, ') created but verification email failed');
                 }
               }
             );
@@ -323,9 +341,23 @@ router.post('/forgot-password',
             );
 
             // Wyślij email
-            const resetLink = `${process.env.FRONTEND_URL}/reset-password/${token}`;
-            await sendPasswordResetEmail(user.email, resetLink);
+            try {
+              const resetLink = `${process.env.FRONTEND_URL}/reset-password/${token}`;
+              const result = await sendPasswordResetEmail(user.email, resetLink);
 
+              if (result.success) {
+                console.log('✅ Password reset email sent to:', user.email, '| Message ID:', result.messageId);
+              } else {
+                console.error('❌ Failed to send password reset email to:', user.email);
+                console.error('Error:', result.error);
+                // Don't expose to user for security (email enumeration prevention)
+              }
+            } catch (emailError) {
+              console.error('❌ Exception while sending password reset email:', emailError);
+              // Don't expose to user for security
+            }
+
+            // Always return generic response for security
             res.json(genericResponse);
           }
         );
@@ -340,6 +372,11 @@ router.post('/forgot-password',
 // GET /auth/verify-reset-token/:token - Sprawdzenie ważności tokenu
 router.get('/verify-reset-token/:token', (req, res) => {
   const { token } = req.params;
+
+  // Validate token length (64 hex chars = 32 bytes)
+  if (!token || token.length !== 64 || !/^[a-f0-9]{64}$/i.test(token)) {
+    return res.status(400).json({ error: 'Nieprawidłowy format tokenu' });
+  }
 
   db.get(
     `SELECT id, password_reset_expires
@@ -380,6 +417,11 @@ router.post('/reset-password',
       }
 
       const { token, password } = req.body;
+
+      // Validate token length (64 hex chars = 32 bytes)
+      if (!token || token.length !== 64 || !/^[a-f0-9]{64}$/i.test(token)) {
+        return res.status(400).json({ error: 'Nieprawidłowy format tokenu' });
+      }
 
       // Znajdź usera z tym tokenem
       db.get(
@@ -452,6 +494,11 @@ router.post('/reset-password',
 // GET /auth/verify-email/:token - Weryfikacja emaila
 router.get('/verify-email/:token', (req, res) => {
   const { token } = req.params;
+
+  // Validate token length (64 hex chars = 32 bytes)
+  if (!token || token.length !== 64 || !/^[a-f0-9]{64}$/i.test(token)) {
+    return res.status(400).json({ error: 'Nieprawidłowy format tokenu' });
+  }
 
   db.get(
     `SELECT id, email_verification_token, email_verification_expires, username
@@ -595,9 +642,22 @@ router.delete('/account', auth, async (req, res) => {
                 }
 
                 // Wyślij email
-                const restoreLink = `${process.env.FRONTEND_URL}/restore-account/${restoreToken}`;
-                const deleteDate = new Date(permanentDeleteAt).toLocaleDateString('pl-PL');
-                await sendAccountDeletedEmail(user.email, restoreLink, user.username, deleteDate);
+                try {
+                  const restoreLink = `${process.env.FRONTEND_URL}/restore-account/${restoreToken}`;
+                  const deleteDate = new Date(permanentDeleteAt).toLocaleDateString('pl-PL');
+                  const result = await sendAccountDeletedEmail(user.email, restoreLink, user.username, deleteDate);
+
+                  if (result.success) {
+                    console.log('✅ Account deletion email sent to:', user.email, '| Message ID:', result.messageId);
+                  } else {
+                    console.error('❌ Failed to send account deletion email to:', user.email);
+                    console.error('Error:', result.error);
+                    console.error('⚠️  ACTION REQUIRED: User', user.username, 'deleted but email not sent. Restore token:', restoreToken);
+                  }
+                } catch (emailError) {
+                  console.error('❌ Exception while sending account deletion email:', emailError);
+                  console.error('⚠️  ACTION REQUIRED: User', user.username, 'deleted but email failed. Restore token:', restoreToken);
+                }
 
                 res.json({
                   message: 'Konto zostało oznaczone do usunięcia',
@@ -622,6 +682,11 @@ router.post('/account/restore', async (req, res) => {
 
     if (!token) {
       return res.status(400).json({ error: 'Token jest wymagany' });
+    }
+
+    // Validate token length (64 hex chars = 32 bytes)
+    if (token.length !== 64 || !/^[a-f0-9]{64}$/i.test(token)) {
+      return res.status(400).json({ error: 'Nieprawidłowy format tokenu' });
     }
 
     // Znajdź w deleted_accounts
@@ -670,7 +735,20 @@ router.post('/account/restore', async (req, res) => {
             );
 
             // Wyślij email
-            await sendAccountRestoredEmail(deletedAccount.email, deletedAccount.username);
+            try {
+              const result = await sendAccountRestoredEmail(deletedAccount.email, deletedAccount.username);
+
+              if (result.success) {
+                console.log('✅ Account restored email sent to:', deletedAccount.email, '| Message ID:', result.messageId);
+              } else {
+                console.error('❌ Failed to send account restored email to:', deletedAccount.email);
+                console.error('Error:', result.error);
+                // Account is restored, email is just notification - not critical
+              }
+            } catch (emailError) {
+              console.error('❌ Exception while sending account restored email:', emailError);
+              // Account is restored, email is just notification - not critical
+            }
 
             // Generuj JWT dla auto-login
             const jwtToken = jwt.sign(
