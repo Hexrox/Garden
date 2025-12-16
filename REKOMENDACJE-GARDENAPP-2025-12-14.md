@@ -240,7 +240,7 @@ Okrągły przycisk w prawym dolnym rogu:
 
 **Szacowany czas:** 1-2 tygodnie (research + training)
 
-#### 10. Gamification - BRAKUJE
+#### 10. Gamification - BRAKUJE - wrzucone?
 **Pomysł:**
 ```
 Odznaki:

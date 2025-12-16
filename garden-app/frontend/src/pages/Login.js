@@ -86,20 +86,31 @@ const Login = () => {
             </button>
           </div>
 
-          <div className="flex items-center justify-between mt-4">
-            <Link
-              to="/forgot-password"
-              className="text-sm text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300"
-            >
-              Zapomniałeś hasła?
-            </Link>
-
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Nie masz konta?{' '}
-              <Link to="/register" className="font-medium text-green-600 dark:text-green-400 hover:text-green-500 dark:hover:text-green-300">
-                Zarejestruj się
+          <div className="space-y-3 mt-4">
+            <div className="flex items-center justify-between">
+              <Link
+                to="/forgot-password"
+                className="text-sm text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300"
+              >
+                Zapomniałeś hasła?
               </Link>
-            </p>
+
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Nie masz konta?{' '}
+                <Link to="/register" className="font-medium text-green-600 dark:text-green-400 hover:text-green-500 dark:hover:text-green-300">
+                  Zarejestruj się
+                </Link>
+              </p>
+            </div>
+
+            <div className="text-center pt-3 border-t border-gray-200 dark:border-gray-700">
+              <Link
+                to="/pomoc"
+                className="text-sm text-gray-600 dark:text-gray-400 hover:text-green-600 dark:hover:text-green-400 transition"
+              >
+                📖 Zobacz poradnik - poznaj możliwości aplikacji
+              </Link>
+            </div>
           </div>
         </form>
       </div>

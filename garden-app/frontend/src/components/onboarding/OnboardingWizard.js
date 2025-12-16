@@ -132,7 +132,7 @@ const OnboardingWizard = ({ isOpen, onComplete, onSkip }) => {
         </div>
 
         {/* Content */}
-        <div className="p-4 sm:p-6 md:p-8 overflow-y-auto flex-1">
+        <div className="p-4 sm:p-6 md:p-8 pb-24 sm:pb-6 md:pb-8 overflow-y-auto flex-1">
           {/* Step 1: Interests */}
           {step === 1 && (
             <div className="space-y-6">
@@ -371,7 +371,7 @@ const OnboardingWizard = ({ isOpen, onComplete, onSkip }) => {
                 </p>
               </div>
 
-              <div className="grid gap-3">
+              <div className="grid gap-3 max-h-72 sm:max-h-none overflow-y-auto">
                 {[
                   { icon: '📸', title: 'Galeria zdjęć', desc: 'Rób zdjęcia postępów i śledź wzrost roślin!' },
                   { icon: '🌙', title: 'Kalendarz księżycowy', desc: 'Siej i zbieraj w zgodzie z fazami księżyca!' },
@@ -410,7 +410,7 @@ const OnboardingWizard = ({ isOpen, onComplete, onSkip }) => {
 
           {/* Step 7: Task System & Recurring Tasks */}
           {step === 7 && (
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               <div className="text-center">
                 <div className="w-20 h-20 bg-gradient-to-br from-purple-400 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Check className="w-10 h-10 text-white" />
@@ -424,7 +424,7 @@ const OnboardingWizard = ({ isOpen, onComplete, onSkip }) => {
               </div>
 
               {/* Jak powstają zadania */}
-              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-3 sm:p-4">
                 <h4 className="font-bold text-blue-900 dark:text-blue-200 mb-3 flex items-center gap-2">
                   <span className="text-2xl">🤖</span>
                   Automatyczne zadania
@@ -452,7 +452,7 @@ const OnboardingWizard = ({ isOpen, onComplete, onSkip }) => {
               </div>
 
               {/* Zadania cykliczne */}
-              <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-xl p-4">
+              <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-xl p-3 sm:p-4">
                 <h4 className="font-bold text-purple-900 dark:text-purple-200 mb-3 flex items-center gap-2">
                   <span className="text-2xl">🔄</span>
                   Zadania cykliczne - NOWOŚĆ!
@@ -461,9 +461,9 @@ const OnboardingWizard = ({ isOpen, onComplete, onSkip }) => {
                   Niektóre czynności musisz powtarzać regularnie. Ustaw cykliczność!
                 </p>
 
-                <div className="space-y-3">
-                  <div className="bg-white/50 dark:bg-gray-800/50 rounded-lg p-3">
-                    <p className="text-sm font-semibold text-purple-900 dark:text-purple-200 mb-2">
+                <div className="space-y-2 sm:space-y-3">
+                  <div className="bg-white/50 dark:bg-gray-800/50 rounded-lg p-2 sm:p-3">
+                    <p className="text-xs sm:text-sm font-semibold text-purple-900 dark:text-purple-200 mb-1 sm:mb-2">
                       📝 Przykład: Podlewanie pomidorów
                     </p>
                     <div className="space-y-1 text-xs text-purple-700 dark:text-purple-300">
@@ -478,8 +478,8 @@ const OnboardingWizard = ({ isOpen, onComplete, onSkip }) => {
                     </div>
                   </div>
 
-                  <div className="bg-white/50 dark:bg-gray-800/50 rounded-lg p-3">
-                    <p className="text-sm font-semibold text-purple-900 dark:text-purple-200 mb-2">
+                  <div className="bg-white/50 dark:bg-gray-800/50 rounded-lg p-2 sm:p-3">
+                    <p className="text-xs sm:text-sm font-semibold text-purple-900 dark:text-purple-200 mb-1 sm:mb-2">
                       💧 Przykład: Podlewanie ogórków (intensywnie)
                     </p>
                     <div className="space-y-1 text-xs text-purple-700 dark:text-purple-300">
@@ -495,8 +495,8 @@ const OnboardingWizard = ({ isOpen, onComplete, onSkip }) => {
                   </div>
                 </div>
 
-                <div className="mt-3 p-3 bg-green-100/50 dark:bg-green-900/20 rounded-lg border border-green-300 dark:border-green-700">
-                  <p className="text-xs text-green-800 dark:text-green-200">
+                <div className="mt-2 sm:mt-3 p-2 sm:p-3 bg-green-100/50 dark:bg-green-900/20 rounded-lg border border-green-300 dark:border-green-700">
+                  <p className="text-[10px] sm:text-xs text-green-800 dark:text-green-200">
                     <strong>💡 Wskazówka:</strong> Gdy ukończysz cykliczne zadanie, następne pojawi się automatycznie!
                   </p>
                 </div>

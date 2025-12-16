@@ -101,7 +101,7 @@ const TemplateSelectionStep = ({ interests, selectedTemplate, onSelectTemplate, 
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-96 overflow-y-auto pr-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-60 sm:max-h-80 md:max-h-96 overflow-y-auto pr-2">
             {filteredTemplates.map((template) => (
               <button
                 key={template.id}

@@ -21,8 +21,29 @@ const Register = () => {
       return;
     }
 
-    if (password.length < 6) {
-      setError('Hasło musi mieć minimum 6 znaków');
+    // Validation to match backend requirements
+    if (password.length < 8) {
+      setError('Hasło musi mieć minimum 8 znaków');
+      return;
+    }
+
+    if (!/[A-Z]/.test(password)) {
+      setError('Hasło musi zawierać przynajmniej jedną wielką literę');
+      return;
+    }
+
+    if (!/[a-z]/.test(password)) {
+      setError('Hasło musi zawierać przynajmniej jedną małą literę');
+      return;
+    }
+
+    if (!/[0-9]/.test(password)) {
+      setError('Hasło musi zawierać przynajmniej jedną cyfrę');
+      return;
+    }
+
+    if (!/[@$!%*?&#^()_+\-=\[\]{}|;:,.<>~]/.test(password)) {
+      setError('Hasło musi zawierać przynajmniej jeden znak specjalny (@$!%*?&#^()_+-=[]{}|;:,.<>~)');
       return;
     }
 
@@ -97,10 +118,13 @@ const Register = () => {
                 type="password"
                 required
                 className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white dark:bg-gray-700 focus:outline-none focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm"
-                placeholder="Minimum 6 znaków"
+                placeholder="Minimum 8 znaków"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                Min. 8 znaków, wielka i mała litera, cyfra, znak specjalny
+              </p>
             </div>
             <div>
               <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">

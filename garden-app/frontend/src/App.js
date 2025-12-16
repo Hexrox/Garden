@@ -26,6 +26,7 @@ import Tasks from './pages/Tasks';
 import Calendar from './pages/Calendar';
 import Analytics from './pages/Analytics';
 import PrivacyPolicy from './pages/PrivacyPolicy';
+import Help from './pages/Help';
 import AdminPanel from './pages/AdminPanel';
 import Gallery from './pages/Gallery';
 import PublicProfile from './pages/PublicProfile';
@@ -283,6 +284,7 @@ function AppRoutes() {
 
         {/* Public Pages */}
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+        <Route path="/pomoc" element={<Help />} />
         <Route path="/g/:username" element={<PublicProfile />} />
 
         {/* Default redirect */}

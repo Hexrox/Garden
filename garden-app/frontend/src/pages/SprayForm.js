@@ -21,6 +21,12 @@ const SprayForm = () => {
   const [error, setError] = useState('');
   const [loadingBed, setLoadingBed] = useState(true);
 
+  // Autocomplete state
+  const [suggestions, setSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+
   useEffect(() => {
     loadBedInfo();
   }, [bedId]);
@@ -28,6 +34,31 @@ const SprayForm = () => {
   useEffect(() => {
     calculateSafeHarvestDate();
   }, [formData.spray_date, formData.withdrawal_period]);
+
+  // Autocomplete debounced search
+  useEffect(() => {
+    if (!formData.spray_name || formData.spray_name.length < 2) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      try {
+        setLoadingSuggestions(true);
+        const response = await axios.get(`/api/spray-products/autocomplete/${formData.spray_name}`);
+        setSuggestions(response.data);
+        setShowSuggestions(response.data.length > 0);
+      } catch (error) {
+        console.error('Error fetching suggestions:', error);
+        setSuggestions([]);
+      } finally {
+        setLoadingSuggestions(false);
+      }
+    }, 300); // 300ms debounce
+
+    return () => clearTimeout(timer);
+  }, [formData.spray_name]);
 
   const loadBedInfo = async () => {
     try {
@@ -63,6 +94,18 @@ const SprayForm = () => {
       ...prev,
       [name]: value
     }));
+  };
+
+  const selectProduct = (product) => {
+    setSelectedProduct(product);
+    setFormData(prev => ({
+      ...prev,
+      spray_name: product.name,
+      spray_type: product.type || prev.spray_type,
+      withdrawal_period: product.withdrawal_period !== null ? product.withdrawal_period.toString() : prev.withdrawal_period,
+      dosage: product.dosage_5l || prev.dosage, // Domyślnie 5L
+    }));
+    setShowSuggestions(false);
   };
 
   const validateForm = () => {
@@ -163,7 +206,7 @@ const SprayForm = () => {
   return (
     <div className="max-w-2xl mx-auto">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Dodaj oprysk</h1>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Wykonaj oprysk</h1>
         <p className="text-gray-600 dark:text-gray-400 mt-1">
           Rząd {bedInfo.row_number} - {bedInfo.plant_name || 'Bez nazwy'}
         </p>
@@ -178,9 +221,12 @@ const SprayForm = () => {
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="md:col-span-2">
+            <div className="md:col-span-2 relative">
               <label htmlFor="spray_name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Nazwa środka ochrony roślin *
+                {selectedProduct && (
+                  <span className="ml-2 text-xs text-green-600 dark:text-green-400">✓ Z bazy środków</span>
+                )}
               </label>
               <input
                 type="text"
@@ -189,10 +235,78 @@ const SprayForm = () => {
                 required
                 maxLength={100}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
-                placeholder="np. Topsin M 500 SC"
+                placeholder="Wpisz nazwę środka, np. Topsin M..."
                 value={formData.spray_name}
                 onChange={handleInputChange}
+                onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
+                autoComplete="off"
               />
+
+              {/* Autocomplete dropdown */}
+              {showSuggestions && (
+                <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                  {loadingSuggestions ? (
+                    <div className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
+                      Wyszukiwanie...
+                    </div>
+                  ) : suggestions.length === 0 ? (
+                    <div className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
+                      Brak wyników. Wpisz własną nazwę.
+                    </div>
+                  ) : (
+                    suggestions.map((product) => (
+                      <button
+                        key={product.id}
+                        type="button"
+                        onClick={() => selectProduct(product)}
+                        className="w-full text-left px-4 py-3 hover:bg-green-50 dark:hover:bg-gray-700 border-b border-gray-100 dark:border-gray-700 last:border-b-0"
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium text-gray-900 dark:text-white">
+                                {product.name}
+                              </span>
+                              {product.is_ecological === 1 && (
+                                <span className="text-xs bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 px-2 py-0.5 rounded">
+                                  EKO
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                              {product.type} • {product.target_plants}
+                            </div>
+                            {product.target_pests && (
+                              <div className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                                Przeciw: {product.target_pests}
+                              </div>
+                            )}
+                          </div>
+                          <div className="text-right text-sm ml-4">
+                            <div className="text-gray-700 dark:text-gray-300">
+                              <span className="font-medium">5L:</span> {product.dosage_5l}
+                            </div>
+                            {product.withdrawal_period !== null && (
+                              <div className="text-gray-500 dark:text-gray-400 text-xs mt-1">
+                                Karencja: {product.withdrawal_period}d
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </button>
+                    ))
+                  )}
+                </div>
+              )}
+
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                💡 Zacznij wpisywać - podpowiemy dane z bazy. Możesz też wpisać własny środek!
+              </p>
+              {!selectedProduct && formData.spray_name.length > 0 && !loadingSuggestions && suggestions.length === 0 && (
+                <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                  ✍️ Własny środek - wypełnij resztę danych ręcznie
+                </p>
+              )}
             </div>
 
             <div>
@@ -214,6 +328,8 @@ const SprayForm = () => {
                 <option value="moluskocyd">Moluskocyd (zwalcza ślimaki)</option>
                 <option value="nawóz_dolistny">Nawóz dolistny</option>
                 <option value="biostymulanty">Biostymulanty</option>
+                <option value="metoda_domowa">Metoda domowa (napar, roztwór)</option>
+                <option value="biopreparat_własny">Biopreparat własny</option>
                 <option value="inne">Inne</option>
               </select>
             </div>
@@ -325,7 +441,7 @@ const SprayForm = () => {
               disabled={loading}
               className="flex-1 bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Zapisywanie...' : 'Dodaj oprysk'}
+              {loading ? 'Zapisywanie...' : 'Zapisz oprysk'}
             </button>
             <button
               type="button"

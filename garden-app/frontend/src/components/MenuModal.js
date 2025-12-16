@@ -11,7 +11,8 @@ import {
   LayoutGrid,
   TrendingUp,
   Image,
-  Camera
+  Camera,
+  BookOpen
 } from 'lucide-react';
 
 /**
@@ -99,6 +100,15 @@ const MenuModal = ({ isOpen, onClose, onQuickPhotoClick }) => {
       label: 'Eksport',
       description: 'Danych',
       color: 'bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400'
+    },
+    {
+      id: 'help',
+      path: '/pomoc',
+      icon: BookOpen,
+      label: 'Pomoc',
+      description: 'Poradnik',
+      color: 'bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400',
+      badge: 'NOWY'
     }
   ];
 
@@ -185,7 +195,7 @@ const MenuModal = ({ isOpen, onClose, onQuickPhotoClick }) => {
               </span>
               <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
                 <LayoutGrid size={16} />
-                <span className="font-medium">9 modułów</span>
+                <span className="font-medium">10 modułów</span>
               </div>
             </div>
           </div>
