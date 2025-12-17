@@ -1,0 +1,1028 @@
+# Analiza: Rozbudowa funkcjonalności "Opryski" → "Pielęgnacja roślin"
+
+**Data:** 2025-12-17
+**Cel:** Rozszerzenie obecnej funkcjonalności "Opryski" o nawożenie i kompleksową pielęgnację roślin
+
+---
+
+## 📊 Executive Summary
+
+Obecna funkcjonalność "Opryski" jest zbyt wąska - skupia się tylko na ochronie (coś PRZECIWKO czemuś).
+Ogrodnictwo hobbyst require kompleksową pielęgnację **DLA DOBRA rośliny**, gdzie nawożenie jest kluczowe dla plonów.
+
+**Rekomendacja:** Przekształcić "Opryski" w "Pielęgnacja i ochrona roślin" obejmując:
+- ✅ Opryski ochronne (obecne)
+- ✅ Nawożenie (NOWE)
+- ✅ Inne zabiegi pielęgnacyjne (przyszłość)
+
+---
+
+## 🌱 Research: Nawożenie roślin ogrodowych
+
+### 1. MAKROELEMENTY (NPK + pozostałe)
+
+#### Azot (N)
+- **Funkcja:** Wzrost zielonej masy, fotosynteza
+- **Objawy niedoboru:** Żółknięcie liści, słaby wzrost
+- **Źródła:**
+  - Mineralne: Saletra amonowa, mocznik
+  - Organiczne: Obornik kurzy, gnojówka pokrzywowa
+- **Dawkowanie:** 0,1-0,3 kg saletry/10m² (zależnie od warzywa)
+
+#### Fosfor (P)
+- **Funkcja:** Rozwój korzeni, kwitnienie, owocowanie
+- **Objawy niedoboru:** Purpurowe zabarwienie liści, słabe korzenie
+- **Źródła:**
+  - Mineralne: Superfosfat
+  - Organiczne: Mączka kostna
+
+#### Potas (K)
+- **Funkcja:** Odporność na choroby, jakość plonów
+- **Objawy niedoboru:** Brązowe brzegi liści, słabe owoce
+- **Źródła:**
+  - Mineralne: Siarczan potasu
+  - Organiczne: Kompost, popiół drzewny
+
+### 2. MIKROELEMENTY
+
+- **Magnez (Mg):** Chlorofil, fotosynteza
+- **Wapń (Ca):** Budowa ścian komórkowych
+- **Żelazo (Fe):** Chlorofil, przebarwienia międzyżyłkowe
+- **Bor (B):** Kwitnienie i zawiązywanie owoców
+- **Mangan (Mn):** Enzymy, fotosynteza
+- **Cynk (Zn):** Hormony wzrostu
+- **Miedź (Cu):** Enzymy oddechowe
+
+---
+
+## 🧪 Rodzaje nawozów
+
+### A) NAWOZY NATURALNE
+
+**Charakterystyka:**
+- Pochodzą bezpośrednio od zwierząt gospodarskich
+- Forma stała, wilgotna
+- Intensywny zapach
+- Skład zmienny, nieopisany
+- **Niska cena, mniejsza dostępność**
+
+#### Rodzaje:
+
+**1. Obornik bydlęcy**
+- Ciepły, bogaty w składniki
+- Dawka: 30-35 kg/10m²/rok (amatorska uprawa)
+- Stosowanie: Jesień, z przekopaniem
+
+**2. Obornik koński**
+- Ciepły, mniej wilgoci
+- Szybciej się rozkłada
+- Dawka: 25-30 kg/10m²/rok
+
+**3. Obornik kurzy**
+- Bardzo bogaty w azot (może szkodzić!)
+- Wymaga rocznego składowania przed użyciem
+- Dawka: 15-20 kg/10m²/rok
+
+**4. Obornik owczy/króliczi**
+- Dostępny rzadko
+- Podobne właściwości do końskiego
+
+**5. Gnojowica**
+- Płynna mieszanina moczu i kału ze ściółką
+- Szybko działa (wysoka zawartość azotu)
+- Termin stosowania: Do 20 października na gruntach ornych
+
+### B) NAWOZY ORGANICZNE (przetworzone)
+
+**Charakterystyka:**
+- Przetworzone nawozy naturalne (suszone, granulowane)
+- Forma granulowana, sucha
+- Bardzo słaby zapach
+- **Skład opisany na opakowaniu**
+- Łatwiejsze dawkowanie
+- Wszędzie dostępne, droższe
+
+#### Rodzaje:
+
+**1. Kompost**
+- **Doskonały nawóz** - zapewnia prawidłowy obieg materii
+- Poprawia strukturę gleby
+- Dawka: Dowolna (bez szkodliwego wpływu)
+- Stosowanie: Mieszać z wierzchnią warstwą gleby
+- Częstotliwość: Ciągłe użycie
+
+**2. Obornik granulowany/kompostowany**
+- Wygodna forma obornika
+- Stosowanie: Wiosna/jesień, bezwonny
+- Dawka: Według instrukcji na opakowaniu
+
+**3. Torf**
+- Dostarcza próchnicę
+- Zatrzymuje wodę, spulchnia glebę
+- Rodzaje: Torf wysoki (kwaśny), torf niski (zasadowy)
+- Dawka: 3cm warstwa zmieszana z glebą
+
+**4. Biohumus**
+- Bogaty w składniki, enzymy, mikroorganizmy
+- Stosowanie: Rozcieńczony, opryskiwanie lub podlewanie
+- Częstotliwość: Według opakowania, często co 2 tygodnie (pojemniki)
+
+**5. Produkty z węgla brunatnego**
+- Magnez, wapń, mikroelementy
+- Dawka: 1-2 kg/m²
+
+### C) NAWOZY MINERALNE
+
+**Charakterystyka:**
+- Dostarczają duże ilości składników
+- **Negatywny wpływ na strukturę gleby**
+- Zakwaszają pH gleby
+- Szybkie działanie
+- Precyzyjne dawkowanie
+
+#### Popularne nawozy NPK:
+
+**1. Azofoska (NPK)**
+- Uniwersalny nawóz wieloskładnikowy
+- Różne proporcje N:P:K (np. 5:10:15, 15:15:15)
+- Zastosowanie: Warzywa, kwiaty, trawniki
+
+**2. Pokon (seria nawozów)**
+- Specjalistyczne nawozy dla konkretnych roślin
+- Pomidory, ogórki, rośliny balkonowe
+- Formuły płynne i granulowane
+
+**3. Target (Yara)**
+- Profesjonalne nawozy dolistne
+- Szybka korekta niedoborów
+- 2-3 aplikacje w sezonie
+
+**4. Saletra amonowa**
+- Czysto azotowa (34% N)
+- Nawożenie pogłówne
+- Dawki: 0,1-0,3 kg/10m² (zależnie od warzywa)
+
+### D) NAWOZY NATURALNE DOMOWEJ ROBOTY
+
+**1. Gnojówka pokrzywowa**
+- Przepis: 1kg świeżych pokrzyw + 10L wody + odrobina wapna
+- Fermentacja: 2 tygodnie
+- Rozcieńczenie: 1:10
+- Częstotliwość: 2-3 razy w sezonie
+- **Bogata w azot**
+
+**2. Odwar z kompostu**
+- Naturalny "herbata" z kompostu
+- Mikroorganizmy korzystne dla gleby
+
+**3. Popiół drzewny**
+- Źródło potasu i wapnia
+- Alkalizuje glebę (podwyższa pH)
+- Dawka: Cienka warstwa na powierzchni gleby
+
+---
+
+## 📅 Harmonogram nawożenia warzyw
+
+### Pomidory
+- **Przed sadzeniem:** Kompost/obornik
+- **Nawożenie pogłówne:** Co 2-3 tygodnie od czerwca (kwitnienie)
+- **NPK:** Wysokie zapotrzebowanie na K (owoce)
+- **Dawka saletry:** 0,2 kg/10m²
+
+### Ogórki
+- **Przed sadzeniem:** Obornik (wysoka potrzeba)
+- **Nawożenie pogłówne:** Co 2 tygodnie
+- **NPK:** Wysoka potrzeba azotu (zielona masa)
+- **Dawka saletry:** 0,2 kg/10m²
+- **Biohumus:** Co 2 tygodnie (uprawa pojemnikowa)
+
+### Kapusta (wszystkie rodzaje)
+- **Przed sadzeniem:** Obornik (rok przed lub kompostowany)
+- **Nawożenie pogłówne:** Azot w czerwcu
+- **Dawka saletry:** 0,2 kg/10m²
+- **Warzywa 1. roku po oborniku:** Kapusta, kalafior, brokuł, kalarepa
+
+### Marchew, pietruszka (korzeniowe)
+- **Przed sadzeniem:** Kompost (NIE świeży obornik!)
+- **Nawożenie pogłówne:** Umiarkowane
+- **Dawka saletry:** 0,1 kg/10m²
+- **Uwaga:** Świeży obornik powoduje rozwidlenie korzeni
+
+### Sałata, szpinak (liściowe)
+- **Nawożenie:** Azot dla zielonej masy
+- **Częstotliwość:** Co 2-3 tygodnie
+- **Nawozy dolistne:** Szybka korekcia
+
+---
+
+## 🌸 Harmonogram nawożenia kwiatów
+
+### Róże
+- **Przed sadzeniem:** Kompost + obornik kompostowany
+- **Wiosna (marzec-kwiecień):** Nawóz wieloskładnikowy NPK 15:15:15
+- **Kwitnienie (maj-sierpień):** Co 2-3 tygodnie nawóz z przewagą K (potasu)
+- **NPK idealne:** 10:10:20 lub 5:10:15 (więcej K dla obfitego kwitnienia)
+- **Nawóz specjalistyczny:** Pokon dla róż, Target Róże
+- **Ostatnie nawożenie:** Lipiec (nie później - muszą przygotować się do zimy)
+- **Uwaga:** Potrzebują magnezu (Mg) - chloroza międzyżyłkowa
+
+### Pelargonie (geranium)
+- **Uprawa pojemnikowa:** Nawóz płynny co 7-14 dni
+- **NPK:** 15:15:15 lub nawóz do roślin kwitnących
+- **Sezon:** Kwiecień-wrzesień
+- **Uwaga:** Bardzo żądne składników - regularność kluczowa!
+- **Nawozy:** Pokon dla pelargonii, Substral
+
+### Petunie, surfinie (rośliny balkonowe)
+- **Uprawa pojemnikowa:** Nawóz co 7-10 dni (intensywne kwitnienie)
+- **NPK:** 15:10:30 (wysoka zawartość potasu dla kwiatów)
+- **Sezon:** Maj-wrzesień
+- **Nawozy dolistne:** Dodatkowo co 2 tygodnie (szybka korekta)
+- **Uwaga:** Brak żelaza (Fe) → żółte liście z zielonymi żyłkami
+
+### Hortensje
+- **Wiosna:** Nawóz kwaśny (obniża pH) - hortensje kwaśnolubne
+- **NPK:** 10:15:15 lub specjalistyczny do hortensji
+- **Częstotliwość:** Co 3-4 tygodnie (kwiecień-lipiec)
+- **Kolor kwiatów:**
+  - Niebieski → pH 4.5-5.5 (nawóz kwaśny + siarczan glinu)
+  - Różowy → pH 6.0-6.5 (nawóz zasadowy)
+- **Nawozy:** Pokon dla hortensji, Substral Hortensje
+
+### Tulipany, hiacynty (cebulowe)
+- **Jesień (sadzenie):** Obornik kompostowany + superfosfat
+- **Wiosna (po wschodach):** Nawóz z fosfor i potasem (10:20:20)
+- **Częstotliwość:** 1-2 razy w sezonie
+- **Po kwitnieniu:** Nawóz fosforowo-potasowy (odbudowa cebuli)
+- **Uwaga:** NIE nawozy azotowe podczas kwitnienia!
+
+### Begonie, impatiens (cieniolubne)
+- **Uprawa pojemnikowa:** Nawóz co 10-14 dni
+- **NPK:** 15:15:15 lub uniwersalny do kwiatów
+- **Nawozy organiczne:** Biohumus idealny (łagodny)
+- **Uwaga:** Delikatne korzenie - 1/2 dawki
+
+### Lawenda
+- **Nawożenie minimalne:** Raz-dwa razy w sezonie
+- **NPK:** 10:10:10 (zrównoważony)
+- **Uwaga:** Za dużo azotu → mało kwiatów, dużo liści
+- **Preferuje:** Glebę ubogą, zasadową (pH 7-8)
+
+### Lilie
+- **Przed sadzeniem:** Kompost (NIE świeży obornik!)
+- **Wiosna:** Nawóz z azotem (N) dla wzrostu
+- **Pąkowanie:** Nawóz fosforowo-potasowy (P+K)
+- **Częstotliwość:** Co 3-4 tygodnie
+- **Uwaga:** Cebule gnią w świeżym oborniku
+
+### Bratki, fiołki (rośliny dwuletnie)
+- **Jesień (po sadzeniu):** Nawóz fosforowo-potasowy (wzmocnienie przed zimą)
+- **Wiosna:** Nawóz azotowy dla wzrostu
+- **Kwitnienie:** Uniwersalny NPK 15:15:15
+- **Częstotliwość:** Co 2-3 tygodnie
+
+### Dalie
+- **Przed sadzeniem:** Kompost/obornik kompostowany
+- **Wzrost:** Nawóz azotowy (N)
+- **Kwitnienie:** Nawóz potasowy (K) - co 2 tygodnie
+- **NPK:** 10:10:20 lub 5:10:15
+- **Uwaga:** Żądne składników - regularne nawożenie!
+
+---
+
+## 🌺 Potrzeby kwiatów vs warzywa
+
+| Aspekt | Warzywa | Kwiaty |
+|--------|---------|--------|
+| **Cel nawożenia** | Plon (owoce) | Kwitnienie (kwiaty) |
+| **Główny składnik** | N+P+K zrównoważone | **K (potas) dominuje** |
+| **Częstotliwość** | Co 2-3 tygodnie | Co 1-2 tygodnie (pojemniki) |
+| **Sezon** | Marzec-sierpień | Kwiecień-wrzesień |
+| **Koniec nawożenia** | Sierpień (dojrzewanie) | Lipiec (przygotowanie do zimy) |
+| **Nawozy specjalistyczne** | Dla pomidorów, ogórków | Dla róż, pelargonii, hortensji |
+| **Uprawa pojemnikowa** | Rzadziej | **Bardzo często** (mała gleba) |
+
+---
+
+## 💐 Nawozy specjalistyczne do kwiatów
+
+### 1. Pokon dla róż
+- NPK: 7:6:11 + mikroelementy
+- Forma: Płynna, granulowana
+- Częstotliwość: Co 2 tygodnie (płyn), co miesiąc (granulat)
+
+### 2. Pokon dla pelargonii
+- NPK: 8:5:9 + Fe (żelazo)
+- Forma: Płynna
+- Częstotliwość: Co 7-14 dni
+
+### 3. Substral dla hortensji
+- NPK: Kwaśny (obniża pH)
+- Dodane: Siarczan glinu (niebieski kolor)
+- Częstotliwość: Co 3-4 tygodnie
+
+### 4. Target Kwitnienie (Yara)
+- NPK: 15:10:30 (dużo K)
+- Forma: Dolistna
+- Zastosowanie: Wszystkie kwiaty
+- Częstotliwość: 2-3 razy w sezonie
+
+### 5. Osmocote (granulat powolnego uwalniania)
+- NPK: 15:9:12 + mikroelementy
+- Forma: Granulki powlekane
+- Działa: 3-6 miesięcy
+- Idealny: Rośliny w pojemnikach (jeden raz w sezonie!)
+
+---
+
+## 🔧 Analiza obecnej funkcjonalności "Opryski"
+
+### Struktura bazy danych (spray_history)
+
+```sql
+Pola w tabeli:
+- id
+- bed_id (FK do beds)
+- spray_name (nazwa środka)
+- spray_type (typ oprysku)
+- spray_date (data oprysku)
+- withdrawal_period (okres karencji - DNI)
+- safe_harvest_date (obliczana: spray_date + withdrawal_period)
+- dosage (dawka)
+- weather_conditions (warunki pogodowe)
+- note (notatki)
+- created_at
+```
+
+### Funkcjonalności obecne:
+
+1. **Rejestrowanie oprysku:**
+   - Wybór grządki
+   - Nazwa środka (autocomplete z bazy produktów ochrony roślin)
+   - Typ oprysku
+   - Data oprysku
+   - Okres karencji (dni)
+   - Dawka
+   - Warunki pogodowe
+   - Notatki
+
+2. **Automatyczne obliczenia:**
+   - Safe harvest date = spray_date + withdrawal_period
+   - Reminder 3 dni przed końcem karencji
+
+3. **Widoki:**
+   - Historia oprysków (wszystkie)
+   - Aktywne opryski (w okresie karencji)
+   - Opryski per grządka
+
+4. **Integracja:**
+   - Baza produktów ochrony roślin (spray_products)
+   - Przypomnienia (reminders)
+   - Zadania (tasks)
+
+### Logika biznesowa:
+
+```javascript
+// Obliczanie bezpiecznej daty zbioru
+function calculateSafeHarvestDate(sprayDate, withdrawalPeriod) {
+  const date = new Date(sprayDate);
+  date.setDate(date.getDate() + parseInt(withdrawalPeriod));
+  return date.toISOString().split('T')[0];
+}
+
+// Tworzenie przypomnienia
+function createReminder(userId, sprayId, bedId, safeHarvestDate) {
+  const reminderDate = new Date(safeHarvestDate);
+  reminderDate.setDate(reminderDate.getDate() - 3); // 3 dni przed
+  const message = `Okres karencji dla oprysku kończy się ${safeHarvestDate}`;
+}
+```
+
+### Ograniczenia obecnego systemu:
+
+❌ **Tylko ochrona** - brak nawożenia
+❌ **Nazwa "Opryski"** - kojarzy się z chemią, a nie pielęgnacją
+❌ **Brak rozróżnienia celu** - ochrona vs pielęgnacja
+❌ **Karencja zawsze wymagana** - nawozy nie mają karencji
+❌ **Brak częstotliwości** - nawozy trzeba powtarzać regularnie
+
+---
+
+## 💡 Propozycja rozbudowy
+
+### 1. ZMIANA NAZWY I FILOZOFII
+
+**Z:** "Opryski" (defensywne, chemiczne)
+**Na:** Jeden z poniższych wariantów:
+
+**OPCJA A: "Pielęgnacja i ochrona"** ⭐ REKOMENDOWANE
+- Szeroki termin obejmujący wszystko
+- Pozytywne skojarzenia
+- Miejsce na przyszłe rozszerzenia (przycinanie, okrywanie, etc.)
+
+**OPCJA B: "Nawożenie i opryski"**
+- Konkretne, jasne
+- Łatwe do zrozumienia
+- Może być za wąskie (brak miejsca na inne zabiegi)
+
+**OPCJA C: "Zabiegi pielęgnacyjne"**
+- Profesjonalnie
+- Szeroki zakres
+- Może być zbyt ogólne
+
+**OPCJA D: "Odżywianie i ochrona"**
+- Ładne skojarzenie z odżywianiem roślin
+- Trochę nietypowe
+
+### 2. ROZSZERZENIE STRUKTURY DANYCH
+
+#### Nowa tabela: `plant_care_actions` (lub rozszerzenie `spray_history`)
+
+```sql
+CREATE TABLE plant_care_actions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  bed_id INTEGER NOT NULL,
+  user_id INTEGER NOT NULL,
+
+  -- Typ zabiegu
+  action_type TEXT NOT NULL CHECK(action_type IN ('fertilization', 'protection', 'other')),
+
+  -- Podstawowe dane
+  action_name TEXT NOT NULL,  -- Nazwa nawozu/środka
+  action_date DATE NOT NULL,
+
+  -- Szczegóły produktu
+  product_category TEXT,  -- 'mineral', 'organic', 'natural', 'chemical', etc.
+  product_npk TEXT,       -- '15:15:15' dla nawozów
+  dosage TEXT,
+  dosage_unit TEXT,       -- 'kg/m2', 'ml/L', 'g/roślina'
+
+  -- Dla oprysków ochronnych
+  withdrawal_period INTEGER DEFAULT 0,  -- Dni karencji (0 dla nawozów)
+  safe_harvest_date DATE,               -- NULL dla nawozów
+
+  -- Dla nawożenia
+  fertilization_type TEXT,  -- 'soil', 'foliar' (doglebowe, dolistne)
+  repeat_frequency INTEGER, -- Dni między aplikacjami (dla nawożenia cyklicznego)
+  next_application_date DATE, -- Następna planowana aplikacja
+
+  -- Wspólne
+  weather_conditions TEXT,
+  note TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+  FOREIGN KEY (bed_id) REFERENCES beds(id),
+  FOREIGN KEY (user_id) REFERENCES users(id)
+);
+```
+
+#### Nowa tabela: `fertilizer_products` (podobna do spray_products)
+
+```sql
+CREATE TABLE fertilizer_products (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  manufacturer TEXT,
+  type TEXT CHECK(type IN ('mineral', 'organic', 'natural')),
+
+  -- Skład NPK
+  npk_ratio TEXT,  -- '15:15:15'
+  nitrogen_n INTEGER,
+  phosphorus_p INTEGER,
+  potassium_k INTEGER,
+
+  -- Mikroelementy
+  contains_micronutrients TEXT, -- JSON: {"Mg": 2, "Fe": 0.5}
+
+  -- Dawkowanie
+  recommended_dosage TEXT,
+  dosage_unit TEXT,
+  application_frequency TEXT, -- 'co 2 tygodnie', 'raz w miesiącu'
+
+  -- Zastosowanie
+  suitable_for TEXT, -- 'vegetables', 'fruits', 'flowers', 'all'
+  application_method TEXT, -- 'soil', 'foliar', 'both'
+
+  -- Dodatkowe
+  organic_certified BOOLEAN DEFAULT 0,
+  description TEXT,
+  warnings TEXT,
+
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+### 3. NOWE FUNKCJONALNOŚCI
+
+#### A) Cykliczne zadania nawożenia z weryfikacją pogody ⭐ KLUCZOWE
+
+**Workflow:**
+
+```
+1. Użytkownik nawozi pomidory → zapisuje w systemie
+2. Zaznacza: "Powtarzaj co 14 dni"
+3. System tworzy cykliczne zadanie:
+   - Tytuł: "Nawóż pomidory - Azofoska"
+   - Data: Za 14 dni
+   - Typ: Cykliczne nawożenie
+4. **14 dni później** (dzień przed zaplanowanym nawożeniem):
+   - System sprawdza prognozę pogody
+   - Jeśli DESZCZ → Powiadomienie:
+     "⚠️ Jutro ma padać deszcz! Nawożenie pomidorów może być niemożliwe."
+   - Jeśli POGODNIE → Powiadomienie standardowe:
+     "🌱 Jutro nawóż pomidory (Azofoska 15:15:15)"
+5. Po wykonaniu zadania:
+   - Użytkownik oznacza jako wykonane
+   - System automatycznie tworzy kolejne zadanie za 14 dni
+```
+
+**Integracja z pogodą:**
+
+```javascript
+// Pseudokod
+async function checkWeatherForTask(task) {
+  const taskDate = task.scheduled_date;
+  const location = user.location; // latitude, longitude
+
+  // Pobierz prognozę na dzień zadania
+  const weather = await getWeatherForecast(location, taskDate);
+
+  // Warunki uniemożliwiające nawożenie
+  const conditions = {
+    rain: weather.precipitation > 5, // >5mm deszczu
+    strongWind: weather.wind_speed > 30, // >30km/h wiatr (dolistne)
+    frost: weather.temp_min < 0, // Poniżej 0°C
+    heat: weather.temp_max > 35 // Powyżej 35°C (stres)
+  };
+
+  // Generuj odpowiednie ostrzeżenie
+  if (conditions.rain) {
+    return {
+      warning: true,
+      message: "⚠️ Prognoza: Deszcz (~{weather.precipitation}mm). " +
+               "Nawożenie może być nieskuteczne - nawóz spłynie z deszczem.",
+      suggestion: "Przesuń na dzień wcześniej lub 2-3 dni po deszczu."
+    };
+  }
+
+  if (conditions.strongWind && task.application_method === 'foliar') {
+    return {
+      warning: true,
+      message: "💨 Prognoza: Silny wiatr ({weather.wind_speed}km/h). " +
+               "Opryskiwanie dolistne będzie trudne.",
+      suggestion: "Poczekaj na spokojniejszą pogodę."
+    };
+  }
+
+  if (conditions.frost) {
+    return {
+      warning: true,
+      message: "❄️ Prognoza: Przymrozki ({weather.temp_min}°C). " +
+               "Rośliny nie będą pobierać składników.",
+      suggestion: "Odłóż nawożenie do ocieplenia."
+    };
+  }
+
+  if (conditions.heat) {
+    return {
+      warning: true,
+      message: "🌡️ Prognoza: Upał ({weather.temp_max}°C). " +
+               "Ryzyko poparzenia roślin nawozem.",
+      suggestion: "Nawóź wieczorem lub wczesnym rankiem."
+    };
+  }
+
+  // Pogoda OK
+  return {
+    warning: false,
+    message: "✅ Pogoda sprzyjająca nawożeniu " +
+             "({weather.temp_avg}°C, bez opadów).",
+    suggestion: "Idealny czas na nawożenie!"
+  };
+}
+```
+
+**Powiadomienia push/email:**
+
+```
+📱 POWIADOMIENIE (dzień przed)
+──────────────────────────────
+🌱 Jutro nawóż pomidory
+   Azofoska 15:15:15, 20g/10L
+
+⚠️ Pogoda: Deszcz (12mm)
+💡 Sugestia: Nawóź dzisiaj wieczorem
+   lub przesuń na poniedziałek
+
+[Oznacz jako zrobione] [Przesuń]
+```
+
+#### B) Formularz zabiegu pielęgnacyjnego
+
+**Wybór typu zabiegu:**
+```
+○ Nawożenie
+  ├─ Doglebowe
+  └─ Dolistne
+○ Ochrona (oprysk)
+○ Inne zabiegi
+```
+
+**Dla nawożenia - dodatkowe pola:**
+- Typ nawozu: Mineralny / Organiczny / Naturalny
+- Skład NPK (opcjonalnie)
+- Częstotliwość powtarzania (dni)
+- Czy tworzyć cykliczne zadanie?
+
+**Dla ochrony - istniejące pola:**
+- Okres karencji
+- Data bezpiecznego zbioru
+
+#### B) Automatyczne zadania nawożenia
+
+```javascript
+// Przykład: Nawożenie pomidorów co 2 tygodnie
+if (action_type === 'fertilization' && repeat_frequency > 0) {
+  createRecurringTask({
+    bedId: bedId,
+    actionName: "Nawożenie: " + fertilizer_name,
+    frequency: repeat_frequency, // np. 14 dni
+    nextDate: calculateNextDate(action_date, repeat_frequency)
+  });
+}
+```
+
+#### C) Widoki i statystyki
+
+**Nowe widoki:**
+1. **Historia pielęgnacji** (wszystkie zabiegi)
+2. **Aktywne karencje** (tylko opryski)
+3. **Harmonogram nawożenia** (nadchodzące nawożenia)
+4. **Statystyki NPK** - ile azotu/fosforu/potasu aplikowano
+
+**Dashboard widget:**
+```
+📊 Pielęgnacja w tym miesiącu:
+   🌱 Nawożeń: 12
+   🛡️ Oprysków: 3
+   ⏰ Zaplanowane: 5
+```
+
+### 4. UX/UI ZMIANY
+
+#### Menu główne:
+```
+🌱 Pielęgnacja i ochrona  [było: 🛡️ Opryski]
+```
+
+#### Ekran wyboru typu zabiegu (nowy):
+```
+┌─────────────────────────────────────┐
+│ Wybierz typ zabiegu                  │
+├─────────────────────────────────────┤
+│                                      │
+│  ┌─────────────────────────────┐   │
+│  │  🌱 Nawożenie                │   │
+│  │  Podaż składników pokarmowych│   │
+│  │  dla wzrostu i plonów        │   │
+│  └─────────────────────────────┘   │
+│                                      │
+│  ┌─────────────────────────────┐   │
+│  │  🛡️ Oprysk ochronny          │   │
+│  │  Ochrona przed chorobami     │   │
+│  │  i szkodnikami               │   │
+│  └─────────────────────────────┘   │
+│                                      │
+│  ┌─────────────────────────────┐   │
+│  │  ⚙️ Inny zabieg              │   │
+│  │  Przycinanie, formowanie...  │   │
+│  └─────────────────────────────┘   │
+│                                      │
+└─────────────────────────────────────┘
+```
+
+**WAŻNE:** Po wybraniu typu, formularz dostosowuje się:
+- **Nawożenie** → Pola: typ nawozu, NPK, częstotliwość, BRAK karencji
+- **Oprysk** → Pola: środek, karencja, data bezpiecznego zbioru
+- **Inny** → Minimalne pola
+
+#### Ekran nawożenia (dedykowany):
+```
+┌─────────────────────────────────────┐
+│ Nowy zabieg pielęgnacyjny           │
+├─────────────────────────────────────┤
+│                                      │
+│ Typ zabiegu:                         │
+│ [·] Nawożenie  [ ] Ochrona  [ ] Inne│
+│                                      │
+│ Grządka:                             │
+│ [Pomidory - Rząd 1          ▼]      │
+│                                      │
+│ Nazwa nawozu:                        │
+│ [Azofoska 15:15:15          ]  🔍   │
+│                                      │
+│ Typ nawozu:                          │
+│ [·] Mineralny  [ ] Organiczny        │
+│                                      │
+│ Data aplikacji:                      │
+│ [2025-12-17                 📅]      │
+│                                      │
+│ Dawka:                               │
+│ [0.2          ] [kg/10m² ▼]         │
+│                                      │
+│ ☑ Powtarzaj co:                      │
+│ [14           ] dni                  │
+│                                      │
+│ Notatki:                             │
+│ [________________________]           │
+│                                      │
+│         [Anuluj]  [Zapisz]           │
+└─────────────────────────────────────┘
+```
+
+### 5. MIGRACJA DANYCH
+
+```sql
+-- Opcja 1: Rozszerzenie istniejącej tabeli
+ALTER TABLE spray_history ADD COLUMN action_type TEXT DEFAULT 'protection';
+ALTER TABLE spray_history ADD COLUMN fertilization_type TEXT;
+ALTER TABLE spray_history ADD COLUMN repeat_frequency INTEGER;
+-- ... etc
+
+-- Opcja 2: Nowa tabela + migracja
+INSERT INTO plant_care_actions
+  (bed_id, user_id, action_type, action_name, action_date, withdrawal_period, ...)
+SELECT
+  bed_id, user_id, 'protection', spray_name, spray_date, withdrawal_period, ...
+FROM spray_history;
+```
+
+---
+
+## 🎯 Roadmap implementacji
+
+### Faza 1: Fundament (Sprint 1-2)
+- [ ] Analiza i projekt bazy danych
+- [ ] Migracja/rozszerzenie tabel
+- [ ] Backend API dla nawożenia
+- [ ] Baza produktów nawozowych (fertilizer_products)
+
+### Faza 2: UI/UX (Sprint 3-4)
+- [ ] Zmiana nazwy menu na "Pielęgnacja i ochrona"
+- [ ] Nowy formularz z wyborem typu zabiegu
+- [ ] Autocomplete dla nawozów
+- [ ] Widok historii nawożenia
+
+### Faza 3: Automatyzacja (Sprint 5-6)
+- [ ] Cykliczne zadania nawożenia
+- [ ] Kalendarze nawożenia per roślina
+- [ ] Przypomnienia o nawożeniu
+- [ ] Integracja z kalendarzem księżycowym
+
+### Faza 4: Statystyki i raporty (Sprint 7+)
+- [ ] Bilans NPK per grządka
+- [ ] Wykresy nawożenia w czasie
+- [ ] Korelacja nawożenia z plonami
+- [ ] Eksport do PDF/CSV
+
+---
+
+## 🌟 Korzyści dla użytkowników
+
+### Dla hobbystów:
+✅ **Kompleksowa pielęgnacja** w jednym miejscu
+✅ **Przypomnienia o nawożeniu** - nigdy nie zapomnisz
+✅ **Gotowe harmonogramy** dla popularnych warzyw
+✅ **Bilans składników** - widzisz co aplikowałeś
+
+### Dla zaawansowanych:
+✅ **Precyzyjne dawkowanie** NPK
+✅ **Statystyki i analizy** pielęgnacji
+✅ **Korelacja z plonami** - co działa, co nie
+✅ **Historia zabiegów** - uczysz się z doświadczenia
+
+---
+
+## 🧪 Instrukcje przygotowania nawozów (dla amatorów)
+
+### NAWOZY MINERALNE
+
+#### Azofoska 15:15:15
+**Przygotowanie:**
+- Forma granulowana - rozpuścić w wodzie lub rozsypać na glebie
+- **Rozcieńczenie:** 20-30g na 10L wody (podlewanie)
+- **Doglebowo:** 150-200g/10m² rozrzucone, lekko wymieszane z glebą
+
+**Częstotliwość:**
+- **Warzywa:** Co 3-4 tygodnie w sezonie wegetacyjnym
+- **Pierwsze nawożenie:** Wiosna (marzec-kwiecień)
+- **Ostatnie:** Sierpień (nie później - rośliny muszą przygotować się do zimy)
+
+**UWAGA:** ⚠️ Nie stosować więcej niż 30g/10L - nadmiar wypali korzenie!
+
+#### Saletra amonowa 34%N
+**Przygotowanie:**
+- **Rozcieńczenie:** 10-20g na 10L wody
+- **Doglebowo:** 100-300g/10m² (zależnie od warzywa)
+
+**Częstotliwość:**
+- **Nawożenie pogłówne:** Czerwiec-lipiec (kwitnienie, owocowanie)
+- **Pomidory, ogórki:** Co 2-3 tygodnie
+- **Kapusta:** 1-2 razy w sezonie
+
+**UWAGA:** ⚠️
+- NIE stosować na sucho bez podlania!
+- NIE przekraczać 20g/10L - poparzenie liści!
+- Najlepiej po deszczu lub podlewaniu
+
+#### Pokon (nawozy płynne)
+**Przygotowanie:**
+- Gotowy koncentrat do rozcieńczenia
+- **Standardowo:** 10ml na 1L wody (1:100)
+- Dokładnie przestrzegać instrukcji na butelce
+
+**Częstotliwość:**
+- **Rośliny balkonowe:** Co 7-14 dni
+- **Warzywa:** Co 2 tygodnie w sezonie
+
+**UWAGA:** ⚠️ Lepiej rzadziej, ale regularnie, niż raz mocno!
+
+### NAWOZY ORGANICZNE
+
+#### Biohumus (płynny)
+**Przygotowanie:**
+- **Rozcieńczenie:** Według opakowania, zazwyczaj 50-100ml na 10L wody
+- Można używać do podlewania i opryskiwania liści
+
+**Częstotliwość:**
+- **Pojemniki/doniczki:** Co 2 tygodnie
+- **Grządki:** Co 3-4 tygodnie
+
+**UWAGA:** ⚠️ Bezpieczny nawóz - trudno przedawkować, ale przestrzegaj instrukcji
+
+#### Obornik granulowany
+**Przygotowanie:**
+- **Doglebowo:** 300-500g/10m² rozrzucone i wymieszane z glebą
+- **Napar:** 1kg granulatu + 10L wody, odstać 24h, rozcieńczyć 1:5
+
+**Częstotliwość:**
+- **Jesień:** Raz przed sezonem (wkopać)
+- **Wiosna:** Raz na początku sezonu
+- **Napar:** Co 4 tygodnie w sezonie
+
+**UWAGA:** ⚠️ Świeży obornik może spalić rośliny - tylko kompostowany!
+
+### NAWOZY NATURALNE DOMOWEJ ROBOTY
+
+#### Gnojówka pokrzywowa
+**Przygotowanie (krok po kroku):**
+1. **Zbierz:** 1kg świeżych pokrzyw (przed kwitnieniem)
+2. **Posiekaj** pokrzywy nożem lub sekatorami
+3. **Włóż do wiadra** (10L plastikowe)
+4. **Zalej wodą** (najlepiej deszczówką) - 10L
+5. **Dodaj** odrobinę wapna/popiołu (zmniejsza zapach)
+6. **Przykryj** pokrywką (z otworem powietrznym)
+7. **Mieszaj** codziennie przez 10-14 dni
+8. **Gotowe** gdy przestanie pienić się i będzie ciemnobrązowe
+
+**Stosowanie:**
+- **Rozcieńczenie:** 1:10 (1L gnojówki + 9L wody)
+- **NIE stosować nierozcieńczonej** - bardzo mocna!
+
+**Częstotliwość:**
+- **Warzywa liściowe:** Co 2 tygodnie
+- **Pomidory, ogórki:** Co 3 tygodnie
+- **Nie stosować** podczas kwitnienia (zbyt dużo azotu)
+
+**UWAGA:** ⚠️
+- Silny zapach - robić z dala od domu
+- Tylko dobrze fermentowana (2 tygodnie minimum)
+- Rozcieńczona 1:10 - inaczej popali rośliny!
+
+#### Odwar z kompostu ("herbata kompostowa")
+**Przygotowanie:**
+1. **Weź** 2-3kg dojrzałego kompostu
+2. **Włóż do worka** (płótno, stara poszewka)
+3. **Zanurz** w 10L wody na 3-5 dni
+4. **Mieszaj** raz dziennie
+5. **Wyjmij** worek, odcedź płyn
+
+**Stosowanie:**
+- **Rozcieńczenie:** 1:5 (1L odparu + 4L wody)
+- Do podlewania lub opryskiwania
+
+**Częstotliwość:**
+- Co 3-4 tygodnie
+- Szczególnie korzystny wczesną wiosną (mikroorganizmy)
+
+**UWAGA:** ⚠️ Zapach neutralny - jeśli śmierdzi, kompost nie był dojrzały
+
+#### Popiół drzewny
+**Przygotowanie:**
+- **Prosty:** Posypać cienką warstwą wokół roślin
+- **Napar:** 300g popiołu + 10L wody, odstać 3 dni, rozcieńczyć 1:2
+
+**Częstotliwość:**
+- **Jednorazowo:** Wiosna lub jesień (alkalizuje glebę)
+- **Nie więcej niż** raz w sezonie
+
+**UWAGA:** ⚠️
+- Tylko popiół z drewna (NIE z węgla, plastiku!)
+- Podwyższa pH - unikać na glebach zasadowych
+- Nie stosować pod rośliny kwaśnolubne (borówki, azalie)
+
+---
+
+## ⚠️ Najczęstsze błędy i jak ich uniknąć
+
+### 1. Zbyt wysokie stężenie
+**Problem:** Poparzenie korzeni/liści, zamieranie roślin
+**Rozwiązanie:**
+- Zawsze lepiej za słabo niż za mocno
+- Przestrzegaj proporcji rozcieńczenia
+- Najpierw podlej wodą, potem nawozem
+
+### 2. Nawożenie w niewłaściwym czasie
+**Problem:** Rośliny nie wchłaniają składników
+**Rozwiązanie:**
+- Nawozy azotowe: NIE po sierpniu (rośliny muszą dojrzeć)
+- Nawozy fosforowo-potasowe: Jesień OK
+- Nigdy na suchą glebę - najpierw podlej
+
+### 3. Nawożenie podczas suszy
+**Problem:** Spalenie korzeni w suchej glebie
+**Rozwiązanie:**
+- Zawsze podlej wodą PRZED nawożeniem
+- Lub nawóź po deszczu
+- Lub nawóż wieczorem gdy gleba jest wilgotna
+
+### 4. Mieszanie nawozów mineralnych z organicznymi
+**Problem:** Niektóre składniki mogą reagować
+**Rozwiązanie:**
+- Odstęp min. 2 tygodnie między aplikacjami
+- Nie mieszać w tym samym roztworze
+- Najpierw organiczne, potem mineralne
+
+### 5. Nawożenie młodych sadzonek
+**Problem:** Delikatne korzenie się palą
+**Rozwiązanie:**
+- Poczekaj 2-3 tygodnie po posadzeniu
+- Użyj 1/2 zalecanego stężenia
+- Lub tylko nawozy organiczne
+
+---
+
+## 📋 Checklista dla użytkownika (funkcja w aplikacji)
+
+### Przed nawożeniem:
+- [ ] Sprawdź wilgotność gleby (podlej jeśli sucha)
+- [ ] Przeczytaj instrukcję na opakowaniu
+- [ ] Przygotuj odpowiednie rozcieńczenie
+- [ ] Sprawdź pogodę (najlepiej wieczór, przed deszczem)
+- [ ] Sprawdź ostatnie nawożenie (min. 2 tygodnie przerwy)
+
+### Podczas nawożenia:
+- [ ] Nawóź wieczorem lub rano (NIE w pełnym słońcu)
+- [ ] Podlewaj równomiernie, unikaj koncentracji w jednym miejscu
+- [ ] Nawozy doglebowe wymieszaj z glebą (nie zostawiaj na powierzchni)
+- [ ] Unikaj kontaktu z liśćmi (chyba że nawóz dolistny)
+
+### Po nawożeniu:
+- [ ] Podlej lekko wodą (zmyj nawóz z liści)
+- [ ] Zanotuj w aplikacji (co, ile, kiedy)
+- [ ] Ustaw przypomnienie na kolejne nawożenie
+- [ ] Obserwuj rośliny przez 2-3 dni (objawy poparzenia?)
+
+---
+
+## 📚 Źródła
+
+- [Co to obornik naturalny, a co organiczny - Planta.pl](https://www.planta.pl/pl/porady/nawozenie-roslin/co-to-obornik-naturalny-a-co-organiczny)
+- [Terminy nawożenia 2025 - Tygodnik Rolniczy](https://www.tygodnik-rolniczy.pl/uprawa/nawozenie/terminy-nawozenia-2025-do-kiedy-wolno-stosowac-obornik-i-nawozy-naturalne-2538689)
+- [Nawozy organiczne - Świat Kwiatów](https://www.swiatkwiatow.pl/poradnik-ogrodniczy/nawozy-organiczne-id342.html)
+- [Nawozy organiczne - Murator Dom](https://muratordom.pl/ogrod/pielegnacja-roslin/nawozy-organiczne-obornik-kompost-torf-kora-nawozy-zielone-aa-P61K-7upJ-76Wk.html)
+- [Nawożenie warzyw obornikiem - SODR Modliszewice](https://www.sodr.pl/sir/aktualnosci-sir/Nawozenie-warzyw-obornikiem/idn:1827)
+- [Naturalne nawożenie w sadzie - Faworytka](https://drzewka-faworytka.pl/pl/blog/Naturalne-nawozenie-w-sadzie-Kompost%2C-obornik-a-gnojowki/320)
+
+---
+
+## 🤔 Rekomendacje końcowe
+
+**Nazwa menu:** "Pielęgnacja i ochrona" ⭐
+
+**Dlaczego:**
+- Pozytywne skojarzenia (pielęgnacja = troska)
+- Szeroki zakres (miejsce na rozwój)
+- Jasno odróżnia: pielęgnacja (nawożenie, dla dobra) vs ochrona (opryski, przeciwko czemuś)
+
+**Architektura:**
+- Rozszerzenie obecnej tabeli + nowe pola
+- Zachowanie kompatybilności wstecznej
+- Stopniowa migracja UI
+
+**Priorytet implementacji:**
+1. Backend + baza danych
+2. Podstawowy UI nawożenia
+3. Automatyczne zadania
+4. Statystyki i raporty
