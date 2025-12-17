@@ -336,6 +336,345 @@ Ogrodnictwo hobbyst require kompleksową pielęgnację **DLA DOBRA rośliny**, g
 
 ---
 
+## 🎯 Rozróżnienie w aplikacji: Warzywa vs Kwiaty
+
+### Dlaczego to ważne?
+
+**Kwiaty i warzywa mają RÓŻNE POTRZEBY:**
+- Warzywa → **Plon** (duże owoce, korzenie) → N+P+K zrównoważone
+- Kwiaty → **Kwitnienie** (obfite kwiaty) → Dużo **K (potasu)**, mniej N
+
+**Co to znaczy dla użytkownika?**
+- Pomidory nawożone nawozem do pelargonii → **Mało kwiatów, mało owoców** (za dużo K)
+- Petunie nawożone nawozem do pomidorów → **Dużo liści, mało kwiatów** (za dużo N)
+
+### Implementacja w aplikacji:
+
+#### 1. RODZAJ ROŚLINY w tabeli `beds`
+
+```sql
+ALTER TABLE beds ADD COLUMN plant_category TEXT
+  CHECK(plant_category IN ('vegetable', 'flower', 'herb', 'fruit'));
+```
+
+**Przy tworzeniu grządki:**
+```
+┌─────────────────────────────────────┐
+│ Nowa grządka                         │
+├─────────────────────────────────────┤
+│                                      │
+│ Nazwa rośliny:                       │
+│ [Pomidor Malinowy        ]  🔍      │
+│                                      │
+│ Kategoria:                           │
+│ (•) Warzywo  ( ) Kwiat  ( ) Zioło   │
+│                                      │
+└─────────────────────────────────────┘
+```
+
+#### 2. INTELIGENTNE PODPOWIEDZI NAWOZÓW
+
+**Scenariusz 1: Nawożenie pomidorów (warzywo)**
+```
+┌─────────────────────────────────────┐
+│ Nawożenie: Pomidory - Rząd 1        │
+├─────────────────────────────────────┤
+│ Kategoria: Warzywo 🥕               │
+│                                      │
+│ 💡 REKOMENDOWANE NAWOZY:             │
+│ • Azofoska 15:15:15                  │
+│ • Nawóz uniwersalny do warzyw        │
+│ • Biohumus                           │
+│                                      │
+│ ⚠️ UNIKAJ:                           │
+│ • Nawozy do kwiatów (za dużo K)     │
+│ • Nawozy do hortensji (kwaśne)      │
+└─────────────────────────────────────┘
+```
+
+**Scenariusz 2: Nawożenie pelargonii (kwiat)**
+```
+┌─────────────────────────────────────┐
+│ Nawożenie: Pelargonie - Balkon      │
+├─────────────────────────────────────┤
+│ Kategoria: Kwiat 🌸                  │
+│                                      │
+│ 💡 REKOMENDOWANE NAWOZY:             │
+│ • Pokon dla pelargonii (8:5:9)      │
+│ • Nawóz do roślin kwitnących        │
+│ • Target Kwitnienie (15:10:30)      │
+│                                      │
+│ 💡 WSKAZÓWKA:                        │
+│ Kwiaty potrzebują więcej POTASU (K) │
+│ dla obfitego kwitnienia!             │
+│                                      │
+│ ⚠️ UNIKAJ:                           │
+│ • Nawozy azotowe (dużo liści!)      │
+│ • Nawozy uniwersalne (za mało K)    │
+└─────────────────────────────────────┘
+```
+
+#### 3. RÓŻNE BAZY NAWOZÓW
+
+**Tabela: `fertilizer_products`**
+
+```sql
+CREATE TABLE fertilizer_products (
+  id INTEGER PRIMARY KEY,
+  name TEXT,
+  npk_ratio TEXT,
+
+  -- KATEGORIA ZASTOSOWANIA
+  suitable_for TEXT CHECK(suitable_for IN
+    ('vegetables', 'flowers', 'herbs', 'all', 'acidic_plants')),
+
+  -- Priorytet w podpowiedziach
+  recommended_for TEXT, -- JSON: ["tomatoes", "peppers", "cucumbers"]
+  not_recommended_for TEXT, -- JSON: ["roses", "geraniums"]
+
+  ...
+);
+```
+
+**Przykładowe wpisy:**
+
+```sql
+-- Dla warzyw
+INSERT INTO fertilizer_products (name, npk_ratio, suitable_for, recommended_for)
+VALUES ('Azofoska 15:15:15', '15:15:15', 'vegetables',
+        '["tomatoes","peppers","cucumbers","cabbage"]');
+
+-- Dla kwiatów
+INSERT INTO fertilizer_products (name, npk_ratio, suitable_for, recommended_for)
+VALUES ('Pokon dla pelargonii', '8:5:9', 'flowers',
+        '["geraniums","petunias","begonias"]');
+
+-- Specjalistyczne
+INSERT INTO fertilizer_products (name, npk_ratio, suitable_for, recommended_for)
+VALUES ('Substral dla hortensji', 'acidic', 'acidic_plants',
+        '["hydrangeas","azaleas","rhododendrons"]');
+```
+
+#### 4. AUTOCOMPLETE Z FILTROWANIEM
+
+**Kod (pseudokod):**
+```javascript
+// Przy wpisywaniu nazwy nawozu
+async function fetchFertilizerSuggestions(query, plantCategory) {
+  const response = await axios.get('/api/fertilizers/autocomplete', {
+    params: {
+      q: query,
+      category: plantCategory // 'vegetable', 'flower', 'herb'
+    }
+  });
+
+  // Backend zwraca:
+  // 1. Najpierw: Nawozy odpowiednie dla kategorii
+  // 2. Potem: Uniwersalne nawozy
+  // 3. Na końcu: Inne (z ostrzeżeniem)
+
+  return response.data;
+}
+```
+
+**Wynik w UI:**
+```
+Nawóz: [Pok_________]
+
+Wyniki (dla kwiatów 🌸):
+──────────────────────────────
+✅ IDEALNE:
+  Pokon dla pelargonii 8:5:9
+  Target Kwitnienie 15:10:30
+  Osmocote Kwitnące 15:9:12
+
+🟡 UNIWERSALNE:
+  Biohumus uniwersalny
+  Kompost
+
+⚠️ INNE (niepasujące):
+  Pokon dla pomidorów (za mało K!)
+  Azofoska 15:15:15 (dla warzyw)
+```
+
+#### 5. HARMONOGRAMY NAWOŻENIA PER ROŚLINA
+
+**Tabela: `plant_fertilization_schedules`**
+
+```sql
+CREATE TABLE plant_fertilization_schedules (
+  id INTEGER PRIMARY KEY,
+  plant_name TEXT, -- 'Pomidor', 'Pelargonia'
+  plant_category TEXT, -- 'vegetable', 'flower'
+
+  -- Harmonogram
+  fertilization_frequency INTEGER, -- Dni
+  start_month INTEGER, -- 3 (marzec)
+  end_month INTEGER, -- 8 (sierpień)
+
+  -- Rekomendacje
+  recommended_npk TEXT, -- '15:15:15' lub '15:10:30'
+  recommended_fertilizers TEXT, -- JSON: ["Azofoska", "Biohumus"]
+
+  -- Instrukcje
+  instructions TEXT, -- "Nawóź co 2 tygodnie podczas kwitnienia"
+  warnings TEXT -- "Nie nawóź po sierpniu!"
+);
+```
+
+**Przykłady:**
+
+```sql
+-- Pomidor (warzywo)
+INSERT INTO plant_fertilization_schedules VALUES
+(1, 'Pomidor', 'vegetable', 14, 5, 8,
+ '15:15:15', '["Azofoska 15:15:15","Saletra amonowa","Biohumus"]',
+ 'Nawóź co 2 tygodnie od czerwca (kwitnienie i owocowanie)',
+ 'Nie nawóż po sierpniu - rośliny muszą dojrzeć!');
+
+-- Pelargonia (kwiat)
+INSERT INTO plant_fertilization_schedules VALUES
+(2, 'Pelargonia', 'flower', 10, 4, 9,
+ '15:10:30', '["Pokon dla pelargonii","Target Kwitnienie","Osmocote"]',
+ 'Nawóż co 7-14 dni przez cały sezon kwitnienia',
+ 'Rośliny w pojemnikach wymagają częstszego nawożenia!');
+
+-- Hortensja (kwiat kwaśnolubny)
+INSERT INTO plant_fertilization_schedules VALUES
+(3, 'Hortensja', 'flower', 21, 4, 7,
+ 'acidic', '["Substral dla hortensji","Nawóz kwaśny"]',
+ 'Nawóż co 3-4 tygodnie nawozem kwaśnym (obniża pH)',
+ 'Kolor kwiatów zależy od pH! Niebieski=kwaśna gleba, różowy=zasadowa');
+```
+
+#### 6. AUTOMATYCZNE SUGESTIE
+
+**Gdy użytkownik tworzy grządkę:**
+
+```javascript
+// Backend endpoint
+router.post('/beds', async (req, res) => {
+  const { plant_name, plant_category } = req.body;
+
+  // Pobierz harmonogram dla tej rośliny
+  const schedule = await db.get(`
+    SELECT * FROM plant_fertilization_schedules
+    WHERE plant_name = ? OR plant_category = ?
+    LIMIT 1
+  `, [plant_name, plant_category]);
+
+  if (schedule) {
+    // Zaproponuj użytkownikowi ustawienie cyklicznego nawożenia
+    res.json({
+      bed_id: newBed.id,
+      suggestion: {
+        message: `Czy chcesz ustawić automatyczne przypomnienia o nawożeniu?`,
+        details: `${plant_name} wymaga nawożenia co ${schedule.fertilization_frequency} dni.`,
+        recommended_fertilizers: JSON.parse(schedule.recommended_fertilizers),
+        frequency: schedule.fertilization_frequency
+      }
+    });
+  }
+});
+```
+
+**Dialog w aplikacji:**
+```
+┌─────────────────────────────────────┐
+│ ✅ Grządka utworzona!               │
+├─────────────────────────────────────┤
+│                                      │
+│ 💡 Pelargonie wymagają regularnego  │
+│    nawożenia co 10-14 dni!          │
+│                                      │
+│ Rekomendowane nawozy:                │
+│ • Pokon dla pelargonii (8:5:9)      │
+│ • Target Kwitnienie (15:10:30)      │
+│                                      │
+│ Czy ustawić automatyczne             │
+│ przypomnienia?                       │
+│                                      │
+│ [Tak, co 10 dni] [Tak, co 14 dni]  │
+│ [Nie, dziękuję]                      │
+└─────────────────────────────────────┘
+```
+
+#### 7. WALIDACJA I OSTRZEŻENIA
+
+**Scenariusz: Użytkownik próbuje użyć złego nawozu**
+
+```javascript
+// Backend validation
+router.post('/fertilize', async (req, res) => {
+  const { bed_id, fertilizer_name } = req.body;
+
+  // Pobierz informacje o grządce
+  const bed = await db.get('SELECT * FROM beds WHERE id = ?', bed_id);
+
+  // Pobierz informacje o nawozie
+  const fertilizer = await db.get(
+    'SELECT * FROM fertilizer_products WHERE name = ?',
+    fertilizer_name
+  );
+
+  // Sprawdź kompatybilność
+  if (bed.plant_category === 'flower' &&
+      fertilizer.suitable_for === 'vegetables') {
+    return res.status(400).json({
+      error: 'Nieodpowiedni nawóz!',
+      warning: `${fertilizer_name} jest przeznaczony dla WARZYW. ` +
+               `${bed.plant_name} (kwiat) potrzebuje nawozu z większą ` +
+               `zawartością POTASU (K) dla obfitego kwitnienia.`,
+      suggestions: [
+        'Pokon dla pelargonii (8:5:9)',
+        'Target Kwitnienie (15:10:30)',
+        'Nawóz do roślin kwitnących'
+      ]
+    });
+  }
+
+  // Nawóz OK
+  res.json({ success: true });
+});
+```
+
+**Dialog ostrzeżenia:**
+```
+┌─────────────────────────────────────┐
+│ ⚠️ OSTRZEŻENIE                      │
+├─────────────────────────────────────┤
+│                                      │
+│ Azofoska 15:15:15 jest przeznaczona │
+│ dla WARZYW!                          │
+│                                      │
+│ Pelargonie (kwiat) potrzebują       │
+│ więcej POTASU (K) dla kwitnienia.   │
+│                                      │
+│ Proponowane nawozy:                  │
+│ • Pokon dla pelargonii (8:5:9)      │
+│ • Target Kwitnienie (15:10:30)      │
+│                                      │
+│ [Anuluj] [Zapisz mimo to]           │
+└─────────────────────────────────────┘
+```
+
+---
+
+## 📊 Podsumowanie: Kwiaty vs Warzywa w aplikacji
+
+| Funkcja | Jak obsługuje różnice? |
+|---------|------------------------|
+| **Tworzenie grządki** | Wybór kategorii (warzywo/kwiat/zioło) |
+| **Autocomplete nawozów** | Filtrowanie po kategorii, priorytet pasujących |
+| **Podpowiedzi** | Różne dla warzyw i kwiatów |
+| **Harmonogramy** | Osobne dla każdej rośliny/kategorii |
+| **Walidacja** | Ostrzeżenia gdy nawóz niepasujący |
+| **Baza nawozów** | Pole `suitable_for` (vegetables/flowers) |
+| **Częstotliwość** | Kwiaty częściej (7-14 dni vs 14-21 dni) |
+| **NPK** | Kwiaty więcej K, warzywa zrównoważone |
+
+---
+
 ## 🔧 Analiza obecnej funkcjonalności "Opryski"
 
 ### Struktura bazy danych (spray_history)
