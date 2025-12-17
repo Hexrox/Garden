@@ -289,6 +289,218 @@ Ogrodnictwo hobbyst require kompleksową pielęgnację **DLA DOBRA rośliny**, g
 - **NPK:** 10:10:20 lub 5:10:15
 - **Uwaga:** Żądne składników - regularne nawożenie!
 
+### Słoneczniki
+- **Przed sadzeniem:** Kompost lub obornik
+- **Wzrost:** Nawóz azotowy dla wysokiego łodygi
+- **NPK:** 15:15:15 lub Azofoska
+- **Dawka:** 50-80g/m² (Azofoska)
+- **Częstotliwość:** 2-3 razy w sezonie
+- **Uwaga:** Bardzo żądne składników - wysokie rośliny
+
+### Cynia daliowa
+- **NPK:** 15:15:15 lub nawóz do kwiatów
+- **Dawka:** 50-80g/m² (Azofoska)
+- **Częstotliwość:** Co 2-3 tygodnie
+- **Uwaga:** Kwiaty długo kwitnące - regularne nawożenie
+
+### Aster
+- **NPK:** 15:15:15 lub nawóz uniwersalny
+- **Dawka:** 40-60g/m² (Azofoska)
+- **Częstotliwość:** Co 3 tygodnie
+- **Uwaga:** Kwitnie jesienią - nawóz do września
+
+### Goździki
+- **NPK:** 15:15:15
+- **Dawka:** 50-80g/m² (Azofoska)
+- **Częstotliwość:** Co 2-3 tygodnie
+- **Uwaga:** Lubią glebę zasadową (pH 6.5-7.5)
+
+### Aksamitki (tagetes)
+- **NPK:** 15:15:15 lub uniwersalny
+- **Dawka:** 40-60g/m² (Azofoska)
+- **Częstotliwość:** Co 3 tygodnie
+- **Uwaga:** Mało wymagające - nie przenawozić!
+
+---
+
+## 🌳 Harmonogram nawożenia krzewów owocowych
+
+### Maliny
+- **Wczesna wiosna (marzec):** Kompost + nawóz azotowy
+- **Po kwitnieniu (maj):** Nawóz wieloskładnikowy NPK 15:15:15
+- **Po owocowaniu (sierpień):** Nawóz fosforowo-potasowy (P+K)
+- **Jesień:** Obornik kompostowany pod krzewy
+- **NPK:** 15:15:15 wiosną, 5:15:20 po owocowaniu
+- **Dawka:** 30-50g/m²
+- **Uwaga:** Nie nawozić azotem po lipcu!
+
+### Porzeczki (czarna, czerwona)
+- **Wiosna (kwiecień):** Kompost + nawóz azotowy
+- **Przed kwitnieniem:** NPK 15:15:15
+- **Po owocowaniu:** Nawóz fosforowo-potasowy
+- **Jesień:** Obornik
+- **Dawka:** 40-60g/m² (NPK)
+- **Uwaga:** Porzeczka czarna żądniejsza niż czerwona!
+
+### Agrest
+- **Wiosna:** Kompost + NPK 15:15:15
+- **Po owocowaniu:** Nawóz P+K
+- **Jesień:** Obornik kompostowany
+- **Dawka:** 30-50g/m²
+- **Uwaga:** Podobne potrzeby jak porzeczki
+
+### Aronia
+- **Wiosna (marzec-kwiecień):** Kompost + azot
+- **Przed kwitnieniem:** NPK 15:15:15
+- **Po owocowaniu:** Nawóz P+K
+- **Częstotliwość:** 2-3 razy w sezonie
+- **Dawka:** 30-40g/m²
+- **Uwaga:** Mało wymagająca - nie przenawozić!
+
+### Borówka amerykańska
+- **Nawóz KWAŚNY:** pH 4.0-5.5 (siarczan amonu)
+- **Wiosna:** Nawóz azotowy kwaśny
+- **NPK:** 10:5:5 lub specjalny do borówek
+- **Częstotliwość:** Co 4-6 tygodni (kwiecień-lipiec)
+- **Dawka:** 20-30g/m²
+- **Uwaga:** NIE stosować obornika, popiołu! (alkalizują)
+
+### Truskawki
+- **Wiosna (marzec):** Kompost + nawóz azotowy
+- **Przed kwitnieniem:** NPK 15:15:15
+- **Po owocowaniu:** Nawóz P+K (wzmocnienie na zimę)
+- **Częstotliwość:** 3-4 razy w sezonie
+- **Dawka:** 30-40g/m²
+- **Uwaga:** Unikać azotu podczas owocowania!
+
+---
+
+## 🌿 Harmonogram nawożenia ziół
+
+### Bazylia
+- **Potrzeby:** WYSOKIE (żądna składników)
+- **NPK:** 15:15:15 lub uniwersalny
+- **Częstotliwość:**
+  - Grządki: Co 6 tygodni
+  - Doniczki: Co tydzień (rozcieńczony)
+- **Nawozy:** Biohumus, kompost
+- **Uwaga:** Jedyne zioło wymagające regularnego nawożenia!
+
+### Pietruszka (liściowa, korzeniowa)
+- **Potrzeby:** Średnie
+- **NPK:** 15:15:15
+- **Częstotliwość:** Co 4-6 tygodni
+- **Uwaga:** Korzeniowa - unikać świeżego obornika (rozwidlenie)
+
+### Koper
+- **Potrzeby:** Średnie
+- **NPK:** 15:15:15
+- **Częstotliwość:** Co 4-6 tygodni
+- **Nawozy:** Kompost, biohumus
+
+### Tymianek
+- **Potrzeby:** MINIMALNE (roślin śródziemnomorska)
+- **Nawożenie:** Raz w sezonie kompostem
+- **Uwaga:** Pochodzi z terenów ubogich - NIE przenawozić!
+
+### Rozmaryn
+- **Potrzeby:** MINIMALNE
+- **Nawożenie:** Raz w sezonie (wiosna)
+- **NPK:** 10:10:10 lub kompost
+- **Uwaga:** Jak tymianek - unikać nadmiaru azotu
+
+### Mięta
+- **Potrzeby:** Średnie
+- **NPK:** 15:15:15
+- **Częstotliwość:** Co 4-6 tygodni
+- **Podlewanie:** Częste (lubi wilgoć)
+- **Nawozy:** Kompost, biohumus
+
+### Melisa
+- **Potrzeby:** Minimalne-średnie
+- **Nawożenie:** Kompost wiosną
+- **Częstotliwość:** 1-2 razy w sezonie
+
+### Szałwia
+- **Potrzeby:** Minimalne
+- **Nawożenie:** Raz w sezonie
+- **Uwaga:** Jak tymianek - preferuje glebę uboższą
+
+### Oregano (lebiodka)
+- **Potrzeby:** Minimalne
+- **Nawożenie:** Raz w sezonie kompostem
+- **Uwaga:** Śródziemnomorska - mało wymagająca
+
+### Lubczyk
+- **Potrzeby:** Średnie-wysokie
+- **NPK:** 15:15:15
+- **Częstotliwość:** Co 3-4 tygodnie
+- **Uwaga:** Duża roślina - większe potrzeby
+
+---
+
+## 🥕 Dodatkowe warzywa
+
+### Papryka
+- **Podobnie jak pomidor** - wysokie potrzeby
+- **NPK:** 15:15:15
+- **Częstotliwość:** Co 2 tygodnie (kwitnienie-owocowanie)
+- **Dawka saletry:** 0,2 kg/10m²
+- **Uwaga:** Długi okres wegetacji - regularne nawożenie
+
+### Bakłażan
+- **Jak papryka** - wysokie potrzeby
+- **NPK:** 15:15:15
+- **Częstotliwość:** Co 2 tygodnie
+- **Uwaga:** Żądny składników jak pomidor
+
+### Cukinia, patison, dynia
+- **Potrzeby:** BARDZO WYSOKIE
+- **Przed sadzeniem:** Dużo obornika/kompostu
+- **Nawożenie pogłówne:** Co 2 tygodnie
+- **NPK:** 15:15:15 lub wyższy azot
+- **Dawka saletry:** 0,3 kg/10m²
+- **Uwaga:** Ogromne rośliny - ogromne potrzeby!
+
+### Kalafior, brokuły
+- **Jak kapusta** - wysokie potrzeby
+- **Przed sadzeniem:** Obornik kompostowany
+- **NPK:** 15:15:15
+- **Częstotliwość:** Co 3 tygodnie
+- **Dawka saletry:** 0,2 kg/10m²
+
+### Por
+- **Potrzeby:** Wysokie (długi okres wegetacji)
+- **NPK:** 15:15:15
+- **Częstotliwość:** Co 3 tygodnie
+- **Uwaga:** Warzywo korzeniowe - nie świeży obornik!
+
+### Cebula, czosnek
+- **Potrzeby:** Średnie
+- **Przed sadzeniem:** Kompost (NIE świeży obornik!)
+- **NPK:** 15:15:15
+- **Częstotliwość:** 1-2 razy w sezonie
+- **Uwaga:** Za dużo azotu → duże liście, małe cebule
+
+### Buraki
+- **Potrzeby:** Średnie
+- **NPK:** 15:15:15
+- **Częstotliwość:** Co 4 tygodnie
+- **Uwaga:** Korzeniowe - unikać świeżego obornika
+
+### Ziemniaki
+- **Przed sadzeniem:** Obornik jesienny + NPK wiosną
+- **NPK:** 15:15:15 lub wyższy potas (10:10:20)
+- **Częstotliwość:** 1-2 razy (przed obsypywaniem)
+- **Uwaga:** Potas dla dużych bulw!
+
+### Fasola, groch (strączkowe)
+- **Potrzeby:** NISKIE (wiążą azot z powietrza!)
+- **Przed sadzeniem:** Kompost
+- **NPK:** Tylko P+K (bez azotu!) lub 5:15:15
+- **Częstotliwość:** 1 raz w sezonie
+- **Uwaga:** Za dużo azotu → same liście, brak strąków!
+
 ---
 
 ## 🌺 Potrzeby kwiatów vs warzywa
