@@ -9,7 +9,9 @@ import {
   TrendingUp,
   Clock,
   MapPin,
-  ArrowLeft
+  ArrowLeft,
+  Trash2,
+  X
 } from 'lucide-react';
 import axios from '../config/axios';
 import { useAuth } from '../context/AuthContext';
@@ -28,6 +30,9 @@ const AdminPanel = () => {
   const [stats, setStats] = useState(null);
   const [users, setUsers] = useState([]);
   const [recentActivity, setRecentActivity] = useState([]);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [userToDelete, setUserToDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     // Sprawdź czy użytkownik to admin
@@ -57,6 +62,32 @@ const AdminPanel = () => {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeleteUser = async () => {
+    if (!userToDelete) return;
+
+    try {
+      setDeleting(true);
+      await axios.delete(`/api/admin/users/${userToDelete.id}`);
+
+      // Odśwież listę użytkowników
+      setUsers(users.filter(u => u.id !== userToDelete.id));
+
+      // Zaktualizuj statystyki
+      setStats(prev => ({
+        ...prev,
+        total_users: (prev?.total_users || 0) - 1
+      }));
+
+      setShowDeleteModal(false);
+      setUserToDelete(null);
+    } catch (err) {
+      console.error('Error deleting user:', err);
+      alert(err.response?.data?.error || 'Błąd podczas usuwania użytkownika');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -163,6 +194,9 @@ const AdminPanel = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Ostatnie logowanie
                 </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Akcje
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -222,6 +256,20 @@ const AdminPanel = () => {
                       <span className="text-gray-400 dark:text-gray-500">Nigdy</span>
                     )}
                   </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    {u.id !== user.id && (
+                      <button
+                        onClick={() => {
+                          setUserToDelete(u);
+                          setShowDeleteModal(true);
+                        }}
+                        className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 flex items-center gap-1"
+                      >
+                        <Trash2 size={16} />
+                        <span>Usuń</span>
+                      </button>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -256,6 +304,102 @@ const AdminPanel = () => {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && userToDelete && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-md w-full">
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                <Trash2 className="text-red-600" size={24} />
+                Usuń konto użytkownika
+              </h3>
+              <button
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setUserToDelete(null);
+                }}
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                disabled={deleting}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-6">
+              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-4">
+                <p className="text-red-800 dark:text-red-200 font-semibold mb-2">
+                  ⚠️ Ostrzeżenie!
+                </p>
+                <p className="text-red-700 dark:text-red-300 text-sm">
+                  Ta operacja jest nieodwracalna i usunie wszystkie dane użytkownika.
+                </p>
+              </div>
+
+              <div className="space-y-2 mb-4">
+                <p className="text-gray-900 dark:text-white">
+                  Czy na pewno chcesz usunąć użytkownika:
+                </p>
+                <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4">
+                  <p className="font-bold text-gray-900 dark:text-white">
+                    {userToDelete.username}
+                  </p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    {userToDelete.email}
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4">
+                <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                  Zostaną usunięte:
+                </p>
+                <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                  <li>• {userToDelete.plots_count} poletko/poletek</li>
+                  <li>• Wszystkie grządki i rośliny</li>
+                  <li>• {userToDelete.tasks_count} zadanie/zadań</li>
+                  <li>• Wszystkie zdjęcia</li>
+                  <li>• Historia oprysków</li>
+                  <li>• Przypomnienia i powiadomienia</li>
+                </ul>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200 dark:border-gray-700">
+              <button
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setUserToDelete(null);
+                }}
+                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                disabled={deleting}
+              >
+                Anuluj
+              </button>
+              <button
+                onClick={handleDeleteUser}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
+                disabled={deleting}
+              >
+                {deleting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                    Usuwanie...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 size={16} />
+                    Usuń konto
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}

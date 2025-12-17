@@ -102,4 +102,195 @@ router.get('/stats', auth, adminAuth, async (req, res) => {
   }
 });
 
+/**
+ * DELETE /api/admin/users/:id
+ * Usuwa użytkownika i wszystkie jego dane (tylko dla admina)
+ * Zabezpieczone przed usunięciem własnego konta
+ */
+router.delete('/users/:id', auth, adminAuth, async (req, res) => {
+  const userIdToDelete = parseInt(req.params.id);
+  const adminId = req.user.id;
+
+  // Zabezpieczenie przed usunięciem własnego konta
+  if (userIdToDelete === adminId) {
+    return res.status(400).json({ error: 'Nie możesz usunąć własnego konta' });
+  }
+
+  try {
+    // Sprawdź czy użytkownik istnieje
+    const userToDelete = await new Promise((resolve, reject) => {
+      db.get('SELECT id, username, email FROM users WHERE id = ?', [userIdToDelete], (err, row) => {
+        if (err) reject(err);
+        else resolve(row);
+      });
+    });
+
+    if (!userToDelete) {
+      return res.status(404).json({ error: 'Użytkownik nie znaleziony' });
+    }
+
+    // Rozpocznij transakcję
+    await new Promise((resolve, reject) => {
+      db.run('BEGIN TRANSACTION', (err) => {
+        if (err) reject(err);
+        else resolve();
+      });
+    });
+
+    try {
+      // 1. Pobierz ID wszystkich plots użytkownika
+      const userPlots = await new Promise((resolve, reject) => {
+        db.all('SELECT id FROM plots WHERE user_id = ?', [userIdToDelete], (err, rows) => {
+          if (err) reject(err);
+          else resolve(rows || []);
+        });
+      });
+
+      const plotIds = userPlots.map(p => p.id);
+
+      if (plotIds.length > 0) {
+        const placeholders = plotIds.map(() => '?').join(',');
+
+        // 2. Pobierz ID wszystkich beds
+        const userBeds = await new Promise((resolve, reject) => {
+          db.all(`SELECT id FROM beds WHERE plot_id IN (${placeholders})`, plotIds, (err, rows) => {
+            if (err) reject(err);
+            else resolve(rows || []);
+          });
+        });
+
+        const bedIds = userBeds.map(b => b.id);
+
+        if (bedIds.length > 0) {
+          const bedPlaceholders = bedIds.map(() => '?').join(',');
+
+          // 3. Usuń powiązane dane beds
+          await new Promise((resolve, reject) => {
+            db.run(`DELETE FROM plant_photos WHERE bed_id IN (${bedPlaceholders})`, bedIds, (err) => {
+              if (err) reject(err);
+              else resolve();
+            });
+          });
+
+          await new Promise((resolve, reject) => {
+            db.run(`DELETE FROM spray_history WHERE bed_id IN (${bedPlaceholders})`, bedIds, (err) => {
+              if (err) reject(err);
+              else resolve();
+            });
+          });
+
+          await new Promise((resolve, reject) => {
+            db.run(`DELETE FROM companion_plants WHERE bed_id IN (${bedPlaceholders})`, bedIds, (err) => {
+              if (err) reject(err);
+              else resolve();
+            });
+          });
+        }
+
+        // 4. Usuń beds
+        await new Promise((resolve, reject) => {
+          db.run(`DELETE FROM beds WHERE plot_id IN (${placeholders})`, plotIds, (err) => {
+            if (err) reject(err);
+            else resolve();
+          });
+        });
+
+        // 5. Usuń plots
+        await new Promise((resolve, reject) => {
+          db.run('DELETE FROM plots WHERE user_id = ?', [userIdToDelete], (err) => {
+            if (err) reject(err);
+            else resolve();
+          });
+        });
+      }
+
+      // 6. Usuń tasks użytkownika
+      await new Promise((resolve, reject) => {
+        db.run('DELETE FROM tasks WHERE user_id = ?', [userIdToDelete], (err) => {
+          if (err) reject(err);
+          else resolve();
+        });
+      });
+
+      // 7. Usuń reminders użytkownika
+      await new Promise((resolve, reject) => {
+        db.run('DELETE FROM reminders WHERE user_id = ?', [userIdToDelete], (err) => {
+          if (err) reject(err);
+          else resolve();
+        });
+      });
+
+      // 8. Usuń succession_reminders użytkownika
+      await new Promise((resolve, reject) => {
+        db.run('DELETE FROM succession_reminders WHERE user_id = ?', [userIdToDelete], (err) => {
+          if (err) reject(err);
+          else resolve();
+        });
+      });
+
+      // 9. Usuń public gallery photos
+      await new Promise((resolve, reject) => {
+        db.run('DELETE FROM public_gallery_photos WHERE user_id = ?', [userIdToDelete], (err) => {
+          if (err) reject(err);
+          else resolve();
+        });
+      });
+
+      // 10. Usuń profile views
+      await new Promise((resolve, reject) => {
+        db.run('DELETE FROM profile_views WHERE user_id = ? OR viewed_user_id = ?', [userIdToDelete, userIdToDelete], (err) => {
+          if (err) reject(err);
+          else resolve();
+        });
+      });
+
+      // 11. Usuń weather history
+      await new Promise((resolve, reject) => {
+        db.run('DELETE FROM weather_history WHERE user_id = ?', [userIdToDelete], (err) => {
+          if (err) reject(err);
+          else resolve();
+        });
+      });
+
+      // 12. Usuń użytkownika
+      await new Promise((resolve, reject) => {
+        db.run('DELETE FROM users WHERE id = ?', [userIdToDelete], (err) => {
+          if (err) reject(err);
+          else resolve();
+        });
+      });
+
+      // Zatwierdź transakcję
+      await new Promise((resolve, reject) => {
+        db.run('COMMIT', (err) => {
+          if (err) reject(err);
+          else resolve();
+        });
+      });
+
+      console.log(`Admin ${req.user.username} deleted user: ${userToDelete.username} (ID: ${userIdToDelete})`);
+
+      res.json({
+        message: 'Użytkownik został pomyślnie usunięty',
+        deletedUser: {
+          id: userToDelete.id,
+          username: userToDelete.username,
+          email: userToDelete.email
+        }
+      });
+
+    } catch (error) {
+      // Rollback w przypadku błędu
+      await new Promise((resolve) => {
+        db.run('ROLLBACK', () => resolve());
+      });
+      throw error;
+    }
+
+  } catch (error) {
+    console.error('Error deleting user:', error);
+    res.status(500).json({ error: 'Błąd podczas usuwania użytkownika' });
+  }
+});
+
 module.exports = router;
