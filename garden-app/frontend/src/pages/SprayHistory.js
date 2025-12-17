@@ -1,10 +1,21 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from '../config/axios';
+import { Plus, X } from 'lucide-react';
 
 const SprayHistory = () => {
+  const navigate = useNavigate();
   const [sprays, setSprays] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all'); // 'all' or 'active'
+
+  // Modal state for adding spray
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [plots, setPlots] = useState([]);
+  const [selectedPlot, setSelectedPlot] = useState(null);
+  const [beds, setBeds] = useState([]);
+  const [loadingPlots, setLoadingPlots] = useState(false);
+  const [loadingBeds, setLoadingBeds] = useState(false);
 
   useEffect(() => {
     loadSprays();
@@ -28,13 +39,59 @@ const SprayHistory = () => {
     return harvestDate >= today;
   };
 
+  const openAddSprayModal = async () => {
+    setShowAddModal(true);
+    setLoadingPlots(true);
+    try {
+      const response = await axios.get('/api/plots');
+      setPlots(response.data);
+    } catch (error) {
+      console.error('Error loading plots:', error);
+    } finally {
+      setLoadingPlots(false);
+    }
+  };
+
+  const selectPlot = async (plot) => {
+    setSelectedPlot(plot);
+    setLoadingBeds(true);
+    try {
+      const response = await axios.get(`/api/plots/${plot.id}/details`);
+      setBeds(response.data.beds || []);
+    } catch (error) {
+      console.error('Error loading beds:', error);
+      setBeds([]);
+    } finally {
+      setLoadingBeds(false);
+    }
+  };
+
+  const selectBed = (bed) => {
+    setShowAddModal(false);
+    navigate(`/beds/${bed.id}/spray`);
+  };
+
+  const closeModal = () => {
+    setShowAddModal(false);
+    setSelectedPlot(null);
+    setBeds([]);
+    setPlots([]);
+  };
+
   if (loading) return <div className="text-center py-12 text-gray-500 dark:text-gray-400">Ładowanie...</div>;
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center flex-wrap gap-4">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Historia oprysków</h1>
         <div className="flex space-x-2">
+          <button
+            onClick={openAddSprayModal}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 font-medium"
+          >
+            <Plus size={20} />
+            Dodaj oprysk
+          </button>
           <button
             onClick={() => setFilter('all')}
             className={`px-4 py-2 rounded-md text-sm font-medium ${
@@ -193,6 +250,141 @@ const SprayHistory = () => {
             </div>
           </div>
         </>
+      )}
+
+      {/* Modal - Add Spray */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                {!selectedPlot ? 'Wybierz poletko' : 'Wybierz grządkę'}
+              </h2>
+              <button
+                onClick={closeModal}
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              >
+                <X className="w-6 h-6 text-gray-500" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-6">
+              {!selectedPlot ? (
+                // Step 1: Select Plot
+                <div className="space-y-4">
+                  {loadingPlots ? (
+                    <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+                      Ładowanie poletek...
+                    </div>
+                  ) : plots.length === 0 ? (
+                    <div className="text-center py-12">
+                      <p className="text-gray-500 dark:text-gray-400 mb-4">
+                        Nie masz jeszcze żadnych poletek
+                      </p>
+                      <button
+                        onClick={() => {
+                          closeModal();
+                          navigate('/plots/new');
+                        }}
+                        className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+                      >
+                        Dodaj pierwsze poletko
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {plots.map((plot) => (
+                        <button
+                          key={plot.id}
+                          onClick={() => selectPlot(plot)}
+                          className="p-4 border-2 border-gray-200 dark:border-gray-700 rounded-xl hover:border-blue-500 dark:hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all text-left"
+                        >
+                          <h3 className="font-bold text-gray-900 dark:text-white text-lg mb-1">
+                            {plot.name}
+                          </h3>
+                          {plot.location && (
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                              📍 {plot.location}
+                            </p>
+                          )}
+                          <p className="text-sm text-gray-500 dark:text-gray-500 mt-2">
+                            {plot.bed_count || 0} grządek
+                          </p>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                // Step 2: Select Bed
+                <div className="space-y-4">
+                  <button
+                    onClick={() => {
+                      setSelectedPlot(null);
+                      setBeds([]);
+                    }}
+                    className="text-sm text-blue-600 dark:text-blue-400 hover:underline mb-4"
+                  >
+                    ← Wróć do wyboru poletka
+                  </button>
+
+                  {loadingBeds ? (
+                    <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+                      Ładowanie grządek...
+                    </div>
+                  ) : beds.length === 0 ? (
+                    <div className="text-center py-12">
+                      <p className="text-gray-500 dark:text-gray-400 mb-4">
+                        To poletko nie ma jeszcze grządek
+                      </p>
+                      <button
+                        onClick={() => {
+                          closeModal();
+                          navigate(`/plots/${selectedPlot.id}`);
+                        }}
+                        className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+                      >
+                        Dodaj grządkę
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {beds.map((bed) => (
+                        <button
+                          key={bed.id}
+                          onClick={() => selectBed(bed)}
+                          className="w-full p-4 border-2 border-gray-200 dark:border-gray-700 rounded-xl hover:border-blue-500 dark:hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all text-left"
+                        >
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <h4 className="font-bold text-gray-900 dark:text-white">
+                                Rząd {bed.row_number}
+                              </h4>
+                              {bed.plant_name && (
+                                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                                  🌱 {bed.plant_name}
+                                  {bed.plant_variety && ` - ${bed.plant_variety}`}
+                                </p>
+                              )}
+                              {bed.planted_date && (
+                                <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                                  Posadzone: {bed.planted_date}
+                                </p>
+                              )}
+                            </div>
+                            <span className="text-2xl">💧</span>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

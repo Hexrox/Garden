@@ -395,6 +395,17 @@ const PlotDetail = () => {
                           </button>
                         )}
                         <button
+                          onClick={() => {
+                            setOpenMenuId(null);
+                            navigate(`/beds/${bed.id}/spray`);
+                          }}
+                          className="w-full flex items-center gap-2 px-4 py-2 text-sm text-blue-700 dark:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+                        >
+                          <span>💧</span>
+                          Dodaj oprysk
+                        </button>
+                        <hr className="border-gray-200 dark:border-gray-700" />
+                        <button
                           onClick={() => openDeleteDialog(bed)}
                           className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-700 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-b-lg"
                         >
