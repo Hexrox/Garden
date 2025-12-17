@@ -195,7 +195,7 @@ const PrivacyPolicy = () => {
             <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4">
               <p className="font-mono text-sm text-gray-800 dark:text-gray-200">
                 Garden App<br />
-                Email: admin@gardenapp.pl
+                Email: hexan@tlen.pl
               </p>
             </div>
           </Section>

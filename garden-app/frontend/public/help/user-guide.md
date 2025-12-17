@@ -755,8 +755,7 @@ Aplikacja zawiera bazę 27 najczęstszych problemów. Oto jak je rozpoznać:
 ## 📞 Pomoc i kontakt
 
 **Masz pytania?**
-- 📧 Email: [kontakt@gardenapp.pl]
-- 💬 Forum: [forum.gardenapp.pl]
+- 📧 Email: [hexan@tlen.pl]
 - 🐛 Zgłoś błąd: [github.com/gardenapp/issues]
 
 **Podoba Ci się aplikacja?**
