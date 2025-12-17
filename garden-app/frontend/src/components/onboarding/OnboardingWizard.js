@@ -96,7 +96,24 @@ const OnboardingWizard = ({ isOpen, onComplete, onSkip }) => {
   const saveCity = async () => {
     if (formData.city) {
       try {
-        await axios.put('/api/auth/update-profile', { city: formData.city });
+        // Geocode city name to coordinates
+        const geocodeResponse = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(formData.city)}&limit=1`
+        );
+        const geocodeData = await geocodeResponse.json();
+
+        if (geocodeData && geocodeData.length > 0) {
+          const { lat, lon } = geocodeData[0];
+          await axios.put('/api/auth/update-profile', {
+            city: formData.city,
+            latitude: parseFloat(lat),
+            longitude: parseFloat(lon)
+          });
+        } else {
+          // City not found, save just the name
+          await axios.put('/api/auth/update-profile', { city: formData.city });
+        }
+
         handleNext();
       } catch (error) {
         console.error('Error saving city:', error);
@@ -110,10 +127,10 @@ const OnboardingWizard = ({ isOpen, onComplete, onSkip }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4">
-      <div className="relative w-full max-w-2xl bg-white dark:bg-gray-800 rounded-lg sm:rounded-2xl shadow-2xl overflow-hidden max-h-[98vh] flex flex-col">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 pb-20" style={{ zIndex: 50 }}>
+      <div className="relative w-full max-w-2xl bg-white dark:bg-gray-800 rounded-lg sm:rounded-2xl shadow-2xl max-h-[calc(100vh-100px)] flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="bg-gradient-to-r from-green-600 to-emerald-600 p-4 sm:p-6 text-white flex-shrink-0">
+        <div className="bg-gradient-to-r from-green-600 to-emerald-600 p-4 sm:p-6 text-white flex-shrink-0 rounded-t-lg sm:rounded-t-2xl">
           <button
             onClick={onSkip}
             className="absolute top-3 right-3 sm:top-4 sm:right-4 p-1.5 sm:p-2 hover:bg-white/20 rounded-lg transition-colors z-10"
@@ -546,7 +563,7 @@ const OnboardingWizard = ({ isOpen, onComplete, onSkip }) => {
         </div>
 
         {/* Footer */}
-        <div className="border-t border-gray-200 dark:border-gray-700 p-3 sm:p-4 md:p-6 flex items-center justify-between bg-gray-50 dark:bg-gray-900 flex-shrink-0">
+        <div className="border-t border-gray-200 dark:border-gray-700 p-3 sm:p-4 md:p-6 flex items-center justify-between bg-gray-50 dark:bg-gray-900 flex-shrink-0 rounded-b-lg sm:rounded-b-2xl">
           <button
             onClick={onSkip}
             className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
@@ -555,7 +572,7 @@ const OnboardingWizard = ({ isOpen, onComplete, onSkip }) => {
             <span className="sm:hidden">Pomiń</span>
           </button>
 
-          <div className="flex gap-1.5 sm:gap-2">
+          <div className="flex gap-1.5 sm:gap-2" style={{ minWidth: 'fit-content' }}>
             {step > 1 && (
               <button
                 onClick={handleBack}
