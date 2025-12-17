@@ -45,6 +45,29 @@ const Dashboard = () => {
       const hasData = plotsRes.data.length > 0;
       setOnboardingCompleted(completed);
 
+      // Auto-geocode city if user has city but no coordinates
+      const profile = profileRes.data;
+      if (profile.city && (!profile.latitude || !profile.longitude)) {
+        try {
+          console.log('Auto-geocoding city:', profile.city);
+          const geocodeResponse = await fetch(
+            `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(profile.city)}&limit=1`
+          );
+          const geocodeData = await geocodeResponse.json();
+
+          if (geocodeData && geocodeData.length > 0) {
+            const { lat, lon } = geocodeData[0];
+            await axios.put('/api/auth/update-profile', {
+              latitude: parseFloat(lat),
+              longitude: parseFloat(lon)
+            });
+            console.log('✅ Auto-geocoded city successfully');
+          }
+        } catch (error) {
+          console.error('Error auto-geocoding city:', error);
+        }
+      }
+
       if (!completed && !hasData) {
         // New user without data - show onboarding
         setShowOnboarding(true);
