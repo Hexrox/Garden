@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, ChevronRight, ChevronLeft, Check, MapPin, Sprout, Camera, Sparkles } from 'lucide-react';
 import axios from '../../config/axios';
 import TemplateSelectionStep from './TemplateSelectionStep';
@@ -15,6 +15,18 @@ const OnboardingWizard = ({ isOpen, onComplete, onSkip }) => {
   });
 
   const totalSteps = 7;
+
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
 
   const handleNext = () => {
     if (step < totalSteps) {
@@ -132,7 +144,7 @@ const OnboardingWizard = ({ isOpen, onComplete, onSkip }) => {
         </div>
 
         {/* Content */}
-        <div className="p-4 sm:p-6 md:p-8 pb-24 sm:pb-6 md:pb-8 overflow-y-auto flex-1">
+        <div className="p-4 sm:p-6 md:p-8 pb-32 sm:pb-6 md:pb-8 overflow-y-auto flex-1">
           {/* Step 1: Interests */}
           {step === 1 && (
             <div className="space-y-6">
