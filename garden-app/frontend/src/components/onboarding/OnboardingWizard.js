@@ -111,7 +111,7 @@ const OnboardingWizard = ({ isOpen, onComplete, onSkip }) => {
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4">
-      <div className="relative w-full max-w-2xl bg-white dark:bg-gray-800 rounded-lg sm:rounded-2xl shadow-2xl overflow-hidden max-h-[95vh] flex flex-col">
+      <div className="relative w-full max-w-2xl bg-white dark:bg-gray-800 rounded-lg sm:rounded-2xl shadow-2xl overflow-hidden max-h-[98vh] flex flex-col">
         {/* Header */}
         <div className="bg-gradient-to-r from-green-600 to-emerald-600 p-4 sm:p-6 text-white flex-shrink-0">
           <button
@@ -144,7 +144,7 @@ const OnboardingWizard = ({ isOpen, onComplete, onSkip }) => {
         </div>
 
         {/* Content */}
-        <div className="p-4 sm:p-6 md:p-8 pb-32 sm:pb-6 md:pb-8 overflow-y-auto flex-1">
+        <div className="p-3 sm:p-6 md:p-8 pb-3 sm:pb-6 md:pb-8 overflow-y-auto flex-1">
           {/* Step 1: Interests */}
           {step === 1 && (
             <div className="space-y-6">
