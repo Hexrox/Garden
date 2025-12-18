@@ -1558,6 +1558,375 @@ FROM spray_history;
 
 ---
 
+## 📝 Edytowalna baza danych roślin dla użytkownika
+
+### Problem:
+**Dane domyślne nie pasują do wszystkich!**
+
+Przykłady:
+- Ogórek "Prima" → zbiór po 45 dniach
+- Ogórek "Korniszon" → zbiór po 35 dniach
+- Użytkownik w północnej Polsce → wszystko rośnie wolniej
+- Użytkownik z doświadczeniem → chce skrócić czasy
+- Różne odmiany → różne potrzeby nawozowe
+
+### Rozwiązanie: Dwupoziomowy system danych
+
+#### POZIOM 1: Dane globalne (domyślne, systemowe)
+
+```sql
+CREATE TABLE plant_defaults (
+  id INTEGER PRIMARY KEY,
+  plant_name TEXT NOT NULL,
+  plant_category TEXT, -- 'vegetable', 'flower', 'herb', 'shrub'
+
+  -- Czasy wegetacji
+  days_to_germination INTEGER, -- Dni do kiełkowania
+  days_to_harvest INTEGER, -- Dni od siewu do zbioru
+  harvest_duration_days INTEGER, -- Ile dni trwa zbiór
+
+  -- Nawożenie
+  fertilization_frequency INTEGER, -- Co ile dni
+  fertilization_start_month INTEGER, -- Miesiąc początek (3=marzec)
+  fertilization_end_month INTEGER, -- Miesiąc koniec (8=sierpień)
+  recommended_npk TEXT, -- '15:15:15'
+  recommended_fertilizers TEXT, -- JSON: ["Azofoska", "Biohumus"]
+
+  -- Instrukcje
+  fertilization_instructions TEXT,
+  fertilization_warnings TEXT,
+  care_tips TEXT,
+
+  -- Metadata
+  source TEXT, -- Skąd dane (np. "Poradnik ogrodniczy 2025")
+  created_at DATETIME,
+  updated_at DATETIME
+);
+```
+
+**Przykładowe wpisy:**
+
+```sql
+-- Ogórek (dane domyślne)
+INSERT INTO plant_defaults VALUES (
+  1, 'Ogórek', 'vegetable',
+  7, 60, 30, -- Kiełkowanie: 7 dni, zbiór: 60 dni, trwa: 30 dni
+  14, 5, 8, -- Nawóz co 14 dni, maj-sierpień
+  '15:15:15', '["Azofoska 15:15:15","Biohumus","Gnojówka pokrzywowa"]',
+  'Nawóź co 2 tygodnie podczas owocowania. Dużo składników!',
+  'Nie nawóź po sierpniu. Unikaj azotu pod koniec sezonu.',
+  'Regularnie podlewaj, nie dopuszczaj do przesuszenia.',
+  'Poradnik ogrodniczy 2025',
+  CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+);
+
+-- Róża (dane domyślne)
+INSERT INTO plant_defaults VALUES (
+  2, 'Róża', 'flower',
+  NULL, NULL, 120, -- Kwitnienie przez 120 dni
+  21, 4, 7, -- Nawóż co 3 tygodnie, kwiecień-lipiec
+  '10:10:20', '["Pokon dla róż 7:6:11","Target Róże","Kompost"]',
+  'Nawóź co 3 tygodnie podczas kwitnienia. Potrzebuje więcej potasu (K).',
+  'Nie nawóź po lipcu - róża musi przygotować się do zimy!',
+  'Przycinaj przekwitnięte kwiaty. Podlewaj pod krzew, nie na liście.',
+  'Doradztwo ogrodnicze 2025',
+  CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+);
+```
+
+#### POZIOM 2: Dane użytkownika (personalizowane)
+
+```sql
+CREATE TABLE user_plant_settings (
+  id INTEGER PRIMARY KEY,
+  user_id INTEGER NOT NULL,
+  plant_default_id INTEGER NOT NULL, -- FK do plant_defaults
+
+  -- NADPISANE wartości (NULL = używaj domyślnych)
+  custom_days_to_germination INTEGER,
+  custom_days_to_harvest INTEGER,
+  custom_harvest_duration_days INTEGER,
+
+  custom_fertilization_frequency INTEGER,
+  custom_fertilization_start_month INTEGER,
+  custom_fertilization_end_month INTEGER,
+  custom_recommended_npk TEXT,
+  custom_recommended_fertilizers TEXT,
+
+  custom_fertilization_instructions TEXT,
+  custom_fertilization_warnings TEXT,
+  custom_care_tips TEXT,
+
+  -- Notatki użytkownika
+  user_notes TEXT, -- "U mnie ogórek rośnie 70 dni bo północna Polska"
+
+  -- Metadata
+  modified_at DATETIME,
+
+  FOREIGN KEY (user_id) REFERENCES users(id),
+  FOREIGN KEY (plant_default_id) REFERENCES plant_defaults(id),
+  UNIQUE(user_id, plant_default_id) -- Jeden wpis per user per roślina
+);
+```
+
+**Przykład użycia:**
+
+```sql
+-- Użytkownik Jan zmienia czas zbioru ogórka
+INSERT INTO user_plant_settings VALUES (
+  1, 123, 1, -- user_id=123, plant_default_id=1 (Ogórek)
+  NULL, 70, NULL, -- Tylko days_to_harvest zmienione na 70
+  NULL, NULL, NULL, NULL, NULL,
+  NULL, NULL, NULL,
+  'U mnie w północnej Polsce ogórki rosną dłużej - około 70 dni',
+  CURRENT_TIMESTAMP
+);
+```
+
+### Logika pobierania danych
+
+**Backend function (pseudokod):**
+
+```javascript
+async function getPlantSettings(userId, plantName) {
+  // 1. Pobierz dane domyślne
+  const defaults = await db.get(
+    'SELECT * FROM plant_defaults WHERE plant_name = ?',
+    plantName
+  );
+
+  if (!defaults) {
+    return null; // Roślina nie znaleziona
+  }
+
+  // 2. Sprawdź czy użytkownik ma personalizację
+  const userSettings = await db.get(`
+    SELECT * FROM user_plant_settings
+    WHERE user_id = ? AND plant_default_id = ?
+  `, [userId, defaults.id]);
+
+  // 3. Merguj: user settings nadpisują defaults
+  const merged = {
+    ...defaults,
+    days_to_germination: userSettings?.custom_days_to_germination ?? defaults.days_to_germination,
+    days_to_harvest: userSettings?.custom_days_to_harvest ?? defaults.days_to_harvest,
+    harvest_duration_days: userSettings?.custom_harvest_duration_days ?? defaults.harvest_duration_days,
+
+    fertilization_frequency: userSettings?.custom_fertilization_frequency ?? defaults.fertilization_frequency,
+    fertilization_start_month: userSettings?.custom_fertilization_start_month ?? defaults.fertilization_start_month,
+    fertilization_end_month: userSettings?.custom_fertilization_end_month ?? defaults.fertilization_end_month,
+    recommended_npk: userSettings?.custom_recommended_npk ?? defaults.recommended_npk,
+    recommended_fertilizers: userSettings?.custom_recommended_fertilizers ?? defaults.recommended_fertilizers,
+
+    fertilization_instructions: userSettings?.custom_fertilization_instructions ?? defaults.fertilization_instructions,
+    fertilization_warnings: userSettings?.custom_fertilization_warnings ?? defaults.fertilization_warnings,
+    care_tips: userSettings?.custom_care_tips ?? defaults.care_tips,
+
+    user_notes: userSettings?.user_notes,
+    is_customized: !!userSettings, // Flaga czy użytkownik zmienił coś
+    customized_at: userSettings?.modified_at
+  };
+
+  return merged;
+}
+```
+
+### UI: Ekran edycji danych rośliny
+
+**Przykład dla Ogórka:**
+
+```
+┌──────────────────────────────────────────┐
+│ ⚙️ Ustawienia: Ogórek                    │
+├──────────────────────────────────────────┤
+│                                           │
+│ 📊 CZASY WEGETACJI                       │
+│ ┌─────────────────────────────────────┐ │
+│ │ Dni do kiełkowania:                  │ │
+│ │ [7          ] dni  [🔄 Domyślne: 7] │ │
+│ │                                      │ │
+│ │ Dni od siewu do zbioru:              │ │
+│ │ [70         ] dni  [🔄 Domyślne: 60]│ │
+│ │ ✏️ Zmienione                          │ │
+│ │                                      │ │
+│ │ Czas zbiorów (ile dni):              │ │
+│ │ [30         ] dni  [🔄 Domyślne: 30]│ │
+│ └─────────────────────────────────────┘ │
+│                                           │
+│ 🌱 NAWOŻENIE                             │
+│ ┌─────────────────────────────────────┐ │
+│ │ Częstotliwość:                       │ │
+│ │ [14         ] dni  [🔄 Domyślne: 14]│ │
+│ │                                      │ │
+│ │ Sezon nawożenia:                     │ │
+│ │ Od: [Maj      ▼]  Do: [Sierpień ▼] │ │
+│ │     [🔄 Domyślne: Maj-Sierpień]     │ │
+│ │                                      │ │
+│ │ Rekomendowany NPK:                   │ │
+│ │ [15:15:15     ]  [🔄 Domyślne]      │ │
+│ │                                      │ │
+│ │ Rekomendowane nawozy:                │ │
+│ │ • Azofoska 15:15:15                  │ │
+│ │ • Biohumus                           │ │
+│ │ • Gnojówka pokrzywowa                │ │
+│ │ [+ Dodaj własny nawóz]               │ │
+│ └─────────────────────────────────────┘ │
+│                                           │
+│ 📝 INSTRUKCJE I WSKAZÓWKI                │
+│ ┌─────────────────────────────────────┐ │
+│ │ [Nawóź co 2 tygodnie podczas...   ]│ │
+│ │ [owocowania. Dużo składników!      ]│ │
+│ │                                      │ │
+│ │ [🔄 Przywróć domyślne instrukcje]   │ │
+│ └─────────────────────────────────────┘ │
+│                                           │
+│ 💭 TWOJE NOTATKI                         │
+│ ┌─────────────────────────────────────┐ │
+│ │ [U mnie w północnej Polsce ogórki  ]│ │
+│ │ [rosną dłużej - około 70 dni.      ]│ │
+│ │ [Odmiana: Prima F1                 ]│ │
+│ └─────────────────────────────────────┘ │
+│                                           │
+│ ℹ️ Dane domyślne z: Poradnik ogrodniczy  │
+│                                           │
+│ [Przywróć wszystkie domyślne] [Zapisz]  │
+└──────────────────────────────────────────┘
+```
+
+### Funkcje w UI:
+
+#### 1. Przycisk "🔄 Domyślne" przy każdym polu
+```javascript
+const resetFieldToDefault = (fieldName) => {
+  setCustomSettings(prev => ({
+    ...prev,
+    [fieldName]: null // NULL = użyj domyślnej wartości
+  }));
+};
+```
+
+#### 2. Przycisk "Przywróć wszystkie domyślne"
+```javascript
+const resetAllToDefaults = async () => {
+  if (confirm('Czy na pewno przywrócić wszystkie ustawienia domyślne?')) {
+    await axios.delete(`/api/user-plant-settings/${plantId}`);
+    loadPlantSettings(); // Odśwież dane
+  }
+};
+```
+
+#### 3. Wizualna indykacja zmian
+```jsx
+<div className={customSettings.days_to_harvest ? 'border-blue-500 bg-blue-50' : ''}>
+  {customSettings.days_to_harvest && <span className="text-blue-600">✏️ Zmienione</span>}
+  <input value={customSettings.days_to_harvest || defaults.days_to_harvest} />
+</div>
+```
+
+### Gdzie dostępny ekran edycji?
+
+#### Opcja 1: W karcie rośliny
+```
+┌────────────────────────────────┐
+│ 🥒 Ogórek - Rząd 1            │
+├────────────────────────────────┤
+│ Posadzono: 2025-05-15          │
+│ Przewidywany zbiór: 2025-07-24 │
+│ (70 dni ✏️ zmienione)          │
+│                                 │
+│ [⚙️ Edytuj ustawienia rośliny] │
+└────────────────────────────────┘
+```
+
+#### Opcja 2: W menu głównym
+```
+📚 Biblioteka roślin → Ogórek → [⚙️ Moje ustawienia]
+```
+
+#### Opcja 3: Przy dodawaniu grządki
+```
+┌────────────────────────────────┐
+│ Nowa grządka: Ogórek           │
+├────────────────────────────────┤
+│ Przewidywany zbiór za: 60 dni  │
+│ ⚙️ To nie pasuje? Dostosuj     │
+│    ustawienia dla siebie       │
+└────────────────────────────────┘
+```
+
+### Backend API endpoints
+
+```javascript
+// GET - Pobierz ustawienia rośliny (merged: defaults + user)
+router.get('/api/plants/:plantName/settings', auth, async (req, res) => {
+  const settings = await getPlantSettings(req.user.id, req.params.plantName);
+  res.json(settings);
+});
+
+// PUT - Zaktualizuj ustawienia użytkownika
+router.put('/api/plants/:plantName/settings', auth, async (req, res) => {
+  const { custom_days_to_harvest, custom_fertilization_frequency, ... } = req.body;
+
+  // Upsert do user_plant_settings
+  await db.run(`
+    INSERT INTO user_plant_settings (user_id, plant_default_id, custom_days_to_harvest, ...)
+    VALUES (?, ?, ?, ...)
+    ON CONFLICT(user_id, plant_default_id) DO UPDATE SET
+      custom_days_to_harvest = excluded.custom_days_to_harvest,
+      ...
+      modified_at = CURRENT_TIMESTAMP
+  `, [req.user.id, plantDefaultId, custom_days_to_harvest, ...]);
+
+  res.json({ success: true });
+});
+
+// DELETE - Przywróć domyślne (usuń personalizację)
+router.delete('/api/plants/:plantName/settings', auth, async (req, res) => {
+  await db.run(`
+    DELETE FROM user_plant_settings
+    WHERE user_id = ? AND plant_default_id = ?
+  `, [req.user.id, plantDefaultId]);
+
+  res.json({ success: true, message: 'Przywrócono ustawienia domyślne' });
+});
+```
+
+### Korzyści dla użytkownika:
+
+✅ **Personalizacja:** Każdy ma swoje warunki (klimat, odmiana, doświadczenie)
+✅ **Bezpieczeństwo:** Zawsze można wrócić do domyślnych
+✅ **Uczenie się:** Notatki pomagają zapamiętać co zadziałało
+✅ **Precyzja:** Aplikacja działa według TWOICH danych, nie ogólnych
+✅ **Elastyczność:** Zmieniaj co chcesz, reszta domyślna
+
+### Przypadki użycia:
+
+**Przypadek 1: Ogrodnik w północnej Polsce**
+```
+Problem: Wszystkie warzywa rosną u mnie 10 dni dłużej
+Rozwiązanie: Dodaję +10 dni do każdego warzywa
+```
+
+**Przypadek 2: Doświadczony ogrodnik**
+```
+Problem: Mam specjalną odmianę ogórka "Express" - zbiór po 40 dniach
+Rozwiązanie: Zmieniam days_to_harvest na 40, notatka: "Odmiana Express F1"
+```
+
+**Przypadek 3: Eksperymentujący użytkownik**
+```
+Problem: Chcę spróbować nawozić rzadziej
+Rozwiązanie: Zmieniam częstotliwość z 14 na 21 dni, notatka: "Eksperyment 2025"
+```
+
+**Przypadek 4: Nowy użytkownik**
+```
+Problem: Nie wiem jakie ustawienia - używam domyślnych
+Rozwiązanie: Nic nie zmieniam, system działa z domyślnymi wartościami
+```
+
+---
+
 ## 🤔 Rekomendacje końcowe
 
 **Nazwa menu:** "Pielęgnacja i ochrona" ⭐
