@@ -6,35 +6,82 @@ const auth = require('../middleware/auth');
 const fs = require('fs');
 const path = require('path');
 
-// Import default plants from JSON to database (run once per user)
+// Import extended plants from JSON to database (run once per user)
 router.post('/import-defaults', auth, (req, res) => {
-  const harvestDataPath = path.join(__dirname, '../data/harvest_data.json');
+  const extendedDataPath = path.join(__dirname, '../data/plants_extended.json');
 
   try {
-    const rawData = fs.readFileSync(harvestDataPath, 'utf8');
-    const harvestData = JSON.parse(rawData);
+    const rawData = fs.readFileSync(extendedDataPath, 'utf8');
+    const plantsData = JSON.parse(rawData);
 
     let imported = 0;
-    const vegetables = harvestData.vegetables;
+    let totalPlants = 0;
 
-    for (const [key, plant] of Object.entries(vegetables)) {
-      db.run(
-        `INSERT INTO plants (user_id, name, display_name, days_to_harvest, range_min, range_max, notes, is_custom)
-         VALUES (?, ?, ?, ?, ?, ?, ?, 0)`,
-        [req.user.id, key.toLowerCase(), plant.name, plant.daysToHarvest, plant.rangeMin, plant.rangeMax, plant.notes],
-        (err) => {
-          if (!err) imported++;
-        }
-      );
+    // Iterate through all categories
+    for (const [category, plants] of Object.entries(plantsData)) {
+      for (const [key, plant] of Object.entries(plants)) {
+        totalPlants++;
+        db.run(
+          `INSERT INTO plants (
+            user_id, name, display_name, latin_name, category,
+            days_to_harvest, range_min, range_max, notes,
+            npk_needs, npk_ratio_recommended, fertilization_frequency,
+            organic_fertilizer, mineral_fertilizer,
+            soil_ph, soil_type, water_needs, sun_requirement,
+            companion_plants, avoid_plants,
+            height, is_perennial, planting_time, storage_requirement,
+            pruning_needs, winter_care, propagation_method,
+            is_custom
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)`,
+          [
+            req.user.id,
+            key.toLowerCase(),
+            plant.name,
+            plant.latinName || null,
+            plant.category || null,
+            plant.daysToHarvest,
+            plant.rangeMin || null,
+            plant.rangeMax || null,
+            plant.notes || null,
+            plant.npkNeeds || null,
+            plant.npkRatioRecommended || null,
+            plant.fertilizationFrequency || null,
+            plant.organicFertilizer || null,
+            plant.mineralFertilizer || null,
+            plant.soilPh || null,
+            plant.soilType || null,
+            plant.waterNeeds || null,
+            plant.sunRequirement || null,
+            plant.companionPlants || null,
+            plant.avoidPlants || null,
+            plant.height || null,
+            plant.isPerennial ? 1 : 0,
+            plant.plantingTime || null,
+            plant.storageRequirement || null,
+            plant.pruningNeeds || null,
+            plant.winterCare || null,
+            plant.propagationMethod || null
+          ],
+          (err) => {
+            if (!err) imported++;
+            if (err) console.error('Error importing plant:', key, err.message);
+          }
+        );
+      }
     }
 
     // Wait a bit for all inserts
     setTimeout(() => {
-      res.json({ message: `Zaimportowano ${imported} roślin`, count: imported });
-    }, 500);
+      res.json({
+        message: `Zaimportowano ${imported} z ${totalPlants} roślin`,
+        count: imported,
+        total: totalPlants
+      });
+    }, 1000);
 
   } catch (error) {
-    res.status(500).json({ error: 'Błąd podczas importu' });
+    console.error('Import error:', error);
+    res.status(500).json({ error: 'Błąd podczas importu: ' + error.message });
   }
 });
 
@@ -75,6 +122,7 @@ router.post('/',
   [
     body('name').trim().notEmpty().escape().withMessage('Nazwa jest wymagana'),
     body('display_name').optional().trim().escape(),
+    body('latin_name').optional().trim().escape(),
     body('category').optional().trim().escape(),
     body('days_to_harvest').isInt({ min: 1 }).withMessage('Dni do zbioru muszą być liczbą większą od 0'),
     body('range_min').optional().isInt({ min: 1 }),
@@ -86,7 +134,20 @@ router.post('/',
     body('sun_requirement').optional().trim().escape(),
     body('is_perennial').optional().isBoolean(),
     body('planting_time').optional().trim().escape(),
-    body('storage_requirement').optional().trim().escape()
+    body('storage_requirement').optional().trim().escape(),
+    body('npk_needs').optional().trim().escape(),
+    body('npk_ratio_recommended').optional().trim().escape(),
+    body('fertilization_frequency').optional().trim().escape(),
+    body('organic_fertilizer').optional().trim().escape(),
+    body('mineral_fertilizer').optional().trim().escape(),
+    body('soil_ph').optional().trim().escape(),
+    body('soil_type').optional().trim().escape(),
+    body('water_needs').optional().trim().escape(),
+    body('companion_plants').optional().trim().escape(),
+    body('avoid_plants').optional().trim().escape(),
+    body('pruning_needs').optional().trim().escape(),
+    body('winter_care').optional().trim().escape(),
+    body('propagation_method').optional().trim().escape()
   ],
   (req, res) => {
     const errors = validationResult(req);
@@ -95,22 +156,38 @@ router.post('/',
     }
 
     const {
-      name, display_name, category, days_to_harvest, range_min, range_max, notes,
+      name, display_name, latin_name, category, days_to_harvest, range_min, range_max, notes,
       flower_color, bloom_season, height, sun_requirement, is_perennial,
-      planting_time, storage_requirement
+      planting_time, storage_requirement,
+      npk_needs, npk_ratio_recommended, fertilization_frequency,
+      organic_fertilizer, mineral_fertilizer,
+      soil_ph, soil_type, water_needs,
+      companion_plants, avoid_plants,
+      pruning_needs, winter_care, propagation_method
     } = req.body;
 
     db.run(
       `INSERT INTO plants (
-        user_id, name, display_name, category, days_to_harvest, range_min, range_max, notes,
+        user_id, name, display_name, latin_name, category, days_to_harvest, range_min, range_max, notes,
         flower_color, bloom_season, height, sun_requirement, is_perennial,
-        planting_time, storage_requirement, is_custom
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
+        planting_time, storage_requirement,
+        npk_needs, npk_ratio_recommended, fertilization_frequency,
+        organic_fertilizer, mineral_fertilizer,
+        soil_ph, soil_type, water_needs,
+        companion_plants, avoid_plants,
+        pruning_needs, winter_care, propagation_method,
+        is_custom
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
       [
-        req.user.id, name.toLowerCase(), display_name || name, category,
+        req.user.id, name.toLowerCase(), display_name || name, latin_name, category,
         days_to_harvest, range_min, range_max, notes,
         flower_color, bloom_season, height, sun_requirement, is_perennial ? 1 : 0,
-        planting_time, storage_requirement
+        planting_time, storage_requirement,
+        npk_needs, npk_ratio_recommended, fertilization_frequency,
+        organic_fertilizer, mineral_fertilizer,
+        soil_ph, soil_type, water_needs,
+        companion_plants, avoid_plants,
+        pruning_needs, winter_care, propagation_method
       ],
       function (err) {
         if (err) {

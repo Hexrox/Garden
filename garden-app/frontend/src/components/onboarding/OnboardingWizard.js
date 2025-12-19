@@ -11,8 +11,11 @@ const OnboardingWizard = ({ isOpen, onComplete, onSkip }) => {
     skipTemplate: false,
     location: '',
     city: '',
+    selectedLocation: null,
     hasGeolocation: false
   });
+  const [citySuggestions, setCitySuggestions] = useState([]);
+  const [searchingCity, setSearchingCity] = useState(false);
 
   const totalSteps = 7;
 
@@ -27,6 +30,62 @@ const OnboardingWizard = ({ isOpen, onComplete, onSkip }) => {
       document.body.style.overflow = '';
     };
   }, [isOpen]);
+
+  // Debounce city search
+  useEffect(() => {
+    if (formData.city.length >= 2) {
+      const timer = setTimeout(() => {
+        searchPolishCities(formData.city);
+      }, 500);
+      return () => clearTimeout(timer);
+    } else {
+      setCitySuggestions([]);
+    }
+  }, [formData.city]);
+
+  const searchPolishCities = async (query) => {
+    if (query.length < 2) {
+      setCitySuggestions([]);
+      return;
+    }
+
+    try {
+      setSearchingCity(true);
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?` +
+        `q=${encodeURIComponent(query)}&` +
+        `countrycodes=pl&` +
+        `format=json&` +
+        `addressdetails=1&` +
+        `limit=10`,
+        {
+          headers: {
+            'User-Agent': 'GardenApp/2.0'
+          }
+        }
+      );
+      const data = await response.json();
+      setCitySuggestions(data);
+    } catch (error) {
+      console.error('Error searching cities:', error);
+    } finally {
+      setSearchingCity(false);
+    }
+  };
+
+  const selectCity = (place) => {
+    setFormData(prev => ({
+      ...prev,
+      city: place.display_name.split(',')[0],
+      selectedLocation: {
+        city: place.display_name.split(',')[0],
+        lat: place.lat,
+        lon: place.lon,
+        fullName: place.display_name
+      }
+    }));
+    setCitySuggestions([]);
+  };
 
   const handleNext = () => {
     if (step < totalSteps) {
@@ -74,10 +133,22 @@ const OnboardingWizard = ({ isOpen, onComplete, onSkip }) => {
           const { latitude, longitude } = position.coords;
 
           try {
-            // Save to profile
-            await axios.put('/api/auth/update-profile', { latitude, longitude });
+            // Save to weather API for proper integration
+            await axios.put('/api/weather/location', {
+              latitude,
+              longitude,
+              city: null
+            });
 
-            setFormData(prev => ({ ...prev, hasGeolocation: true }));
+            setFormData(prev => ({
+              ...prev,
+              hasGeolocation: true,
+              selectedLocation: {
+                lat: latitude,
+                lon: longitude,
+                city: 'Twoja lokalizacja'
+              }
+            }));
 
             // Auto advance to next step
             setTimeout(() => handleNext(), 1000);
@@ -94,29 +165,17 @@ const OnboardingWizard = ({ isOpen, onComplete, onSkip }) => {
   };
 
   const saveCity = async () => {
-    if (formData.city) {
+    if (formData.selectedLocation && formData.selectedLocation.lat && formData.selectedLocation.lon) {
       try {
-        // Geocode city name to coordinates
-        const geocodeResponse = await fetch(
-          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(formData.city)}&limit=1`
-        );
-        const geocodeData = await geocodeResponse.json();
-
-        if (geocodeData && geocodeData.length > 0) {
-          const { lat, lon } = geocodeData[0];
-          await axios.put('/api/auth/update-profile', {
-            city: formData.city,
-            latitude: parseFloat(lat),
-            longitude: parseFloat(lon)
-          });
-        } else {
-          // City not found, save just the name
-          await axios.put('/api/auth/update-profile', { city: formData.city });
-        }
-
+        // Save location to weather endpoint (integrates with weather API)
+        await axios.put('/api/weather/location', {
+          latitude: parseFloat(formData.selectedLocation.lat),
+          longitude: parseFloat(formData.selectedLocation.lon),
+          city: formData.selectedLocation.city
+        });
         handleNext();
       } catch (error) {
-        console.error('Error saving city:', error);
+        console.error('Error saving location:', error);
         handleNext(); // Continue anyway
       }
     } else {
@@ -127,8 +186,8 @@ const OnboardingWizard = ({ isOpen, onComplete, onSkip }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 pb-20" style={{ zIndex: 50 }}>
-      <div className="relative w-full max-w-2xl bg-white dark:bg-gray-800 rounded-lg sm:rounded-2xl shadow-2xl max-h-[calc(100vh-100px)] flex flex-col overflow-hidden">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4" style={{ zIndex: 9999, paddingBottom: 'max(calc(5rem + env(safe-area-inset-bottom, 0px)), 6rem)', paddingTop: 'max(env(safe-area-inset-top, 1rem), 1rem)' }}>
+      <div className="relative w-full max-w-2xl bg-white dark:bg-gray-800 rounded-lg sm:rounded-2xl shadow-2xl h-[calc(100dvh-10rem)] sm:h-[calc(100dvh-11rem)] md:h-auto md:max-h-[calc(100vh-120px)] flex flex-col overflow-hidden">
         {/* Header */}
         <div className="bg-gradient-to-r from-green-600 to-emerald-600 p-4 sm:p-6 text-white flex-shrink-0 rounded-t-lg sm:rounded-t-2xl">
           <button
@@ -161,7 +220,7 @@ const OnboardingWizard = ({ isOpen, onComplete, onSkip }) => {
         </div>
 
         {/* Content */}
-        <div className="p-3 sm:p-6 md:p-8 pb-3 sm:pb-6 md:pb-8 overflow-y-auto flex-1">
+        <div className="p-3 sm:p-6 md:p-8 pb-3 sm:pb-4 overflow-y-auto flex-1" style={{ scrollbarGutter: 'stable' }}>
           {/* Step 1: Interests */}
           {step === 1 && (
             <div className="space-y-6">
@@ -239,12 +298,17 @@ const OnboardingWizard = ({ isOpen, onComplete, onSkip }) => {
                 </p>
               </div>
 
-              {formData.hasGeolocation ? (
+              {formData.hasGeolocation || formData.selectedLocation ? (
                 <div className="text-center p-6 bg-green-50 dark:bg-green-900/20 rounded-xl">
                   <Check className="w-12 h-12 text-green-600 dark:text-green-400 mx-auto mb-2" />
                   <p className="text-green-800 dark:text-green-200 font-medium">
                     ✓ Lokalizacja ustawiona!
                   </p>
+                  {formData.selectedLocation && (
+                    <p className="text-sm text-green-700 dark:text-green-300 mt-1">
+                      📍 {formData.selectedLocation.fullName || formData.selectedLocation.city}
+                    </p>
+                  )}
                   <p className="text-sm text-green-700 dark:text-green-300 mt-1">
                     Otrzymasz prognozy pogody dla Twojej okolicy
                   </p>
@@ -268,9 +332,9 @@ const OnboardingWizard = ({ isOpen, onComplete, onSkip }) => {
                     </div>
                   </div>
 
-                  <div>
+                  <div className="relative">
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Wpisz miasto:
+                      Wpisz miasto (zacznij wpisywać...)
                     </label>
                     <input
                       type="text"
@@ -278,7 +342,38 @@ const OnboardingWizard = ({ isOpen, onComplete, onSkip }) => {
                       onChange={(e) => setFormData({ ...formData, city: e.target.value })}
                       placeholder="np. Warszawa"
                       className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      autoComplete="off"
                     />
+                    {searchingCity && (
+                      <div className="absolute right-3 top-11 text-gray-400">
+                        <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                      </div>
+                    )}
+                    {citySuggestions.length > 0 && (
+                      <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl shadow-lg max-h-48 overflow-y-auto">
+                        {citySuggestions.map((place, index) => (
+                          <button
+                            key={index}
+                            type="button"
+                            onClick={() => selectCity(place)}
+                            className="w-full text-left px-4 py-3 hover:bg-blue-50 dark:hover:bg-gray-700 border-b border-gray-200 dark:border-gray-700 last:border-b-0 transition-colors"
+                          >
+                            <div className="font-medium text-gray-900 dark:text-white text-sm">
+                              {place.display_name.split(',')[0]}
+                            </div>
+                            <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                              {place.display_name.split(',').slice(1).join(',').trim()}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                      💡 Wybierz miasto z listy aby uwzględnić województwo/powiat
+                    </p>
                   </div>
                 </>
               )}
@@ -400,7 +495,7 @@ const OnboardingWizard = ({ isOpen, onComplete, onSkip }) => {
                 </p>
               </div>
 
-              <div className="grid gap-3 max-h-72 sm:max-h-none overflow-y-auto">
+              <div className="grid gap-3 max-h-48 sm:max-h-64 md:max-h-none overflow-y-auto">
                 {[
                   { icon: '📸', title: 'Galeria zdjęć', desc: 'Rób zdjęcia postępów i śledź wzrost roślin!' },
                   { icon: '🌙', title: 'Kalendarz księżycowy', desc: 'Siej i zbieraj w zgodzie z fazami księżyca!' },
@@ -563,7 +658,7 @@ const OnboardingWizard = ({ isOpen, onComplete, onSkip }) => {
         </div>
 
         {/* Footer */}
-        <div className="border-t border-gray-200 dark:border-gray-700 p-3 sm:p-4 md:p-6 flex items-center justify-between bg-gray-50 dark:bg-gray-900 flex-shrink-0 rounded-b-lg sm:rounded-b-2xl">
+        <div className="border-t border-gray-200 dark:border-gray-700 p-3 sm:p-4 md:p-6 flex items-center justify-between bg-gray-50 dark:bg-gray-900 flex-shrink-0 rounded-b-lg sm:rounded-b-2xl shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
           <button
             onClick={onSkip}
             className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
@@ -584,7 +679,7 @@ const OnboardingWizard = ({ isOpen, onComplete, onSkip }) => {
             )}
 
             <button
-              onClick={step === 3 && !formData.hasGeolocation && formData.city ? saveCity : handleNext}
+              onClick={step === 3 ? saveCity : handleNext}
               className="px-4 sm:px-6 py-1.5 sm:py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors flex items-center gap-1 sm:gap-2 text-sm sm:text-base"
             >
               {step === totalSteps ? 'Zakończ' : 'Dalej'}

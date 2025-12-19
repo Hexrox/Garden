@@ -114,6 +114,31 @@ db.serialize(() => {
   db.run(`ALTER TABLE plants ADD COLUMN planting_time TEXT`, (err) => {});
   db.run(`ALTER TABLE plants ADD COLUMN storage_requirement TEXT`, (err) => {});
 
+  // Add columns for latin names and extended info
+  db.run(`ALTER TABLE plants ADD COLUMN latin_name TEXT`, (err) => {});
+  db.run(`ALTER TABLE plants ADD COLUMN common_names TEXT`, (err) => {});
+
+  // Add columns for fertilization needs
+  db.run(`ALTER TABLE plants ADD COLUMN npk_needs TEXT`, (err) => {});
+  db.run(`ALTER TABLE plants ADD COLUMN npk_ratio_recommended TEXT`, (err) => {});
+  db.run(`ALTER TABLE plants ADD COLUMN fertilization_frequency TEXT`, (err) => {});
+  db.run(`ALTER TABLE plants ADD COLUMN organic_fertilizer TEXT`, (err) => {});
+  db.run(`ALTER TABLE plants ADD COLUMN mineral_fertilizer TEXT`, (err) => {});
+
+  // Add columns for soil requirements
+  db.run(`ALTER TABLE plants ADD COLUMN soil_ph TEXT`, (err) => {});
+  db.run(`ALTER TABLE plants ADD COLUMN soil_type TEXT`, (err) => {});
+  db.run(`ALTER TABLE plants ADD COLUMN water_needs TEXT`, (err) => {});
+
+  // Add columns for companion planting
+  db.run(`ALTER TABLE plants ADD COLUMN companion_plants TEXT`, (err) => {});
+  db.run(`ALTER TABLE plants ADD COLUMN avoid_plants TEXT`, (err) => {});
+
+  // Add columns for care requirements
+  db.run(`ALTER TABLE plants ADD COLUMN pruning_needs TEXT`, (err) => {});
+  db.run(`ALTER TABLE plants ADD COLUMN winter_care TEXT`, (err) => {});
+  db.run(`ALTER TABLE plants ADD COLUMN propagation_method TEXT`, (err) => {});
+
   // Add columns for frost dates and hardiness zones
   db.run(`ALTER TABLE users ADD COLUMN hardiness_zone TEXT`, (err) => {});
   db.run(`ALTER TABLE users ADD COLUMN first_frost_date TEXT`, (err) => {});
@@ -975,6 +1000,136 @@ db.serialize(() => {
       console.error('Error updating existing users email_verified:', err.message);
     } else {
       console.log('✅ Marked existing users as email verified');
+    }
+  });
+
+  // ==========================================
+  // CARE & FERTILIZATION SYSTEM
+  // ==========================================
+
+  // Unified care history table (sprays + fertilization)
+  db.run(`CREATE TABLE IF NOT EXISTS care_history (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    bed_id INTEGER NOT NULL,
+    action_type TEXT CHECK(action_type IN ('spray', 'fertilization')) NOT NULL,
+    action_name TEXT NOT NULL,
+    action_date DATE NOT NULL,
+    dosage TEXT,
+    weather_conditions TEXT,
+    note TEXT,
+
+    -- Spray-specific fields
+    withdrawal_period INTEGER,
+    safe_harvest_date DATE,
+
+    -- Fertilization-specific fields
+    fertilizer_type TEXT CHECK(fertilizer_type IN ('mineral', 'organic', 'natural')),
+    npk_ratio TEXT,
+    application_method TEXT CHECK(application_method IN ('soil', 'foliar')) DEFAULT 'soil',
+    is_recurring BOOLEAN DEFAULT 0,
+    repeat_frequency INTEGER,
+    next_application_date DATE,
+
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(bed_id) REFERENCES beds(id) ON DELETE CASCADE
+  )`);
+
+  // Fertilizers products database
+  db.run(`CREATE TABLE IF NOT EXISTS fertilizers (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    fertilizer_type TEXT CHECK(fertilizer_type IN ('mineral', 'organic', 'natural')) NOT NULL,
+    npk_ratio TEXT,
+    suitable_for TEXT,
+    dosage_min INTEGER,
+    dosage_max INTEGER,
+    dosage_unit TEXT DEFAULT 'g/10m²',
+    frequency_days INTEGER,
+    application_method TEXT CHECK(application_method IN ('soil', 'foliar')) DEFAULT 'soil',
+    notes TEXT,
+    registered_poland BOOLEAN DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )`);
+
+  // Spray products database (reference for CareForm autocomplete)
+  db.run(`CREATE TABLE IF NOT EXISTS spray_products (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    active_substance TEXT,
+    type TEXT CHECK(type IN ('fungicyd', 'insektycyd', 'herbicyd', 'akarycyd', 'moluskocyd', 'biopreparat')) NOT NULL,
+    is_ecological BOOLEAN DEFAULT 0,
+    withdrawal_period INTEGER NOT NULL,
+    dosage_professional TEXT,
+    dosage_2l TEXT,
+    dosage_5l TEXT,
+    dosage_notes TEXT,
+    target_plants TEXT,
+    target_pests TEXT,
+    application_method TEXT,
+    max_applications INTEGER,
+    interval_days INTEGER,
+    temperature_range TEXT,
+    warnings TEXT,
+    registered_poland BOOLEAN DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )`);
+
+  // Create indexes for care & fertilization system
+  db.run('CREATE INDEX IF NOT EXISTS idx_care_bed_id ON care_history(bed_id)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_care_action_date ON care_history(action_date)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_care_action_type ON care_history(action_type)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_fertilizers_name ON fertilizers(name)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_fertilizers_type ON fertilizers(fertilizer_type)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_spray_products_name ON spray_products(name)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_spray_products_type ON spray_products(type)');
+
+  // Populate fertilizers database (only if empty)
+  db.get('SELECT COUNT(*) as count FROM fertilizers', (err, row) => {
+    if (err) {
+      console.error('Error checking fertilizers:', err.message);
+      return;
+    }
+
+    if (row.count === 0) {
+      console.log('🌱 Populating fertilizers database...');
+
+      const fertilizersData = [
+        // Mineralne uniwersalne
+        { name: 'Azofoska', type: 'mineral', npk: '13:13:21', suitable: 'warzywa, kwiaty', dosage_min: 150, dosage_max: 250, unit: 'g/10m²', freq: 14, method: 'soil', notes: 'Nawóz uniwersalny NPK' },
+        { name: 'Polifoska', type: 'mineral', npk: '8:24:24', suitable: 'warzywa korzeniowe, cebulowe', dosage_min: 100, dosage_max: 200, unit: 'g/10m²', freq: 21, method: 'soil', notes: 'Wysoka zawartość fosforu i potasu' },
+        { name: 'Saletra amonowa', type: 'mineral', npk: '34:0:0', suitable: 'warzywa liściaste', dosage_min: 50, dosage_max: 100, unit: 'g/10m²', freq: 14, method: 'soil', notes: 'Czysto azotowy, szybkie działanie' },
+        { name: 'Superfosfat potrójny', type: 'mineral', npk: '0:46:0', suitable: 'kwiaty, rośliny owocowe', dosage_min: 80, dosage_max: 150, unit: 'g/10m²', freq: 30, method: 'soil', notes: 'Fosfor dla kwitnienia i owocowania' },
+        { name: 'Siarczan potasu', type: 'mineral', npk: '0:0:50', suitable: 'pomidory, papryka', dosage_min: 50, dosage_max: 100, unit: 'g/10m²', freq: 21, method: 'soil', notes: 'Potas poprawia smak owoców' },
+
+        // Organiczne
+        { name: 'Kompost', type: 'organic', npk: '1:0.5:1', suitable: 'wszystkie rośliny', dosage_min: 3000, dosage_max: 5000, unit: 'g/10m²', freq: 60, method: 'soil', notes: 'Naturalny nawóz organiczny, poprawia strukturę gleby' },
+        { name: 'Obornik', type: 'organic', npk: '0.5:0.3:0.5', suitable: 'warzywa, krzewy', dosage_min: 4000, dosage_max: 6000, unit: 'g/10m²', freq: 180, method: 'soil', notes: 'Próchniczny, stosować przefermentowany' },
+        { name: 'Granulat z obornika kurczego', type: 'organic', npk: '3:2:2', suitable: 'warzywa', dosage_min: 200, dosage_max: 400, unit: 'g/10m²', freq: 30, method: 'soil', notes: 'Wysokoskoncentrowany, długo działający' },
+        { name: 'Biohumus', type: 'organic', npk: '1:1:1', suitable: 'wszystkie rośliny', dosage_min: 500, dosage_max: 1000, unit: 'g/10m²', freq: 30, method: 'soil', notes: 'Wermikomppost z dżdżownic' },
+
+        // Naturalne
+        { name: 'Pokrzywa (roztwór)', type: 'natural', npk: '4:0.5:8', suitable: 'pomidory, warzywa liściaste', dosage_min: 1, dosage_max: 2, unit: 'L/10L wody', freq: 7, method: 'foliar', notes: 'Napar z pokrzywy 1:10 z wodą' },
+        { name: 'Skrzyp (roztwór)', type: 'natural', npk: '0:0:0', suitable: 'wszystkie rośliny', dosage_min: 1, dosage_max: 2, unit: 'L/10L wody', freq: 7, method: 'foliar', notes: 'Wzmacnia odporność, bogaty w krzem' },
+        { name: 'Popioł drzewny', type: 'natural', npk: '0:0:10', suitable: 'warzywa owocowe', dosage_min: 100, dosage_max: 200, unit: 'g/10m²', freq: 30, method: 'soil', notes: 'Bogaty w potas i mikro elementy' },
+        { name: 'Fusumizacja kawy', type: 'natural', npk: '2:0.3:0.2', suitable: 'kwiaty, pomidory', dosage_min: 200, dosage_max: 400, unit: 'g/10m²', freq: 21, method: 'soil', notes: 'Zakwasza glebę, azot' }
+      ];
+
+      const stmt = db.prepare(`
+        INSERT INTO fertilizers (name, fertilizer_type, npk_ratio, suitable_for, dosage_min, dosage_max, dosage_unit, frequency_days, application_method, notes)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `);
+
+      fertilizersData.forEach(f => {
+        stmt.run(f.name, f.type, f.npk, f.suitable, f.dosage_min, f.dosage_max, f.unit, f.freq, f.method, f.notes);
+      });
+
+      stmt.finalize((err) => {
+        if (err) {
+          console.error('Error populating fertilizers:', err.message);
+        } else {
+          console.log(`✅ Added ${fertilizersData.length} fertilizer products`);
+        }
+      });
     }
   });
 

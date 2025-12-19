@@ -397,12 +397,12 @@ const PlotDetail = () => {
                         <button
                           onClick={() => {
                             setOpenMenuId(null);
-                            navigate(`/beds/${bed.id}/spray`);
+                            navigate(`/beds/${bed.id}/care`);
                           }}
                           className="w-full flex items-center gap-2 px-4 py-2 text-sm text-blue-700 dark:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700"
                         >
-                          <span>💧</span>
-                          Dodaj oprysk
+                          <span>🌱</span>
+                          Pielęgnacja
                         </button>
                         <hr className="border-gray-200 dark:border-gray-700" />
                         <button

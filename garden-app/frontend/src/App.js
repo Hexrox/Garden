@@ -15,12 +15,12 @@ import Dashboard from './pages/Dashboard';
 import PlotsList from './pages/PlotsList';
 import PlotDetail from './pages/PlotDetail';
 import PlotForm from './pages/PlotForm';
-import SprayForm from './pages/SprayForm';
 import SprayHistory from './pages/SprayHistory';
+import CareForm from './pages/CareForm';
 import Reminders from './pages/Reminders';
 import Export from './pages/Export';
 import Profile from './pages/Profile';
-import PlantManagement from './pages/PlantManagement';
+import PlantCatalog from './pages/PlantCatalog';
 import SuccessionPlanting from './pages/SuccessionPlanting';
 import Tasks from './pages/Tasks';
 import Calendar from './pages/Calendar';
@@ -186,10 +186,10 @@ function AppRoutes() {
           }
         />
         <Route
-          path="/beds/:bedId/spray"
+          path="/beds/:bedId/care"
           element={
             <ProtectedRoute forceRender={forceRender}>
-              <SprayForm />
+              <CareForm />
             </ProtectedRoute>
           }
         />
@@ -221,7 +221,7 @@ function AppRoutes() {
           path="/plants"
           element={
             <ProtectedRoute forceRender={forceRender}>
-              <PlantManagement />
+              <PlantCatalog />
             </ProtectedRoute>
           }
         />

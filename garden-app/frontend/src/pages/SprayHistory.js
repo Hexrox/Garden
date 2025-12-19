@@ -23,11 +23,11 @@ const SprayHistory = () => {
 
   const loadSprays = async () => {
     try {
-      const endpoint = filter === 'active' ? '/api/sprays/active' : '/api/sprays/history';
+      const endpoint = filter === 'active' ? '/api/sprays/active' : '/api/care/user/all';
       const response = await axios.get(endpoint);
       setSprays(response.data);
     } catch (error) {
-      console.error('Error loading sprays:', error);
+      console.error('Error loading care actions:', error);
     } finally {
       setLoading(false);
     }
@@ -68,7 +68,7 @@ const SprayHistory = () => {
 
   const selectBed = (bed) => {
     setShowAddModal(false);
-    navigate(`/beds/${bed.id}/spray`);
+    navigate(`/beds/${bed.id}/care`);
   };
 
   const closeModal = () => {
@@ -83,14 +83,14 @@ const SprayHistory = () => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center flex-wrap gap-4">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Historia oprysków</h1>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Pielęgnacja i ochrona</h1>
         <div className="flex space-x-2">
           <button
             onClick={openAddSprayModal}
             className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 font-medium"
           >
             <Plus size={20} />
-            Dodaj oprysk
+            Dodaj zabieg
           </button>
           <button
             onClick={() => setFilter('all')}
@@ -117,7 +117,7 @@ const SprayHistory = () => {
 
       {sprays.length === 0 ? (
         <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg shadow">
-          <p className="text-gray-500 dark:text-gray-400">Brak zapisanych oprysków</p>
+          <p className="text-gray-500 dark:text-gray-400">Brak zapisanych zabiegów pielęgnacyjnych</p>
         </div>
       ) : (
         <>

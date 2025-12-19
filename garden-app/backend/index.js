@@ -34,6 +34,8 @@ const searchRoutes = require('./routes/search');
 const templateRoutes = require('./routes/templates');
 const sprayProductsRoutes = require('./routes/sprayProducts');
 const plantProblemsRoutes = require('./routes/plantProblems');
+const careRoutes = require('./routes/care');
+const fertilizersRoutes = require('./routes/fertilizers');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -239,6 +241,8 @@ app.use('/api', publicProfileRoutes);
 app.use('/api/templates', templateRoutes);
 app.use('/api/spray-products', sprayProductsRoutes);
 app.use('/api/plant-problems', plantProblemsRoutes);
+app.use('/api/care', careRoutes);
+app.use('/api/fertilizers', fertilizersRoutes);
 
 // 404 handler
 app.use((req, res) => {

@@ -101,7 +101,7 @@ const TemplateSelectionStep = ({ interests, selectedTemplate, onSelectTemplate, 
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-60 sm:max-h-80 md:max-h-96 overflow-y-auto pr-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-40 sm:max-h-60 md:max-h-80 overflow-y-auto pr-2">
             {filteredTemplates.map((template) => (
               <button
                 key={template.id}
@@ -196,17 +196,17 @@ const TemplateSelectionStep = ({ interests, selectedTemplate, onSelectTemplate, 
       </button>
 
       {selectedTemplate && (
-        <div className="bg-green-50 dark:bg-green-900/20 rounded-xl p-4">
-          <div className="flex items-start gap-3">
-            <div className="bg-green-600 rounded-full p-2 flex-shrink-0">
-              <Check className="w-5 h-5 text-white" />
+        <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3">
+          <div className="flex items-center gap-2">
+            <div className="bg-green-600 rounded-full p-1.5 flex-shrink-0">
+              <Check className="w-4 h-4 text-white" />
             </div>
             <div className="flex-1 min-w-0">
-              <h4 className="font-semibold text-green-900 dark:text-green-100 mb-1">
-                Wybrany szablon: {selectedTemplate.name}
-              </h4>
-              <p className="text-sm text-green-800 dark:text-green-200">
-                Po zakończeniu onboardingu automatycznie utworzymy dla Ciebie poletko z {selectedTemplate.bed_count} grządkami!
+              <p className="text-sm font-semibold text-green-900 dark:text-green-100">
+                ✓ {selectedTemplate.name}
+              </p>
+              <p className="text-xs text-green-700 dark:text-green-300">
+                {selectedTemplate.bed_count} grządek
               </p>
             </div>
           </div>
