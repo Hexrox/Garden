@@ -501,6 +501,330 @@ Ogrodnictwo hobbyst require kompleksową pielęgnację **DLA DOBRA rośliny**, g
 - **Częstotliwość:** 1 raz w sezonie
 - **Uwaga:** Za dużo azotu → same liście, brak strąków!
 
+### Rzodkiewka
+- **Potrzeby:** NISKIE-ŚREDNIE (szybki wzrost)
+- **NPK:** 15:15:15 lub kompost
+- **Częstotliwość:** Zazwyczaj nie wymaga (krótkosezonowa)
+- **Uwaga:** Rośnie 20-30 dni - kompost przed siewem wystarcza
+
+### Rzodkiew
+- **Potrzeby:** ŚREDNIE
+- **Przed sadzeniem:** Kompost (rok po oborniku)
+- **NPK:** 15:15:15
+- **Częstotliwość:** 1-2 razy w sezonie
+- **Uwaga:** Podobna do marchwi - korzeniowa
+
+### Rzepa
+- **Potrzeby:** ŚREDNIE
+- **Przed sadzeniem:** 2-3 rok po oborniku
+- **NPK:** 15:15:15
+- **Częstotliwość:** 1-2 razy w sezonie
+- **Uwaga:** Głęboko uprawiona gleba
+
+### Seler (bulwowy, naciowy, liściowy)
+- **Potrzeby:** BARDZO WYSOKIE!
+- **NPK:** 15:15:15
+- **Częstotliwość:** Co 3 tygodnie
+- **Dawka saletry:** 0,2-0,3 kg/10m²
+- **Uwaga:** Jeden z najbardziej żądnych warzyw!
+
+### Rukola (rucola)
+- **Potrzeby:** NISKIE-ŚREDNIE
+- **NPK:** 15:15:15 lub kompost
+- **Częstotliwość:** 1-2 razy w sezonie
+- **Uwaga:** Rośnie szybko - kompost wystarcza
+
+### Szpinak
+- **Potrzeby:** ŚREDNIE
+- **NPK:** 15:15:15 (więcej azotu dla liści)
+- **Częstotliwość:** Co 3-4 tygodnie
+- **Uwaga:** Lubi wilgotną glebę
+
+### Brokuły
+- **Jak kalafior:** Wysokie potrzeby
+- **NPK:** 15:15:15
+- **Częstotliwość:** Co 3 tygodnie
+- **Dawka saletry:** 0,2 kg/10m²
+- **Uwaga:** Potrzebuje azotu dla pąków
+
+### Cukinia, Kabaczek
+- **Potrzeby:** BARDZO WYSOKIE
+- **Przed sadzeniem:** Dużo obornika
+- **NPK:** 15:15:15
+- **Częstotliwość:** Co 2 tygodnie
+- **Dawka saletry:** 0,3 kg/10m²
+- **Uwaga:** Ogromne rośliny = ogromne potrzeby!
+
+### Szparagi
+- **Potrzeby:** WYSOKIE (wieloletnie)
+- **Wiosna:** Kompost + NPK 15:15:15
+- **Po zbiorze:** Nawóz P+K (odbudowa)
+- **Częstotliwość:** 3-4 razy w sezonie
+- **Uwaga:** Roślina wieloletnia - regularne nawożenie!
+
+### Rabarbar
+- **Potrzeby:** BARDZO WYSOKIE (wieloletnie)
+- **Wczesna wiosna:** Obornik + kompost
+- **NPK:** 15:15:15
+- **Częstotliwość:** Co 3-4 tygodnie
+- **Uwaga:** Ogromne liście = dużo składników!
+
+### Kukurydza
+- **Potrzeby:** WYSOKIE
+- **NPK:** 15:15:15 lub wyższy azot
+- **Częstotliwość:** Co 3 tygodnie
+- **Dawka saletry:** 0,3 kg/10m²
+- **Uwaga:** Wysoka roślina - potrzebuje azotu
+
+---
+
+## 🌳 Harmonogram nawożenia drzew owocowych
+
+### Jabłoń
+- **Wczesna wiosna (marzec-kwiecień):** Kompost + azot
+- **Przed kwitnieniem:** NPK 15:15:15
+- **Po kwitnieniu (maj):** Nawóz z więcej K (10:10:20)
+- **Jesień:** Obornik kompostowany
+- **Częstotliwość:** 3-4 razy w sezonie
+- **Dawka:** 50-80g/m² pod koroną
+- **Uwaga:** Najbardziej żądne drzewa! Regularne nawożenie
+
+### Grusza
+- **Podobnie jak jabłoń:** Wysokie potrzeby
+- **Wiosna:** Kompost + NPK 15:15:15
+- **Po kwitnieniu:** Nawóz P+K
+- **Częstotliwość:** 3-4 razy w sezonie
+- **Dawka:** 50-80g/m²
+- **Uwaga:** Jak jabłoń - bardzo żądna składników
+
+### Śliwa
+- **Wiosna:** Kompost + azot
+- **Przed kwitnieniem:** NPK 15:15:15
+- **Po owocowaniu:** Nawóz P+K
+- **Częstotliwość:** 2-3 razy w sezonie
+- **Dawka:** 40-60g/m²
+- **Uwaga:** Mniej wymagająca niż jabłoń
+
+### Wiśnia, Czereśnia
+- **Wiosna (kwiecień):** Kompost + azot
+- **Przed kwitnieniem:** NPK 15:15:15
+- **Po owocowaniu:** Nawóz P+K
+- **Częstotliwość:** 2-3 razy w sezonie
+- **Dawka:** 40-60g/m²
+- **Uwaga:** Umiarkowane potrzeby
+
+### Brzoskwinia, Morela
+- **Wiosna (marzec-kwiecień):** Kompost + azot
+- **Przed kwitnieniem:** NPK 15:15:15
+- **Po owocowaniu:** Nawóz P+K
+- **Częstotliwość:** 3-4 razy w sezonie
+- **Dawka:** 50-70g/m²
+- **Uwaga:** Ciepłolubne - w Polsce środkowa/południowa
+
+### Orzech włoski
+- **Potrzeby:** BARDZO WYSOKIE!
+- **Wiosna:** Obornik + NPK 15:15:15
+- **Lato:** Nawóz azotowy
+- **Częstotliwość:** 3-4 razy w sezonie
+- **Dawka:** 80-100g/m²
+- **Uwaga:** Jedno z najbardziej żądnych drzew!
+
+---
+
+## 🌺 Więcej kwiatów wieloletnich
+
+### Piwonie
+- **Potrzeby:** ŚREDNIE-WYSOKIE
+- **Wiosna:** Kompost + NPK 10:10:20 (więcej K)
+- **Po kwitnieniu:** Nawóz P+K (odbudowa)
+- **Częstotliwość:** 2-3 razy w sezonie
+- **Uwaga:** Wieloletnie - nie przenawozić azotem!
+
+### Irysy
+- **Potrzeby:** NISKIE-ŚREDNIE
+- **Wiosna:** NPK 10:10:20 (więcej K)
+- **Po kwitnieniu:** Nawóz P+K
+- **Częstotliwość:** 2 razy w sezonie
+- **Uwaga:** Kłącza gnią w świeżym oborniku!
+
+### Narcyzy
+- **Potrzeby:** NISKIE-ŚREDNIE
+- **Jesień (sadzenie):** Kompost + superfosfat
+- **Wiosna:** NPK 10:20:20
+- **Po kwitnieniu:** Nawóz P+K (odbudowa cebuli)
+- **Częstotliwość:** 2 razy w sezonie
+
+### Krokusy
+- **Potrzeby:** MINIMALNE
+- **Jesień:** Kompost
+- **Częstotliwość:** Raz w sezonie
+- **Uwaga:** Małe cebulki - mało wymagające
+
+### Hiacynty
+- **Potrzeby:** ŚREDNIE
+- **Jesień:** Kompost + superfosfat
+- **Wiosna:** NPK 10:20:20
+- **Po kwitnieniu:** Nawóz P+K
+- **Częstotliwość:** 2-3 razy w sezonie
+
+### Szafirek (muscari)
+- **Potrzeby:** MINIMALNE
+- **Jesień:** Kompost
+- **Częstotliwość:** Raz w sezonie lub co 2 lata
+- **Uwaga:** Bardzo mało wymagające
+
+### Żonkile
+- **Potrzeby:** NISKIE-ŚREDNIE
+- **Jak narcyzy:** Podobne wymagania
+- **Wiosna + po kwitnieniu:** NPK z P+K
+- **Częstotliwość:** 2 razy w sezonie
+
+### Funkia (Hosta)
+- **Potrzeby:** ŚREDNIE
+- **Wiosna:** Kompost
+- **NPK:** 15:15:15
+- **Częstotliwość:** 2-3 razy w sezonie
+- **Uwaga:** Cieniolubna - roślina liściasta
+
+### Rudbekia
+- **Potrzeby:** NISKIE-ŚREDNIE
+- **Wiosna:** Kompost
+- **NPK:** 15:15:15
+- **Częstotliwość:** 2 razy w sezonie
+- **Uwaga:** Mało wymagająca - wieloletnia
+
+### Przebiśniegi
+- **Potrzeby:** MINIMALNE
+- **Jesień:** Kompost
+- **Częstotliwość:** Raz na 2 lata
+- **Uwaga:** Bardzo wczesne - mało wymagające
+
+---
+
+## 🌿 Krzewy ozdobne
+
+### Hortensja bukietowa
+- **Potrzeby:** WYSOKIE
+- **Nawóz:** Kwaśny (obniża pH)
+- **NPK:** 10:15:15
+- **Częstotliwość:** Co 2-3 tygodnie (nawozy płynne), marzec-lipiec
+- **Dawka:** Według opakowania
+- **Uwaga:** Pielęgnacja jak hortensja ogrodowa
+
+### Bukszpan
+- **Potrzeby:** ŚREDNIE
+- **Wiosna:** Kompost + NPK 15:15:15
+- **NPK:** 15:15:15
+- **Częstotliwość:** 1-3 razy w roku (kwiecień-lipiec)
+- **Uwaga:** Ostatnie nawożenie do końca lipca!
+
+### Forsycja
+- **Potrzeby:** NISKIE-ŚREDNIE
+- **Wiosna (kwiecień):** NPK 15:15:15
+- **Po kwitnieniu:** Nawóz P+K (opcjonalnie)
+- **Częstotliwość:** 1-2 razy w sezonie (gleba bogata) lub 3-4 (uboga)
+- **Uwaga:** Na bogatej glebie radzi sobie bez nawożenia
+
+### Jaśminowiec (Philadelphus)
+- **Potrzeby:** NISKIE
+- **Przed sadzeniem:** Obornik (2-3 kg/m²)
+- **Częstotliwość:** Co 3-4 lata lub bez nawożenia
+- **Uwaga:** Dobrze znosi brak nawożenia!
+
+### Bez / Lilak
+- **Potrzeby:** ŚREDNIE
+- **Wczesna wiosna:** Nawóz wieloskładnikowy (P+K)
+- **Koniec czerwca:** Drugi raz
+- **Częstotliwość:** 2 razy w sezonie
+- **Uwaga:** Młode (2-3 lata) nie nawozić!
+
+### Tawuła (Spiraea)
+- **Potrzeby:** NISKIE-ŚREDNIE
+- **Wiosna:** Kompost
+- **NPK:** 15:15:15
+- **Częstotliwość:** 1-2 razy w sezonie
+- **Uwaga:** Mało wymagająca
+
+### Berberysy
+- **Potrzeby:** NISKIE
+- **Wiosna:** Kompost
+- **NPK:** 15:15:15
+- **Częstotliwość:** 1 raz w sezonie
+- **Uwaga:** Bardzo mało wymagające - odporne
+
+### Wiciokrzew (Lonicera)
+- **Potrzeby:** ŚREDNIE
+- **Wiosna:** Kompost + NPK 15:15:15
+- **Częstotliwość:** 2-3 razy w sezonie
+- **Uwaga:** Roślina pnąca lub krzew
+
+### Głóg
+- **Potrzeby:** NISKIE
+- **Wiosna:** Kompost
+- **Częstotliwość:** 1 raz w sezonie lub bez
+- **Uwaga:** Bardzo wytrzymały - mało wymaga
+
+### Kalina
+- **Potrzeby:** ŚREDNIE
+- **Wiosna:** Kompost + NPK 15:15:15
+- **Częstotliwość:** 2 razy w sezonie
+- **Uwaga:** Ozdobna i owocowa
+
+---
+
+## 🌱 Rośliny pnące
+
+### Winorośl
+- **Potrzeby:** WYSOKIE
+- **Wiosna:** Kompost + azot
+- **Przed kwitnieniem:** NPK 15:15:15
+- **Po owocowaniu:** Nawóz P+K
+- **Częstotliwość:** 3-4 razy w sezonie
+- **Dawka:** 50-70g/m²
+- **Uwaga:** Żądna składników dla owoców!
+
+### Bluszcz
+- **Potrzeby:** NISKIE
+- **Wiosna:** Kompost
+- **NPK:** 15:15:15
+- **Częstotliwość:** 1-2 razy w sezonie
+- **Uwaga:** Bardzo wytrzymały - mało wymaga
+
+### Powojnik (Clematis)
+- **Potrzeby:** ŚREDNIE-WYSOKIE
+- **Wiosna:** Kompost + NPK 10:10:20 (więcej K)
+- **Kwitnienie:** Nawóz do roślin kwitnących
+- **Częstotliwość:** Co 3-4 tygodnie (kwiecień-lipiec)
+- **Uwaga:** Lubi zasadową glebę (pH 6.5-7.5)
+
+### Glicynia (Wisteria)
+- **Potrzeby:** ŚREDNIE
+- **Wiosna:** Nawóz P+K (mało azotu!)
+- **NPK:** 5:10:15 lub 5:15:20
+- **Częstotliwość:** 2-3 razy w sezonie
+- **Uwaga:** Za dużo azotu → liście bez kwiatów!
+
+### Dzikie wino (Parthenocissus)
+- **Potrzeby:** NISKIE
+- **Wiosna:** Kompost
+- **Częstotliwość:** 1 raz w sezonie lub bez
+- **Uwaga:** Bardzo ekspansywne - mało wymaga
+
+### Chmielu (Humulus)
+- **Potrzeby:** ŚREDNIE-WYSOKIE
+- **Wiosna:** Kompost + azot
+- **NPK:** 15:15:15
+- **Częstotliwość:** Co 3-4 tygodnie
+- **Uwaga:** Szybko rośnie - potrzebuje składników
+
+### Aktinidia (minikiwi)
+- **Potrzeby:** WYSOKIE
+- **Wiosna:** Kompost + azot
+- **Przed kwitnieniem:** NPK 15:15:15
+- **Po owocowaniu:** Nawóz P+K
+- **Częstotliwość:** 3-4 razy w sezonie
+- **Uwaga:** Owoce jadalne - regularne nawożenie
+
 ---
 
 ## 🌺 Potrzeby kwiatów vs warzywa
@@ -1946,3 +2270,729 @@ Rozwiązanie: Nic nie zmieniam, system działa z domyślnymi wartościami
 2. Podstawowy UI nawożenia
 3. Automatyczne zadania
 4. Statystyki i raporty
+
+---
+
+## 🥬 Więcej warzyw - rozszerzona baza
+
+### Kalarepa
+- **Potrzeby:** ŚREDNIE
+- **Przed sadzeniem:** 2-3 rok po oborniku lub kompost
+- **NPK:** 15:15:15
+- **Częstotliwość:** Co 3-4 tygodnie
+- **Dawka saletry:** 0,15 kg/10m²
+- **Uwaga:** Szybki wzrost, zbyt dużo azotu = drewniejące bulwy
+
+### Por
+- **Potrzeby:** BARDZO WYSOKIE (długi sezon)
+- **Przed sadzeniem:** Obornik kompostowany
+- **NPK:** 15:15:15
+- **Częstotliwość:** Co 3 tygodnie
+- **Dawka saletry:** 0,2-0,3 kg/10m²
+- **Uwaga:** Obsypywanie zwiększa białą część łodygi
+
+### Endywia (cykoria sałatowa)
+- **Potrzeby:** ŚREDNIE
+- **NPK:** 15:15:15 (więcej azotu dla liści)
+- **Częstotliwość:** Co 3-4 tygodnie
+- **Dawka:** 0,15 kg/10m²
+- **Uwaga:** Warzywo jesienne - mniej wymagająca niż sałata
+
+### Radicchio (cykoria czerwona)
+- **Potrzeby:** ŚREDNIE
+- **Przed sadzeniem:** Kompost
+- **NPK:** 15:15:15
+- **Częstotliwość:** Co 3-4 tygodnie
+- **Uwaga:** Podobne potrzeby jak endywia
+
+### Karczoch
+- **Potrzeby:** BARDZO WYSOKIE (roślina wieloletnia)
+- **Wiosna:** Dużo kompostu + obornik
+- **NPK:** 15:15:15
+- **Częstotliwość:** Co 2-3 tygodnie
+- **Dawka saletry:** 0,3 kg/10m²
+- **Uwaga:** Roślina śródziemnomorska - w Polsce tylko ciepłe regiony
+
+### Boćwina / Burak liściowy (Swiss chard)
+- **Potrzeby:** ŚREDNIE-WYSOKIE
+- **NPK:** 15:15:15 (więcej N dla liści)
+- **Częstotliwość:** Co 3 tygodnie
+- **Dawka saletry:** 0,2 kg/10m²
+- **Uwaga:** Wielokrotnie zbierana - regularne nawożenie
+
+### Jarmuż (Kale)
+- **Potrzeby:** WYSOKIE (jak kapusta)
+- **Przed sadzeniem:** Obornik kompostowany
+- **NPK:** 15:15:15
+- **Częstotliwość:** Co 3 tygodnie
+- **Dawka saletry:** 0,2 kg/10m²
+- **Uwaga:** Mrozoodporny - zbiór do zimy
+
+### Pak choi (kapusta chińska)
+- **Potrzeby:** ŚREDNIE
+- **NPK:** 15:15:15 (więcej N)
+- **Częstotliwość:** Co 2-3 tygodnie
+- **Uwaga:** Szybki wzrost (30-40 dni) - azot ważny
+
+### Kapusta pekińska
+- **Potrzeby:** WYSOKIE
+- **Przed sadzeniem:** Kompost
+- **NPK:** 15:15:15
+- **Częstotliwość:** Co 2-3 tygodnie
+- **Dawka saletry:** 0,2 kg/10m²
+- **Uwaga:** Duże głowy - potrzebuje składników
+
+### Szparagi
+- **Potrzeby:** BARDZO WYSOKIE (wieloletnie)
+- **Wiosna (marzec):** Kompost + NPK 15:15:15
+- **Po zbiorze (czerwiec):** Nawóż P+K dla odbudowy
+- **Częstotliwość:** 3-4 razy w sezonie
+- **Dawka:** 50-80g/m²
+- **Uwaga:** Nie nawozić podczas zbioru!
+
+### Rzeżucha
+- **Potrzeby:** MINIMALNE (szybki wzrost)
+- **NPK:** 15:15:15 lub kompost przed siewem
+- **Częstotliwość:** Nie wymaga (14-20 dni do zbioru)
+- **Uwaga:** Bardzo szybka - kompost wystarczy
+
+### Portulaka
+- **Potrzeby:** MINIMALNE
+- **NPK:** 15:15:15 lub kompost
+- **Częstotliwość:** 1 raz w sezonie
+- **Uwaga:** Mało wymagająca, rośnie sama
+
+### Fenkuł włoski
+- **Potrzeby:** ŚREDNIE
+- **NPK:** 15:15:15
+- **Częstotliwość:** Co 3-4 tygodnie
+- **Dawka:** 0,15 kg/10m²
+- **Uwaga:** Wymaga wilgoci i składników dla dużych bulw
+
+---
+
+## 🌿 Więcej ziół - rozszerzona baza
+
+### Szczypiorek
+- **Potrzeby:** NISKIE-ŚREDNIE
+- **NPK:** 15:15:15 (więcej N dla liści)
+- **Częstotliwość:** Co 4-6 tygodni
+- **Uwaga:** Wieloletni - raz na wiosnę kompost wystarczy
+
+### Estragon
+- **Potrzeby:** MINIMALNE
+- **NPK:** 10:10:10 lub kompost
+- **Częstotliwość:** 1 raz w sezonie (wiosna)
+- **Uwaga:** Roślina wieloletnia, mało wymagająca
+
+### Majeranek
+- **Potrzeby:** NISKIE
+- **NPK:** 10:10:10
+- **Częstotliwość:** 1-2 razy w sezonie
+- **Uwaga:** Śródziemnomorski - preferuje glebę uboższą
+
+### Lubczyk
+- **Potrzeby:** ŚREDNIE-WYSOKIE (duża roślina)
+- **Wiosna:** Kompost
+- **NPK:** 15:15:15
+- **Częstotliwość:** Co 3-4 tygodnie
+- **Uwaga:** Wieloletni, wyrasta do 2m - potrzebuje składników
+
+### Melisa cytrynowa
+- **Potrzeby:** NISKIE-ŚREDNIE
+- **NPK:** 15:15:15
+- **Częstotliwość:** 1-2 razy w sezonie
+- **Uwaga:** Ekspansywna - nie przenawozić
+
+### Szałwia lekarska
+- **Potrzeby:** MINIMALNE
+- **Nawożenie:** Kompost raz w sezonie
+- **Uwaga:** Śródziemnomorska - gleba uboga, zasadowa
+
+### Szałwia ananasowa
+- **Potrzeby:** NISKIE-ŚREDNIE
+- **NPK:** 10:10:10
+- **Częstotliwość:** 2 razy w sezonie
+- **Uwaga:** Dekoracyjna i jadalna
+
+### Kozieradka
+- **Potrzeby:** NISKIE (wiąże azot!)
+- **NPK:** Tylko P+K (bez N) - 5:15:15
+- **Częstotliwość:** 1 raz w sezonie
+- **Uwaga:** Roślina strączkowa - sama wytwarza azot
+
+### Kolendra
+- **Potrzeby:** NISKIE-ŚREDNIE
+- **NPK:** 15:15:15
+- **Częstotliwość:** 1-2 razy w sezonie
+- **Uwaga:** Szybko kwitnie - unikać zbyt dużo azotu
+
+### Trybula (szczypiorek cebulowy)
+- **Potrzeby:** NISKIE-ŚREDNIE
+- **NPK:** 15:15:15
+- **Częstotliwość:** Co 4-6 tygodni
+- **Uwaga:** Jak szczypiorek - wieloletnia
+
+### Hyzop
+- **Potrzeby:** MINIMALNE
+- **Nawożenie:** Kompost raz w sezonie
+- **Uwaga:** Roślin sucho- i ubogolubna
+
+### Werbena cytrynowa
+- **Potrzeby:** ŚREDNIE
+- **NPK:** 15:15:15
+- **Częstotliwość:** Co 3-4 tygodnie (uprawa pojemnikowa)
+- **Uwaga:** Nie zimuje - doroczna uprawa
+
+### Mięta pieprzowa
+- **Potrzeby:** ŚREDNIE
+- **NPK:** 15:15:15
+- **Częstotliwość:** Co 4-6 tygodni
+- **Uwaga:** Ekspansywna - kontrolować rozrost
+
+### Mięta marokańska
+- **Potrzeby:** ŚREDNIE
+- **NPK:** 15:15:15
+- **Częstotliwość:** Co 4-6 tygodni
+- **Uwaga:** Podobne wymagania jak mięta pieprzowa
+
+---
+
+## 🫐 Więcej krzewów owocowych i jagodowych
+
+### Czarny bez
+- **Potrzeby:** NISKIE-ŚREDNIE
+- **Wiosna:** Kompost
+- **NPK:** 15:15:15
+- **Częstotliwość:** 1-2 razy w sezonie
+- **Uwaga:** Wytrzymały, mało wymagający
+
+### Rokitnik
+- **Potrzeby:** MINIMALNE
+- **NPK:** Tylko P+K (bez N!) - roślina wiąże azot
+- **Częstotliwość:** 1 raz w sezonie lub bez
+- **Uwaga:** Bardzo wytrzymały, gleby ubogie
+
+### Agrest (różne odmiany)
+- **Potrzeby:** ŚREDNIE
+- **Wiosna:** Kompost + NPK 15:15:15
+- **Po owocowaniu:** Nawóż P+K
+- **Częstotliwość:** 2-3 razy w sezonie
+- **Dawka:** 30-50g/m²
+- **Uwaga:** Cięcie po zbiorze ważniejsze niż nawożenie
+
+### Jagody kamczackie (honeyberry)
+- **Potrzeby:** ŚREDNIE
+- **Wiosna:** Kompost + NPK 15:15:15
+- **Po owocowaniu:** Nawóz P+K
+- **Częstotliwość:** 2-3 razy w sezonie
+- **Uwaga:** Wczesne kwitnienie - wczesne nawożenie (marzec)
+
+### Żurawina wielkoowocowa
+- **Potrzeby:** NISKIE (KWAŚNA GLEBA!)
+- **Nawóz:** Kwaśny, siarczan amonu
+- **NPK:** 10:5:5 lub specjalny do borówek
+- **Częstotliwość:** 2-3 razy w sezonie
+- **Uwaga:** pH 4.0-5.0 - jak borówka
+
+### Goji (kolcowój chiński)
+- **Potrzeby:** NISKIE-ŚREDNIE
+- **NPK:** 15:15:15
+- **Częstotliwość:** 2-3 razy w sezonie
+- **Uwaga:** Bardzo wytrzymała, mało wymagająca
+
+---
+
+## 🌺 Więcej kwiatów - kwiaty jednoroczne
+
+### Begonia bulwiasta
+- **Potrzeby:** WYSOKIE
+- **NPK:** 15:15:15 lub do kwiatów
+- **Częstotliwość:** Co 10-14 dni (pojemniki)
+- **Uwaga:** Delikatne korzenie - 1/2 dawki
+
+### Impatiens (niecierpek)
+- **Potrzeby:** WYSOKIE
+- **NPK:** 15:15:15 lub do kwiatów kwitnących
+- **Częstotliwość:** Co 10-14 dni
+- **Uwaga:** Cieniolubny, lubi wilgoć
+
+### Lobelia
+- **Potrzeby:** ŚREDNIE-WYSOKIE
+- **NPK:** 15:10:30 (więcej K dla kwiatów)
+- **Częstotliwość:** Co 7-14 dni (pojemniki)
+- **Uwaga:** Drobna, ale intensywnie kwitnąca
+
+### Nasturcja
+- **Potrzeby:** NISKIE
+- **NPK:** 10:10:20 (mało azotu!)
+- **Częstotliwość:** 1-2 razy w sezonie
+- **Uwaga:** Za dużo azotu = liście bez kwiatów
+
+### Woskownica (begonia semperflorens)
+- **Potrzeby:** ŚREDNIE
+- **NPK:** 15:15:15
+- **Częstotliwość:** Co 2 tygodnie
+- **Uwaga:** Kwitnie cały sezon - regularne nawożenie
+
+### Mieszek (fuchsia)
+- **Potrzeby:** WYSOKIE
+- **NPK:** 15:10:30 (więcej K)
+- **Częstotliwość:** Co 7-10 dni (pojemniki)
+- **Uwaga:** Bardzo żądna składników, cieniolubna
+
+### Żeniszek (Iberis)
+- **Potrzeby:** NISKIE
+- **NPK:** 15:15:15
+- **Częstotliwość:** 1-2 razy w sezonie
+- **Uwaga:** Mało wymagający
+
+### Powojniczek (Convolvulus)
+- **Potrzeby:** NISKIE-ŚREDNIE
+- **NPK:** 15:15:15
+- **Częstotliwość:** Co 2-3 tygodnie
+- **Uwaga:** Balkonowy - pojemniki
+
+### Niecierpek nowogwinejski
+- **Potrzeby:** BARDZO WYSOKIE
+- **NPK:** 15:15:15 lub do kwiatów
+- **Częstotliwość:** Co 7-10 dni
+- **Uwaga:** Większe kwiaty niż zwykły niecierpek
+
+### Bacopa
+- **Potrzeby:** ŚREDNIE
+- **NPK:** 15:15:15
+- **Częstotliwość:** Co 10-14 dni
+- **Uwaga:** Roślina ampelowa - pojemniki
+
+### Bidens (uczep ogrodowy)
+- **Potrzeby:** WYSOKIE
+- **NPK:** 15:10:30
+- **Częstotliwość:** Co 7-10 dni
+- **Uwaga:** Żółte kwiaty, bardzo obfite kwitnienie
+
+### Kalanchoe
+- **Potrzeby:** NISKIE (sukulentowa)
+- **NPK:** 10:10:10
+- **Częstotliwość:** 1 raz w miesiącu
+- **Uwaga:** Nie przeliewać, nie przenawozić
+
+---
+
+## 🌸 Więcej kwiatów wieloletnich i ozdobnych
+
+### Azalia japońska
+- **Potrzeby:** WYSOKIE (KWAŚNA GLEBA!)
+- **Nawóz:** Kwaśny, specjalny do azalii
+- **NPK:** 10:15:15 lub kwaśny
+- **Częstotliwość:** Co 3-4 tygodnie (kwiecień-lipiec)
+- **Uwaga:** pH 4.5-5.5, jak rododendrony
+
+### Rododendron
+- **Potrzeby:** WYSOKIE (KWAŚNA GLEBA!)
+- **Nawóz:** Kwaśny, specjalny do rododendronów
+- **NPK:** 10:15:15 kwaśny
+- **Częstotliwość:** Co 3-4 tygodnie (marzec-lipiec)
+- **Uwaga:** pH 4.5-5.5, NIE stosować popiołu!
+
+### Kamelie
+- **Potrzeby:** WYSOKIE (KWAŚNA GLEBA!)
+- **Nawóz:** Kwaśny
+- **NPK:** 10:15:15
+- **Częstotliwość:** Co 3-4 tygodnie (marzec-sierpień)
+- **Uwaga:** Ciepłolubna, w Polsce tylko ciepłe regiony lub pojemniki
+
+### Magnolia
+- **Potrzeby:** ŚREDNIE-WYSOKIE
+- **Wiosna:** Kompost + NPK 15:15:15
+- **NPK:** 15:15:15
+- **Częstotliwość:** 2-3 razy w sezonie (kwiecień-lipiec)
+- **Uwaga:** Wczesne kwitnienie - nawóz od marca
+
+### Wrzos
+- **Potrzeby:** NISKIE (KWAŚNA GLEBA!)
+- **Nawóz:** Kwaśny lub kompost kwaśny
+- **NPK:** 10:5:5
+- **Częstotliwość:** 1-2 razy w sezonie
+- **Uwaga:** pH 4.0-5.5, torf kwaśny
+
+### Wrzosy
+- **Potrzeby:** NISKIE (KWAŚNA GLEBA!)
+- **Nawóz:** Kwaśny
+- **NPK:** 10:5:5
+- **Częstotliwość:** 1-2 razy w sezonie
+- **Uwaga:** Jak wrzos - gleby torfowe
+
+### Echinacea (jeżówka)
+- **Potrzeby:** NISKIE-ŚREDNIE
+- **NPK:** 15:15:15
+- **Częstotliwość:** 1-2 razy w sezonie
+- **Uwaga:** Roślina lecznicza, mało wymagająca
+
+### Lawendy (różne odmiany)
+- **Potrzeby:** MINIMALNE
+- **NPK:** 10:10:10
+- **Częstotliwość:** 1-2 razy w sezonie
+- **Uwaga:** Śródziemnomorska - gleba uboga, zasadowa
+
+### Rozchodnik (sedum)
+- **Potrzeby:** MINIMALNE (sukulentowy)
+- **NPK:** 10:10:10
+- **Częstotliwość:** 1 raz w sezonie lub bez
+- **Uwaga:** Bardzo wytrzymały, suche gleby
+
+### Rozchodniki (rozchodnik ostry, wielki)
+- **Potrzeby:** MINIMALNE
+- **NPK:** 10:10:10
+- **Częstotliwość:** 1 raz w sezonie
+- **Uwaga:** Sukulenty - nie przenawozić
+
+### Kocanka (nieśmiertelnik)
+- **Potrzeby:** NISKIE
+- **NPK:** 15:15:15
+- **Częstotliwość:** 1-2 razy w sezonie
+- **Uwaga:** Suche stanowiska, mało wymaga
+
+### Bylica (artemisia)
+- **Potrzeby:** MINIMALNE
+- **Nawożenie:** Kompost raz w sezonie
+- **Uwaga:** Suche, ubogie gleby
+
+### Czosnek ozdobny (allium)
+- **Potrzeby:** NISKIE-ŚREDNIE
+- **Jesień (sadzenie):** Kompost + superfosfat
+- **Wiosna:** NPK 10:20:20
+- **Częstotliwość:** 1-2 razy w sezonie
+- **Uwaga:** Cebulowy - jak tulipany
+
+### Anemon japoński
+- **Potrzeby:** ŚREDNIE
+- **Wiosna:** Kompost
+- **NPK:** 15:15:15
+- **Częstotliwość:** 2-3 razy w sezonie
+- **Uwaga:** Kwitnie jesienią - nawóż do września
+
+### Orlik (aquilegia)
+- **Potrzeby:** NISKIE-ŚREDNIE
+- **NPK:** 15:15:15
+- **Częstotliwość:** 1-2 razy w sezonie
+- **Uwaga:** Mało wymagający
+
+### Dzwonek (campanula)
+- **Potrzeby:** NISKIE-ŚREDNIE
+- **NPK:** 15:15:15
+- **Częstotliwość:** 1-2 razy w sezonie
+- **Uwaga:** Różne gatunki, generalnie mało wymagające
+
+### Ostróżka (delphinium)
+- **Potrzeby:** WYSOKIE
+- **Wiosna:** Kompost + NPK 15:15:15
+- **Kwitnienie:** Nawóz do kwiatów (więcej K)
+- **Częstotliwość:** Co 3 tygodnie
+- **Uwaga:** Wysokie rośliny - potrzebują podpór i składników
+
+### Malwa
+- **Potrzeby:** ŚREDNIE
+- **NPK:** 15:15:15
+- **Częstotliwość:** Co 3-4 tygodnie
+- **Uwaga:** Wysokie (2m+) - regularne nawożenie
+
+### Słoneczniczek (heliopsis)
+- **Potrzeby:** ŚREDNIE
+- **NPK:** 15:15:15
+- **Częstotliwość:** Co 3-4 tygodnie
+- **Uwaga:** Jak słoneczniki - średnie potrzeby
+
+### Mieczyki (gladiolus)
+- **Potrzeby:** WYSOKIE
+- **Przed sadzeniem:** Kompost
+- **NPK:** 15:15:15
+- **Częstotliwość:** Co 2-3 tygodnie
+- **Uwaga:** Bulwiaste - azot dla wzrostu, K dla kwiatów
+
+### Goździk ogrodowy
+- **Potrzeby:** ŚREDNIE-WYSOKIE
+- **NPK:** 15:15:15
+- **Częstotliwość:** Co 2-3 tygodnie
+- **Uwaga:** Lubi glebę zasadową (pH 6.5-7.5)
+
+---
+
+## 🌳 Więcej krzewów ozdobnych
+
+### Róża pnąca
+- **Potrzeby:** BARDZO WYSOKIE
+- **Wiosna:** Kompost + NPK 15:15:15
+- **Kwitnienie:** Nawóz z więcej K (10:10:20)
+- **Częstotliwość:** Co 2-3 tygodnie (kwiecień-lipiec)
+- **Uwaga:** Jak róże krzaczaste ale więcej składników
+
+### Róża angielska
+- **Potrzeby:** BARDZO WYSOKIE
+- **Jak róże:** Identyczne wymagania
+- **NPK:** 10:10:20
+- **Częstotliwość:** Co 2-3 tygodnie
+- **Uwaga:** Powtarzające kwitnienie - regularne nawożenie
+
+### Piwonia drzewiasta
+- **Potrzeby:** ŚREDNIE-WYSOKIE
+- **Wiosna:** Kompost + NPK 10:10:20
+- **Po kwitnieniu:** Nawóz P+K
+- **Częstotliwość:** 2-3 razy w sezonie
+- **Uwaga:** Cenny krzew - ostrożne nawożenie
+
+### Irga
+- **Potrzeby:** NISKIE
+- **Wiosna:** Kompost
+- **NPK:** 15:15:15
+- **Częstotliwość:** 1-2 razy w sezonie
+- **Uwaga:** Bardzo wytrzymała, mało wymaga
+
+### Śnieguliczka
+- **Potrzeby:** NISKIE
+- **Wiosna:** Kompost
+- **Częstotliwość:** 1 raz w sezonie lub bez
+- **Uwaga:** Wytrzymała, ozdobna jesienią
+
+### Tawuła japońska
+- **Potrzeby:** NISKIE-ŚREDNIE
+- **Wiosna:** Kompost
+- **NPK:** 15:15:15
+- **Częstotliwość:** 1-2 razy w sezonie
+- **Uwaga:** Różne odmiany, mało wymagająca
+
+### Dereń (cornus)
+- **Potrzeby:** NISKIE-ŚREDNIE
+- **Wiosna:** Kompost
+- **NPK:** 15:15:15
+- **Częstotliwość:** 1-2 razy w sezonie
+- **Uwaga:** Ozdobny zimą (czerwone pędy)
+
+### Budleja (budleia)
+- **Potrzeby:** ŚREDNIE
+- **Wiosna:** Kompost + NPK 15:15:15
+- **Kwitnienie:** Nawóz do kwiatów (więcej K)
+- **Częstotliwość:** Co 3-4 tygodnie (maj-sierpień)
+- **Uwaga:** "Motyli krzew" - długo kwitnie
+
+### Tamaryszek
+- **Potrzeby:** MINIMALNE
+- **Nawożenie:** Kompost raz w sezonie
+- **Uwaga:** Wytrzymały, gleby ubogie, piaszczyste
+
+### Kolkwicja
+- **Potrzeby:** NISKIE-ŚREDNIE
+- **Wiosna:** Kompost
+- **NPK:** 15:15:15
+- **Częstotliwość:** 1-2 razy w sezonie
+- **Uwaga:** Pięknie kwitnąca, mało wymagająca
+
+### Weigela
+- **Potrzeby:** ŚREDNIE
+- **Wiosna:** Kompost + NPK 15:15:15
+- **Po kwitnieniu:** Nawóz P+K (opcjonalnie)
+- **Częstotliwość:** 2-3 razy w sezonie
+- **Uwaga:** Obficie kwitnie - lubi składniki
+
+### Pigwowiec japoński
+- **Potrzeby:** NISKIE-ŚREDNIE
+- **Wiosna:** Kompost
+- **NPK:** 15:15:15
+- **Częstotliwość:** 1-2 razy w sezonie
+- **Uwaga:** Kwiaty wczesną wiosną, owoce jadalne
+
+---
+
+## 🌲 Krzewy iglaste i ozdobne
+
+### Jałowiec (różne odmiany)
+- **Potrzeby:** MINIMALNE
+- **NPK:** 10:10:10 lub specjalny do iglaków
+- **Częstotliwość:** 1 raz w sezonie (wiosna)
+- **Uwaga:** Bardzo wytrzymały, preferuje glebę uboższą
+
+### Tuja (żywotnik)
+- **Potrzeby:** NISKIE-ŚREDNIE
+- **Wiosna:** Nawóz do iglaków
+- **NPK:** 15:10:10 lub specjalny
+- **Częstotliwość:** 1-2 razy w sezonie (marzec-czerwiec)
+- **Uwaga:** NIE nawozić po czerwcu (mrozoodporność)
+
+### Cyprysik (chamaecyparis)
+- **Potrzeby:** NISKIE-ŚREDNIE
+- **Nawóz:** Specjalny do iglaków
+- **NPK:** 15:10:10
+- **Częstotliwość:** 1-2 razy w sezonie (wiosna)
+- **Uwaga:** Jak tuja - nawóż tylko wiosną
+
+### Świerk (picea)
+- **Potrzeby:** NISKIE
+- **Nawóz:** Dla iglaków
+- **Częstotliwość:** 1 raz w sezonie (wiosna) lub bez
+- **Uwaga:** Młode drzewka 1-2 razy, dorosłe bez nawożenia
+
+### Sosna (pinus)
+- **Potrzeby:** MINIMALNE
+- **Nawóz:** Dla iglaków (opcjonalnie)
+- **Częstotliwość:** Młode 1 raz w sezonie, dorosłe bez
+- **Uwaga:** Preferuje gleby ubogie, piaszczyste
+
+---
+
+## 🌿 Rośliny okrywowe
+
+### Bluszcz pospolity
+- **Potrzeby:** NISKIE
+- **Wiosna:** Kompost
+- **NPK:** 15:15:15
+- **Częstotliwość:** 1-2 razy w sezonie
+- **Uwaga:** Zimozielony, bardzo wytrzymały
+
+### Barwinek (vinca)
+- **Potrzeby:** MINIMALNE
+- **NPK:** 15:15:15
+- **Częstotliwość:** 1 raz w sezonie lub bez
+- **Uwaga:** Zimozielony, bardzo ekspansywny
+
+### Pachysandra
+- **Potrzeby:** NISKIE
+- **Wiosna:** Kompost
+- **NPK:** 15:15:15
+- **Częstotliwość:** 1 raz w sezonie
+- **Uwaga:** Cieniolubna, zimozielona
+
+### Bergenia (badan)
+- **Potrzeby:** NISKIE-ŚREDNIE
+- **Wiosna:** Kompost
+- **NPK:** 15:15:15
+- **Częstotliwość:** 1-2 razy w sezonie
+- **Uwaga:** Wczesne kwitnienie, zimozielona
+
+### Rdest (poligon)
+- **Potrzeby:** MINIMALNE
+- **Nawożenie:** Rzadko lub bez
+- **Uwaga:** BARDZO ekspansywny - nie przenawozić!
+
+### Skalnica (saxifraga)
+- **Potrzeby:** MINIMALNE
+- **NPK:** 10:10:10
+- **Częstotliwość:** 1 raz w sezonie
+- **Uwaga:** Skalniak, mało wymagająca
+
+### Rojnik (sedum acre)
+- **Potrzeby:** MINIMALNE
+- **Nawożenie:** Bez lub 1 raz w sezonie
+- **Uwaga:** Sukulentowy, bardzo wytrzymały
+
+---
+
+## 🌷 Więcej roślin bulwiastych
+
+### Lilie azjatyckie
+- **Potrzeby:** ŚREDNIE-WYSOKIE
+- **Wiosna:** NPK z azotem
+- **Pąkowanie:** NPK z więcej P+K
+- **Częstotliwość:** Co 3-4 tygodnie
+- **Uwaga:** Różne odmiany, różne wymagania
+
+### Lilie orientalne
+- **Potrzeby:** WYSOKIE
+- **Jak lilie azjatyckie:** Ale więcej składników
+- **NPK:** 15:15:15 → 10:15:20
+- **Częstotliwość:** Co 2-3 tygodnie
+- **Uwaga:** Późniejsze kwitnienie, intensywny zapach
+
+### Lilie trąbkowe
+- **Potrzeby:** ŚREDNIE-WYSOKIE
+- **Jak lilie azjatyckie**
+- **Częstotliwość:** Co 3 tygodnie
+- **Uwaga:** Duże kwiaty - potrzebują składników
+
+### Szafirek groniasty (muscari)
+- **Potrzeby:** MINIMALNE
+- **Jesień:** Kompost
+- **Częstotliwość:** Co 2 lata lub rzadziej
+- **Uwaga:** Bardzo drobne, mało wymagające
+
+### Cebulica (chionodoxa)
+- **Potrzeby:** MINIMALNE
+- **Jesień:** Kompost
+- **Częstotliwość:** Co 2-3 lata
+- **Uwaga:** Wczesna wiosna, mało wymaga
+
+### Śnieżyczka przebiśnieg (galanthus)
+- **Potrzeby:** MINIMALNE
+- **Jesień:** Kompost
+- **Częstotliwość:** Co 2-3 lata
+- **Uwaga:** Pierwsze kwiaty wiosny, bardzo wytrzymałe
+
+### Zimowit (eranthis)
+- **Potrzeby:** MINIMALNE
+- **Jesień:** Kompost
+- **Częstotliwość:** Co 2-3 lata lub bez
+- **Uwaga:** Bardzo wczesny (luty-marzec)
+
+### Szachownica (fritillaria)
+- **Potrzeby:** ŚREDNIE
+- **Jesień:** Kompost + superfosfat
+- **Wiosna:** NPK 10:20:20
+- **Częstotliwość:** 2 razy w sezonie
+- **Uwaga:** Delikatne cebule - ostrożnie
+
+### Kosaćce (iris bulbosus)
+- **Potrzeby:** NISKIE-ŚREDNIE
+- **Jesień/wiosna:** Kompost
+- **NPK:** 10:10:20
+- **Częstotliwość:** 2 razy w sezonie
+- **Uwaga:** Różne gatunki (cebulowe i kłączowe)
+
+---
+
+## 📊 PODSUMOWANIE - Ilość roślin w bazie
+
+### Warzywa: ~45 gatunków
+- Podstawowe: pomidory, ogórki, kapusta, marchew, ziemniaki, papryka, etc.
+- Korzeniowe: marchew, pietruszka, buraki, seler, rzodkiewka, rzepa
+- Liściowe: sałata, szpinak, rukola, endywia, radicchio, pak choi
+- Kapustne: kapusta biała/czerwona/włoska, kalafior, brokuły, jarmuż, kapusta pekińska
+- Dyniowate: ogórek, cukinia, dynia, patison
+- Strączkowe: fasola, groch, bób
+- Cebulowe: cebula, czosnek, por, szalotka
+- Egzotyczne: bakłażan, karczoch, fenkuł
+- Wieloletnie: szparagi, rabarbar
+
+### Kwiaty: ~60 gatunków
+- Jednoroczne: pelargonie, petunie, begonie, surfinie, aksamitki, cynia, aster, nasturcje, lobelia, impatiens, bacopa, bidens
+- Wieloletnie: róże, tulipany, lilie, piwonie, irysy, narcyzy, hiacynty, rudbekia, funkia, echinacea, orlik, dzwonek, ostróżka, malwa, mieczyki
+- Cebulowe: tulipany, narcyzy, lilie, krokusy, szafirki, żonkile, cebulica, zimowit, szachownica
+- Kwaśnolubne: hortensje, azalie, rododendrony, kamelie, wrzosy
+- Kwiaty balkonowe: pelargonie, petunie, surfinie, begonie, lobelia, bacopa, bidens, mieszek
+- Ozdobne: lawenda, rozchodniki, kocanka, bylica, czosnek ozdobny, anemon
+
+### Zioła: ~25 gatunków
+- Kulinarnie: bazylia, pietruszka, koper, szczypiorek, estragon, majeranek, lubczyk, kolendra, trybula
+- Lecznicze: mięta, melisa, szałwia, tymianek, rozmaryn, oregano, hyzop, echinacea
+- Herbaciane: melisa cytrynowa, werbena cytrynowa, mięta marokańska
+- Aromatyczne: lawenda, kozieradka
+
+### Krzewy owocowe: ~15 gatunków
+- Jagodowe: maliny, porzeczki (czarne, czerwone), agrest, truskawki, borówki, aronia, jagody kamczackie, żurawina, czarny bez, rokitnik, goji
+
+### Drzewa owocowe: ~10 gatunków
+- Jabłoniowe: jabłoń, grusza
+- Pestkowe: śliwa, wiśnia, czereśnia, brzoskwinia, morela
+- Inne: orzech włoski, winorośl, aktinidia
+
+### Krzewy ozdobne: ~30 gatunków
+- Kwitnące: forsycja, bez, jaśminowiec, hortensja bukietowa, weigela, budleja, kolkwicja, piwonia drzewiasta, różepnące
+- Liściaste: bukszpan, tawuła, berberysy, dereń, śnieguliczka, irga
+- Iglaste: jałowiec, tuja, cyprysik
+- Pnące: wiciokrzew, powojnik, glicynia, bluszcz, dzikie wino, chmiel
+
+### Rośliny pnące: ~7 gatunków
+- Winorośl, bluszcz, powojnik, glicynia, dzikie wino, chmiel, aktinidia
+
+### Rośliny okrywowe: ~7 gatunków
+- Bluszcz, barwinek, pachysandra, bergenia, rdest, skalnica, rojnik
+
+**RAZEM: ~200 gatunków roślin w pełnej bazie danych!**
