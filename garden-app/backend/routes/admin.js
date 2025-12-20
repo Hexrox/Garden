@@ -109,6 +109,12 @@ router.get('/stats', auth, adminAuth, async (req, res) => {
  */
 router.delete('/users/:id', auth, adminAuth, async (req, res) => {
   const userIdToDelete = parseInt(req.params.id);
+
+  // Walidacja ID
+  if (isNaN(userIdToDelete) || userIdToDelete <= 0) {
+    return res.status(400).json({ error: 'Nieprawidłowe ID użytkownika' });
+  }
+
   const adminId = req.user.id;
 
   // Zabezpieczenie przed usunięciem własnego konta

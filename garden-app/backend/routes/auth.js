@@ -102,7 +102,7 @@ router.post('/register',
             res.status(201).json({
               message: 'Użytkownik utworzony pomyślnie. Sprawdź swoją skrzynkę email aby zweryfikować konto.',
               token,
-              user: { id: userId, username, email }
+              user: { id: userId, username }
             });
           }
         );

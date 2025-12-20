@@ -5,6 +5,7 @@ const db = require('../db');
 const auth = require('../middleware/auth');
 const upload = require('../middleware/upload');
 const fs = require('fs');
+const { dbGet, dbAll, dbRun } = require('../utils/dbHelpers');
 
 // ==========================================
 // PUBLIC ENDPOINTS (no auth required)
@@ -926,17 +927,28 @@ router.post('/profile/photo', [auth, upload.single('photo')], (req, res) => {
 
     // Delete old photo file
     if (user && user.profile_photo) {
+      const path = require('path');
       const oldPhotoPath = user.profile_photo.startsWith('uploads/')
-        ? user.profile_photo
-        : `uploads/${user.profile_photo}`;
+        ? user.profile_photo.replace('uploads/', '')
+        : user.profile_photo;
 
-      const fullPath = process.env.NODE_ENV === 'production'
-        ? `/var/www/garden-uploads/${req.file.filename}`.replace('uploads/', '')
-        : require('path').join(__dirname, '..', oldPhotoPath);
+      // Security: Use basename to prevent path traversal
+      const safeFilename = path.basename(oldPhotoPath);
 
-      fs.unlink(fullPath, (err) => {
-        if (err) console.error('Error deleting old profile photo:', err);
-      });
+      const uploadDir = process.env.NODE_ENV === 'production'
+        ? '/var/www/garden-uploads'
+        : path.join(__dirname, '..', 'uploads');
+
+      const fullPath = path.join(uploadDir, safeFilename);
+
+      // Verify path is within upload directory
+      if (fullPath.startsWith(uploadDir)) {
+        fs.unlink(fullPath, (err) => {
+          if (err) console.error('Error deleting old profile photo:', err);
+        });
+      } else {
+        console.error('Path traversal attempt blocked:', fullPath);
+      }
     }
 
     // Update user profile photo
@@ -975,17 +987,28 @@ router.delete('/profile/photo', auth, (req, res) => {
     }
 
     // Delete photo file
+    const path = require('path');
     const photoPath = user.profile_photo.startsWith('uploads/')
-      ? user.profile_photo
-      : `uploads/${user.profile_photo}`;
+      ? user.profile_photo.replace('uploads/', '')
+      : user.profile_photo;
 
-    const fullPath = process.env.NODE_ENV === 'production'
-      ? `/var/www/garden-uploads/${photoPath.replace('uploads/', '')}`
-      : require('path').join(__dirname, '..', photoPath);
+    // Security: Use basename to prevent path traversal
+    const safeFilename = path.basename(photoPath);
 
-    fs.unlink(fullPath, (err) => {
-      if (err) console.error('Error deleting profile photo:', err);
-    });
+    const uploadDir = process.env.NODE_ENV === 'production'
+      ? '/var/www/garden-uploads'
+      : path.join(__dirname, '..', 'uploads');
+
+    const fullPath = path.join(uploadDir, safeFilename);
+
+    // Verify path is within upload directory
+    if (fullPath.startsWith(uploadDir)) {
+      fs.unlink(fullPath, (err) => {
+        if (err) console.error('Error deleting profile photo:', err);
+      });
+    } else {
+      console.error('Path traversal attempt blocked:', fullPath);
+    }
 
     // Update database
     db.run(

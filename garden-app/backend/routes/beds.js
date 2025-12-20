@@ -298,6 +298,15 @@ router.put('/beds/:id/harvest', [auth, upload.single('harvest_photo')], (req, re
         return res.status(404).json({ error: 'Grządka nie znaleziona' });
       }
 
+      // Walidacja: data zbioru nie może być przed datą sadzenia
+      if (bed.planted_date && new Date(actual_harvest_date) < new Date(bed.planted_date)) {
+        return res.status(400).json({
+          error: 'Data zbioru nie może być wcześniejsza niż data sadzenia',
+          planted_date: bed.planted_date,
+          harvest_date: actual_harvest_date
+        });
+      }
+
       if (clearBed) {
         // Option 1: Clear bed (free for new planting)
         db.run(

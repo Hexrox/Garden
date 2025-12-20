@@ -53,6 +53,11 @@ router.get('/moon/month/:year/:month', publicLimiter, (req, res) => {
     const year = parseInt(req.params.year);
     const month = parseInt(req.params.month);
 
+    // Walidacja ID
+    if (isNaN(year) || isNaN(month)) {
+      return res.status(400).json({ error: 'Nieprawidłowy format daty' });
+    }
+
     if (year < 2000 || year > 2100 || month < 1 || month > 12) {
       return res.status(400).json({ error: 'Nieprawidłowa data' });
     }

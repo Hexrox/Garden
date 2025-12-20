@@ -170,11 +170,11 @@ const mutationLimiter = rateLimit({
   skip: (req) => req.method === 'GET' // Only apply to mutations
 });
 
-// Public endpoints limiter (moon phases, etc.) - strict to prevent DoS
+// Public endpoints limiter (moon phases, public profiles) - strict to prevent DoS & enumeration
 const publicLimiter = rateLimit({
-  windowMs: 1 * 60 * 1000, // 1 minute
-  max: 10, // 10 requests per minute
-  message: { error: 'Zbyt wiele żądań. Spróbuj ponownie za minutę.' },
+  windowMs: 10 * 60 * 1000, // 10 minutes
+  max: 20, // 20 requests per 10 minutes (prevents username enumeration)
+  message: { error: 'Zbyt wiele żądań. Spróbuj ponownie później.' },
   standardHeaders: true,
   legacyHeaders: false
 });

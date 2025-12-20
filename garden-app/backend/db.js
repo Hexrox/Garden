@@ -543,19 +543,8 @@ db.serialize(() => {
     user_agent TEXT
   )`);
 
-  // Weather history table (for advanced drought detection)
-  db.run(`CREATE TABLE IF NOT EXISTS weather_history (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    date DATE NOT NULL UNIQUE,
-    temperature REAL,
-    temp_min REAL,
-    temp_max REAL,
-    humidity INTEGER,
-    rain REAL DEFAULT 0,
-    wind_speed REAL,
-    description TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-  )`);
+  // NOTE: weather_history table already defined above (line 409-430)
+  // Duplicate definition removed to avoid schema conflicts
 
   // Create indexes for public profile feature
   db.run('CREATE UNIQUE INDEX IF NOT EXISTS idx_users_public_username ON users(public_username)');
