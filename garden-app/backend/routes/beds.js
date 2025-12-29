@@ -77,23 +77,32 @@ router.post('/plots/:plotId/beds',
       const { row_number, plant_name, plant_variety, planted_date, note } = req.body;
       const imagePath = req.file ? `uploads/${req.file.filename}` : null;
 
-      // Calculate expected harvest date
-      let expectedHarvestDate = null;
-      if (plant_name && planted_date) {
-        const prediction = calculateHarvestDate(plant_name, planted_date);
-        if (prediction) {
-          expectedHarvestDate = prediction.expectedDate;
+      // Check if row_number already exists for this plot
+      db.get('SELECT id FROM beds WHERE plot_id = ? AND row_number = ?', [req.params.plotId, row_number], (err, existingBed) => {
+        if (err) {
+          return res.status(500).json({ error: 'Błąd serwera' });
         }
-      }
+        if (existingBed) {
+          return res.status(400).json({ error: `Rząd ${row_number} jest już zajęty. Wybierz inny numer rzędu.` });
+        }
 
-      db.run(
-        `INSERT INTO beds (plot_id, row_number, plant_name, plant_variety, planted_date, note, image_path, expected_harvest_date)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-        [req.params.plotId, row_number, plant_name, plant_variety, planted_date, note, imagePath, expectedHarvestDate],
-        function (err) {
-          if (err) {
-            return res.status(500).json({ error: 'Błąd podczas tworzenia grządki' });
+        // Calculate expected harvest date
+        let expectedHarvestDate = null;
+        if (plant_name && planted_date) {
+          const prediction = calculateHarvestDate(plant_name, planted_date);
+          if (prediction) {
+            expectedHarvestDate = prediction.expectedDate;
           }
+        }
+
+        db.run(
+          `INSERT INTO beds (plot_id, row_number, plant_name, plant_variety, planted_date, note, image_path, expected_harvest_date)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          [req.params.plotId, row_number, plant_name, plant_variety, planted_date, note, imagePath, expectedHarvestDate],
+          function (err) {
+            if (err) {
+              return res.status(500).json({ error: 'Błąd podczas tworzenia grządki' });
+            }
 
           res.status(201).json({
             message: 'Grządka utworzona pomyślnie',
@@ -109,8 +118,9 @@ router.post('/plots/:plotId/beds',
               expected_harvest_date: expectedHarvestDate
             }
           });
-        }
-      );
+          }
+        );
+      });
     });
   }
 );
@@ -152,9 +162,31 @@ router.put('/beds/:id',
             return res.status(404).json({ error: 'Grządka nie znaleziona' });
           }
 
-          // Use new values or fall back to existing
-          const finalPlantName = plant_name !== undefined ? plant_name : bed.plant_name;
-          const finalPlantedDate = planted_date !== undefined ? planted_date : bed.planted_date;
+          // Check if row_number is being changed and if new number is already taken
+          if (row_number !== undefined && row_number !== bed.row_number) {
+            db.get('SELECT id FROM beds WHERE plot_id = ? AND row_number = ? AND id != ?',
+              [bed.plot_id, row_number, bed.id],
+              (err, existingBed) => {
+                if (err) {
+                  return res.status(500).json({ error: 'Błąd serwera' });
+                }
+                if (existingBed) {
+                  return res.status(400).json({ error: `Rząd ${row_number} jest już zajęty. Wybierz inny numer rzędu.` });
+                }
+
+                // Continue with update
+                performUpdate(bed);
+              }
+            );
+          } else {
+            // No row_number change, continue with update
+            performUpdate(bed);
+          }
+
+          function performUpdate(bed) {
+            // Use new values or fall back to existing
+            const finalPlantName = plant_name !== undefined ? plant_name : bed.plant_name;
+            const finalPlantedDate = planted_date !== undefined ? planted_date : bed.planted_date;
 
           // Calculate new harvest date
           let expectedHarvestDate = null;
@@ -203,17 +235,52 @@ router.put('/beds/:id',
           } catch (buildError) {
             return res.status(400).json({ error: buildError.message });
           }
+          }
         }
       );
     } else {
       // No recalculation needed, simple update
-      let updateFields = [];
-      let values = [];
+      // First get current bed to check row_number changes
+      db.get(
+        `SELECT * FROM beds WHERE id = ? AND plot_id IN (SELECT id FROM plots WHERE user_id = ?)`,
+        [req.params.id, req.user.id],
+        (err, bed) => {
+          if (err) {
+            return res.status(500).json({ error: 'Błąd serwera' });
+          }
+          if (!bed) {
+            return res.status(404).json({ error: 'Grządka nie znaleziona' });
+          }
 
-      if (row_number !== undefined) {
-        updateFields.push('row_number = ?');
-        values.push(row_number);
-      }
+          // Check if row_number is being changed and if new number is already taken
+          if (row_number !== undefined && row_number !== bed.row_number) {
+            db.get('SELECT id FROM beds WHERE plot_id = ? AND row_number = ? AND id != ?',
+              [bed.plot_id, row_number, bed.id],
+              (err, existingBed) => {
+                if (err) {
+                  return res.status(500).json({ error: 'Błąd serwera' });
+                }
+                if (existingBed) {
+                  return res.status(400).json({ error: `Rząd ${row_number} jest już zajęty. Wybierz inny numer rzędu.` });
+                }
+
+                // Continue with simple update
+                performSimpleUpdate();
+              }
+            );
+          } else {
+            // No row_number change, continue with simple update
+            performSimpleUpdate();
+          }
+
+          function performSimpleUpdate() {
+            let updateFields = [];
+            let values = [];
+
+            if (row_number !== undefined) {
+              updateFields.push('row_number = ?');
+              values.push(row_number);
+            }
       if (plant_variety !== undefined) {
         updateFields.push('plant_variety = ?');
         values.push(plant_variety);
@@ -261,6 +328,9 @@ router.put('/beds/:id',
           res.json({ message: 'Grządka zaktualizowana pomyślnie' });
         }
       );
+      }
+      }
+    );
     }
   }
 );
