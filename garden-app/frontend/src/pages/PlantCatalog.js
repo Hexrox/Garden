@@ -1,15 +1,30 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronDown, ChevronUp, Leaf, Droplets, Sun, Sprout, AlertCircle } from 'lucide-react';
+import { ChevronDown, ChevronUp, Leaf, Droplets, Sun, Sprout, AlertCircle, Plus } from 'lucide-react';
 import axios from '../config/axios';
 import PlantingWizard from '../components/PlantingWizard';
 
 const PlantCatalog = () => {
   const [plants, setPlants] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [expandedCategories, setExpandedCategories] = useState(['Warzywa owocowe']);
+  const [expandedCategories, setExpandedCategories] = useState(['Warzywa']);
   const [selectedPlant, setSelectedPlant] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [plantingPlant, setPlantingPlant] = useState(null);
+  const [showAddModal, setShowAddModal] = useState(false);
+
+  // Mapowanie kategorii na polski
+  const translateCategory = (category) => {
+    const translations = {
+      'vegetable': 'Warzywa',
+      'flower_perennial': 'Byliny',
+      'flower_bulb': 'Kwiaty cebulowe',
+      'flower_annual': 'Kwiaty jednoroczne',
+      'fruit_tree': 'Drzewa owocowe',
+      'fruit_bush': 'Krzewy owocowe',
+      'herb': 'Zioła'
+    };
+    return translations[category] || category;
+  };
 
   useEffect(() => {
     fetchPlants();
@@ -42,7 +57,7 @@ const PlantCatalog = () => {
 
   // Group plants by category
   const plantsByCategory = plants.reduce((acc, plant) => {
-    const category = plant.category || 'Inne';
+    const category = translateCategory(plant.category) || 'Inne';
     if (!acc[category]) acc[category] = [];
     acc[category].push(plant);
     return acc;
@@ -70,12 +85,16 @@ const PlantCatalog = () => {
   };
 
   const getCategoryIcon = (category) => {
-    if (category.includes('Warzywa')) return '🥕';
-    if (category.includes('Kwiaty')) return '🌸';
-    if (category.includes('Zioła')) return '🌿';
-    if (category.includes('Owoce')) return '🍓';
-    if (category.includes('Krzewy')) return '🌳';
-    return '🌱';
+    const icons = {
+      'Warzywa': '🥕',
+      'Byliny': '🌸',
+      'Kwiaty cebulowe': '🌷',
+      'Kwiaty jednoroczne': '🌼',
+      'Drzewa owocowe': '🌳',
+      'Krzewy owocowe': '🍇',
+      'Zioła': '🌿'
+    };
+    return icons[category] || '🌱';
   };
 
   if (loading) {
@@ -96,14 +115,23 @@ const PlantCatalog = () => {
             Pełna baza wiedzy ogrodniczej - {plants.length} roślin
           </p>
         </div>
-        {plants.length < 20 && (
+        <div className="flex gap-2">
           <button
-            onClick={handleImportDefaults}
-            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+            onClick={() => setShowAddModal(true)}
+            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
           >
-            📥 Importuj rozszerzoną bazę
+            <Plus className="w-4 h-4" />
+            Dodaj roślinę
           </button>
-        )}
+          {plants.length < 20 && (
+            <button
+              onClick={handleImportDefaults}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              📥 Importuj bazę
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Search */}
@@ -126,7 +154,10 @@ const PlantCatalog = () => {
           </div>
         ) : (
           Object.entries(filteredCategories)
-            .sort(([a], [b]) => a.localeCompare(b))
+            .sort(([a], [b]) => {
+              const order = ['Warzywa', 'Byliny', 'Kwiaty cebulowe', 'Kwiaty jednoroczne', 'Drzewa owocowe', 'Krzewy owocowe', 'Zioła'];
+              return order.indexOf(a) - order.indexOf(b);
+            })
             .map(([category, categoryPlants]) => (
               <div
                 key={category}
@@ -193,6 +224,17 @@ const PlantCatalog = () => {
           onClose={() => setPlantingPlant(null)}
         />
       )}
+
+      {/* Add Plant Modal */}
+      {showAddModal && (
+        <AddPlantModal
+          onClose={() => setShowAddModal(false)}
+          onSuccess={() => {
+            setShowAddModal(false);
+            fetchPlants();
+          }}
+        />
+      )}
     </div>
   );
 };
@@ -218,10 +260,23 @@ const PlantCard = ({ plant, onClick }) => {
       </div>
 
       <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400 mt-2">
-        <span className="flex items-center gap-1">
-          <Sprout className="w-3 h-3" />
-          {plant.days_to_harvest} dni
-        </span>
+        {plant.days_to_harvest > 0 && (
+          <span className="flex items-center gap-1">
+            <Sprout className="w-3 h-3" />
+            {plant.days_to_harvest} dni
+          </span>
+        )}
+        {plant.category && (
+          <span className="px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 rounded">
+            {plant.category === 'flower_perennial' && '🌸 Bylina'}
+            {plant.category === 'flower_annual' && '🌼 Jednoroczna'}
+            {plant.category === 'flower_bulb' && '🌷 Cebulowa'}
+            {plant.category === 'fruit_tree' && '🌳 Drzewo'}
+            {plant.category === 'fruit_bush' && '🍇 Krzew'}
+            {plant.category === 'herb' && '🌿 Zioło'}
+            {plant.category === 'vegetable' && '🥕 Warzywo'}
+          </span>
+        )}
         {plant.soil_ph && (
           <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 rounded">
             pH {plant.soil_ph}
@@ -261,26 +316,14 @@ const PlantDetailModal = ({ plant, onClose, onPlant }) => {
 
         {/* Content */}
         <div className="p-6 space-y-6">
-          {/* Basic Info */}
+          {/* Basic Info - Extended */}
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            <InfoBox
-              icon={<Sprout className="w-5 h-5" />}
-              label="Dni do zbioru"
-              value={`${plant.days_to_harvest} dni`}
-              sublabel={plant.range_min && plant.range_max ? `(${plant.range_min}-${plant.range_max})` : null}
-            />
-            {plant.soil_ph && (
+            {plant.days_to_harvest && (
               <InfoBox
-                icon="🧪"
-                label="pH gleby"
-                value={plant.soil_ph}
-              />
-            )}
-            {plant.water_needs && (
-              <InfoBox
-                icon={<Droplets className="w-5 h-5" />}
-                label="Potrzeby wodne"
-                value={plant.water_needs}
+                icon={<Sprout className="w-5 h-5" />}
+                label="Dni do zbioru"
+                value={`${plant.days_to_harvest} dni`}
+                sublabel={plant.range_min && plant.range_max ? `(${plant.range_min}-${plant.range_max})` : null}
               />
             )}
             {plant.sun_requirement && (
@@ -290,6 +333,27 @@ const PlantDetailModal = ({ plant, onClose, onPlant }) => {
                 value={plant.sun_requirement}
               />
             )}
+            {(plant.water_needs || plant.watering_needs) && (
+              <InfoBox
+                icon={<Droplets className="w-5 h-5" />}
+                label="Potrzeby wodne"
+                value={plant.water_needs || plant.watering_needs}
+              />
+            )}
+            {plant.soil_ph && (
+              <InfoBox
+                icon="🧪"
+                label="pH gleby"
+                value={plant.soil_ph}
+              />
+            )}
+            {(plant.soil_type || plant.soil_preference) && (
+              <InfoBox
+                icon="🌍"
+                label="Gleba"
+                value={plant.soil_type || plant.soil_preference}
+              />
+            )}
             {plant.height && (
               <InfoBox
                 icon="📏"
@@ -297,29 +361,98 @@ const PlantDetailModal = ({ plant, onClose, onPlant }) => {
                 value={plant.height}
               />
             )}
-            {plant.soil_type && (
+            {plant.planting_depth && (
               <InfoBox
-                icon="🌍"
-                label="Typ gleby"
-                value={plant.soil_type}
+                icon="🌱"
+                label="Głębokość sadzenia"
+                value={plant.planting_depth}
+              />
+            )}
+            {plant.spacing && (
+              <InfoBox
+                icon="↔️"
+                label="Rozstaw"
+                value={plant.spacing}
+              />
+            )}
+            {plant.hardiness_zone && (
+              <InfoBox
+                icon="❄️"
+                label="Strefa USDA"
+                value={plant.hardiness_zone}
+              />
+            )}
+            {plant.origin && (
+              <InfoBox
+                icon="🌏"
+                label="Pochodzenie"
+                value={plant.origin}
               />
             )}
           </div>
 
+          {/* Flower-specific info */}
+          {(plant.flower_color || plant.bloom_season || plant.is_fragrant || plant.is_bee_friendly || plant.is_perennial) && (
+            <Section title="🌸 Informacje o kwiatach">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {plant.flower_color && (
+                  <div className="p-2 bg-pink-50 dark:bg-pink-900/20 rounded">
+                    <span className="text-sm font-semibold text-pink-900 dark:text-pink-100">Kolor:</span>
+                    <span className="ml-2 text-sm text-pink-800 dark:text-pink-200">{plant.flower_color}</span>
+                  </div>
+                )}
+                {plant.bloom_season && (
+                  <div className="p-2 bg-purple-50 dark:bg-purple-900/20 rounded">
+                    <span className="text-sm font-semibold text-purple-900 dark:text-purple-100">Kwitnienie:</span>
+                    <span className="ml-2 text-sm text-purple-800 dark:text-purple-200">{plant.bloom_season}</span>
+                  </div>
+                )}
+                {plant.is_perennial && (
+                  <div className="p-2 bg-green-50 dark:bg-green-900/20 rounded">
+                    <span className="text-sm text-green-800 dark:text-green-200">🌿 Bylina wieloletnia</span>
+                  </div>
+                )}
+                {plant.is_fragrant && (
+                  <div className="p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded">
+                    <span className="text-sm text-yellow-800 dark:text-yellow-200">🌺 Aromatyczna</span>
+                  </div>
+                )}
+                {plant.is_bee_friendly && (
+                  <div className="p-2 bg-amber-50 dark:bg-amber-900/20 rounded">
+                    <span className="text-sm text-amber-800 dark:text-amber-200">🐝 Przyjazna pszczołom</span>
+                  </div>
+                )}
+              </div>
+            </Section>
+          )}
+
+          {/* Uses */}
+          {plant.uses && (
+            <Section title="🍴 Zastosowanie">
+              <div className="flex flex-wrap gap-2">
+                {(typeof plant.uses === 'string' ? plant.uses.split(',') : plant.uses).map((use, idx) => (
+                  <span key={idx} className="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 rounded-full text-sm">
+                    {use.trim()}
+                  </span>
+                ))}
+              </div>
+            </Section>
+          )}
+
           {/* Fertilization */}
-          {(plant.npk_needs || plant.organic_fertilizer || plant.mineral_fertilizer) && (
+          {(plant.fertilization_needs || plant.npk_needs || plant.npk || plant.npk_ratio_recommended || plant.fertilization_frequency || plant.organic_fertilizer || plant.mineral_fertilizer) && (
             <Section title="🌱 Nawożenie" icon="💚">
-              {plant.npk_needs && (
+              {(plant.fertilization_needs || plant.npk_needs) && (
                 <div className="mb-3">
                   <span className="font-semibold text-gray-900 dark:text-white">Potrzeby pokarmowe:</span>
                   <span className="ml-2 px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 rounded-full text-sm">
-                    {plant.npk_needs}
+                    {plant.fertilization_needs || plant.npk_needs}
                   </span>
                 </div>
               )}
-              {plant.npk_ratio_recommended && (
+              {(plant.npk || plant.npk_ratio_recommended) && (
                 <p className="text-gray-700 dark:text-gray-300 mb-2">
-                  <strong>NPK zalecane:</strong> {plant.npk_ratio_recommended}
+                  <strong>NPK zalecane:</strong> {plant.npk || plant.npk_ratio_recommended}
                 </p>
               )}
               {plant.fertilization_frequency && (
@@ -397,6 +530,23 @@ const PlantDetailModal = ({ plant, onClose, onPlant }) => {
             </Section>
           )}
 
+          {/* Care Notes */}
+          {plant.care_notes && (
+            <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border-l-4 border-blue-400">
+              <div className="flex items-start gap-2">
+                <AlertCircle className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-semibold text-blue-900 dark:text-blue-100 text-sm mb-1">
+                    📖 Szczegółowe informacje o hodowli:
+                  </p>
+                  <p className="text-sm text-blue-800 dark:text-blue-200 whitespace-pre-line">
+                    {plant.care_notes}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Notes */}
           {plant.notes && (
             <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border-l-4 border-yellow-400">
@@ -464,5 +614,425 @@ const Section = ({ title, children, icon }) => (
     <div>{children}</div>
   </div>
 );
+
+// Add Plant Modal Component
+const AddPlantModal = ({ onClose, onSuccess }) => {
+  const [formData, setFormData] = useState({
+    name: '',
+    display_name: '',
+    latin_name: '',
+    category: 'vegetable',
+    days_to_harvest: '',
+    notes: '',
+    sun_requirement: '',
+    water_needs: '',
+    soil_type: '',
+    height: '',
+    spacing: '',
+    npk_needs: '',
+    fertilization_frequency: '',
+    // Flower specific
+    flower_color: '',
+    bloom_season: '',
+    is_perennial: false,
+    is_fragrant: false,
+    is_bee_friendly: false
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    try {
+      // Prepare data - only send non-empty fields
+      const plantData = {};
+      Object.entries(formData).forEach(([key, value]) => {
+        if (value !== '' && value !== false) {
+          plantData[key] = value;
+        }
+      });
+
+      // Set name based on display_name (required by backend)
+      plantData.name = formData.display_name.toLowerCase().replace(/\s+/g, '_');
+
+      // Convert days_to_harvest to number or 0
+      if (plantData.days_to_harvest) {
+        plantData.days_to_harvest = parseInt(plantData.days_to_harvest) || 0;
+      } else {
+        plantData.days_to_harvest = 0;
+      }
+
+      await axios.post('/api/plants', plantData);
+      onSuccess();
+    } catch (err) {
+      console.error('Error adding plant:', err);
+      setError(err.response?.data?.error || 'Błąd podczas dodawania rośliny');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const categories = [
+    { value: 'vegetable', label: '🥕 Warzywo', needsHarvest: true },
+    { value: 'flower_perennial', label: '🌸 Bylina', needsHarvest: false },
+    { value: 'flower_bulb', label: '🌷 Kwiat cebulowy', needsHarvest: false },
+    { value: 'flower_annual', label: '🌼 Kwiat jednoroczny', needsHarvest: false },
+    { value: 'fruit_tree', label: '🌳 Drzewo owocowe', needsHarvest: false },
+    { value: 'fruit_bush', label: '🍇 Krzew owocowy', needsHarvest: false },
+    { value: 'herb', label: '🌿 Zioło', needsHarvest: true }
+  ];
+
+  const selectedCategory = categories.find(c => c.value === formData.category);
+  const isFlower = formData.category.startsWith('flower_');
+
+  return (
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        {/* Header */}
+        <div className="sticky top-0 bg-gradient-to-r from-green-600 to-emerald-600 text-white p-6 rounded-t-2xl">
+          <div className="flex items-start justify-between">
+            <div>
+              <h2 className="text-2xl font-bold">Dodaj własną roślinę</h2>
+              <p className="text-green-100 mt-1">Stwórz własny wpis w katalogu</p>
+            </div>
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          {error && (
+            <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-800 dark:text-red-200">
+              {error}
+            </div>
+          )}
+
+          {/* Basic Info */}
+          <div className="space-y-4">
+            <h3 className="font-semibold text-gray-900 dark:text-white">Podstawowe informacje</h3>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Nazwa rośliny *
+              </label>
+              <input
+                type="text"
+                name="display_name"
+                value={formData.display_name}
+                onChange={handleChange}
+                required
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500"
+                placeholder="np. Pomidor malinowy"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Nazwa łacińska
+              </label>
+              <input
+                type="text"
+                name="latin_name"
+                value={formData.latin_name}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500"
+                placeholder="np. Solanum lycopersicum"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Kategoria *
+              </label>
+              <select
+                name="category"
+                value={formData.category}
+                onChange={handleChange}
+                required
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500"
+              >
+                {categories.map(cat => (
+                  <option key={cat.value} value={cat.value}>{cat.label}</option>
+                ))}
+              </select>
+            </div>
+
+            {selectedCategory?.needsHarvest && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Dni do zbioru
+                </label>
+                <input
+                  type="number"
+                  name="days_to_harvest"
+                  value={formData.days_to_harvest}
+                  onChange={handleChange}
+                  min="0"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500"
+                  placeholder="np. 75"
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Growing Conditions */}
+          <div className="space-y-4">
+            <h3 className="font-semibold text-gray-900 dark:text-white">Warunki uprawy</h3>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Wymagania świetlne
+                </label>
+                <select
+                  name="sun_requirement"
+                  value={formData.sun_requirement}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500"
+                >
+                  <option value="">Wybierz...</option>
+                  <option value="pełne słońce">Pełne słońce</option>
+                  <option value="częściowe słońce">Częściowe słońce</option>
+                  <option value="półcień">Półcień</option>
+                  <option value="cień">Cień</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Potrzeby wodne
+                </label>
+                <select
+                  name="water_needs"
+                  value={formData.water_needs}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500"
+                >
+                  <option value="">Wybierz...</option>
+                  <option value="niskie">Niskie</option>
+                  <option value="średnie">Średnie</option>
+                  <option value="wysokie">Wysokie</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Typ gleby
+              </label>
+              <input
+                type="text"
+                name="soil_type"
+                value={formData.soil_type}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500"
+                placeholder="np. próchnicza, przepuszczalna"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Wysokość
+                </label>
+                <input
+                  type="text"
+                  name="height"
+                  value={formData.height}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500"
+                  placeholder="np. 120-150 cm"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Rozstaw
+                </label>
+                <input
+                  type="text"
+                  name="spacing"
+                  value={formData.spacing}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500"
+                  placeholder="np. 50x60 cm"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Fertilization */}
+          <div className="space-y-4">
+            <h3 className="font-semibold text-gray-900 dark:text-white">Nawożenie</h3>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Potrzeby pokarmowe
+                </label>
+                <select
+                  name="npk_needs"
+                  value={formData.npk_needs}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500"
+                >
+                  <option value="">Wybierz...</option>
+                  <option value="niskie">Niskie</option>
+                  <option value="średnie">Średnie</option>
+                  <option value="wysokie">Wysokie</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Częstość nawożenia
+                </label>
+                <input
+                  type="text"
+                  name="fertilization_frequency"
+                  value={formData.fertilization_frequency}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500"
+                  placeholder="np. co 2 tygodnie"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Flower specific fields */}
+          {isFlower && (
+            <div className="space-y-4">
+              <h3 className="font-semibold text-gray-900 dark:text-white">Informacje o kwiatach</h3>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Kolor kwiatu
+                  </label>
+                  <input
+                    type="text"
+                    name="flower_color"
+                    value={formData.flower_color}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500"
+                    placeholder="np. różowy, biały"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Sezon kwitnienia
+                  </label>
+                  <input
+                    type="text"
+                    name="bloom_season"
+                    value={formData.bloom_season}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500"
+                    placeholder="np. maj-lipiec"
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    name="is_perennial"
+                    checked={formData.is_perennial}
+                    onChange={handleChange}
+                    className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                  />
+                  <span className="text-sm text-gray-700 dark:text-gray-300">Bylina wieloletnia</span>
+                </label>
+
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    name="is_fragrant"
+                    checked={formData.is_fragrant}
+                    onChange={handleChange}
+                    className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                  />
+                  <span className="text-sm text-gray-700 dark:text-gray-300">Aromatyczna</span>
+                </label>
+
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    name="is_bee_friendly"
+                    checked={formData.is_bee_friendly}
+                    onChange={handleChange}
+                    className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                  />
+                  <span className="text-sm text-gray-700 dark:text-gray-300">Przyjazna pszczołom</span>
+                </label>
+              </div>
+            </div>
+          )}
+
+          {/* Notes */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Uwagi i porady
+            </label>
+            <textarea
+              name="notes"
+              value={formData.notes}
+              onChange={handleChange}
+              rows="3"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500"
+              placeholder="Dodatkowe informacje o uprawie..."
+            />
+          </div>
+
+          {/* Footer */}
+          <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+            >
+              Anuluj
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              {loading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                  Zapisywanie...
+                </>
+              ) : (
+                <>
+                  <Plus className="w-4 h-4" />
+                  Dodaj roślinę
+                </>
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
 
 export default PlantCatalog;

@@ -75,14 +75,17 @@ const PlantingWizard = ({ plant, onClose }) => {
     try {
       setLoading(true);
 
+      // Ensure plantedDate is valid
+      const plantedDate = formData.plantedDate || new Date().toISOString().split('T')[0];
+
       const bedData = {
         row_number: parseInt(formData.rowNumber),
         plant_name: plant.name,
         plant_variety: formData.plantVariety || null,
-        planted_date: formData.plantedDate,
+        planted_date: plantedDate,
         note: formData.note || `${plant.display_name || plant.name}${plant.latin_name ? ' (' + plant.latin_name + ')' : ''}`,
         // Auto-calculate expected harvest date
-        expected_harvest_date: calculateHarvestDate(formData.plantedDate, plant.days_to_harvest)
+        expected_harvest_date: calculateHarvestDate(plantedDate, plant.days_to_harvest)
       };
 
       await axios.post(`/api/plots/${formData.selectedPlotId}/beds`, bedData);
@@ -339,8 +342,10 @@ const PlantingWizard = ({ plant, onClose }) => {
                   <li>🌱 Roślina: <strong>{plant.display_name || plant.name}</strong></li>
                   <li>📍 Poletko: <strong>{plots.find(p => p.id === formData.selectedPlotId)?.name}</strong></li>
                   <li>🔢 Rząd: <strong>#{formData.rowNumber}</strong></li>
-                  <li>📅 Data sadzenia: <strong>{new Date(formData.plantedDate).toLocaleDateString('pl-PL')}</strong></li>
-                  {plant.days_to_harvest && (
+                  {formData.plantedDate && (
+                    <li>📅 Data sadzenia: <strong>{new Date(formData.plantedDate).toLocaleDateString('pl-PL')}</strong></li>
+                  )}
+                  {plant.days_to_harvest > 0 && formData.plantedDate && (
                     <li>🎯 Przewidywany zbiór: <strong>
                       {new Date(calculateHarvestDate(formData.plantedDate, plant.days_to_harvest)).toLocaleDateString('pl-PL')}
                     </strong> ({plant.days_to_harvest} dni)</li>

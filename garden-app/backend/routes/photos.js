@@ -5,6 +5,7 @@ const db = require('../db');
 const auth = require('../middleware/auth');
 const upload = require('../middleware/upload');
 const { imageValidationMiddleware } = require('../utils/imageValidator');
+const { generateThumbnails, deleteAllVersions } = require('../utils/imageProcessor');
 const fs = require('fs');
 const path = require('path');
 
@@ -47,7 +48,7 @@ router.post('/beds/:bedId/photos',
     body('caption').optional().trim().escape(),
     body('taken_date').optional().isDate()
   ],
-  (req, res) => {
+  async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
@@ -55,6 +56,21 @@ router.post('/beds/:bedId/photos',
 
     if (!req.file) {
       return res.status(400).json({ error: 'Zdjęcie jest wymagane' });
+    }
+
+    // Generate thumbnails
+    let thumbnails;
+    try {
+      thumbnails = await generateThumbnails(req.file.path, req.file.filename);
+    } catch (error) {
+      console.error('Error generating thumbnails:', error);
+      // Clean up uploaded file on error
+      if (req.file && req.file.path) {
+        fs.unlink(req.file.path, (err) => {
+          if (err) console.error('Failed to cleanup file:', err);
+        });
+      }
+      return res.status(500).json({ error: 'Błąd przetwarzania zdjęcia' });
     }
 
     // Verify user owns this bed and get full bed + plot data
@@ -73,21 +89,20 @@ router.post('/beds/:bedId/photos',
         }
 
         const { caption, taken_date, source_type } = req.body;
-        // Use relative path for proper URL serving
-        // Express.static serves '/uploads' -> 'backend/uploads/'
-        const photoPath = `uploads/${req.file.filename}`;
 
         // Insert with denormalized data for gallery performance
         db.run(
           `INSERT INTO plant_photos (
-            bed_id, user_id, photo_path, caption, taken_date, source_type,
+            bed_id, user_id, photo_path, thumb_path, medium_path, caption, taken_date, source_type,
             bed_row_number, bed_plant_name, bed_plant_variety, plot_name
           )
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             req.params.bedId,
             req.user.id,
-            photoPath,
+            thumbnails.original,
+            thumbnails.thumb,
+            thumbnails.medium,
             caption,
             taken_date || new Date().toISOString().split('T')[0],
             source_type || 'progress',
@@ -99,6 +114,8 @@ router.post('/beds/:bedId/photos',
           function (err) {
             if (err) {
               console.error('Error inserting photo:', err);
+              // Clean up uploaded files on database error
+              deleteAllVersions(thumbnails.original);
               return res.status(500).json({ error: 'Błąd podczas dodawania zdjęcia' });
             }
 
@@ -107,7 +124,9 @@ router.post('/beds/:bedId/photos',
               photo: {
                 id: this.lastID,
                 bed_id: req.params.bedId,
-                photo_path: photoPath,
+                photo_path: thumbnails.original,
+                thumb_path: thumbnails.thumb,
+                medium_path: thumbnails.medium,
                 caption,
                 taken_date
               }
@@ -136,27 +155,21 @@ router.delete('/photos/:id', auth, (req, res) => {
         return res.status(404).json({ error: 'Zdjęcie nie znalezione' });
       }
 
-      // Delete physical file first
-      const filePath = path.join(__dirname, '..', photo.photo_path);
-      fs.unlink(filePath, (unlinkErr) => {
-        if (unlinkErr) {
-          console.error('Error deleting file:', unlinkErr);
-          // Continue anyway - file might not exist
-        }
+      // Delete all versions of the file (original, thumb, medium)
+      deleteAllVersions(photo.photo_path);
 
-        // Delete database record
-        db.run(
-          `DELETE FROM plant_photos WHERE id = ?`,
-          [req.params.id],
-          function (err) {
-            if (err) {
-              return res.status(500).json({ error: 'Błąd podczas usuwania' });
-            }
-
-            res.json({ message: 'Zdjęcie usunięte pomyślnie' });
+      // Delete database record
+      db.run(
+        `DELETE FROM plant_photos WHERE id = ?`,
+        [req.params.id],
+        function (err) {
+          if (err) {
+            return res.status(500).json({ error: 'Błąd podczas usuwania' });
           }
-        );
-      });
+
+          res.json({ message: 'Zdjęcie usunięte pomyślnie' });
+        }
+      );
     }
   );
 });

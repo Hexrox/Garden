@@ -220,7 +220,7 @@ app.get('/api/health', (req, res) => {
 });
 
 // Routes
-app.use('/api/auth', authLimiter, authRoutes);
+app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api', plotRoutes);
 app.use('/api', bedRoutes);
