@@ -44,9 +44,20 @@ router.get('/plots/:id/details', auth, (req, res) => {
       b.plant_name,
       b.plant_variety,
       b.planted_date,
+      b.expected_harvest_date,
+      b.actual_harvest_date,
+      b.yield_amount,
+      b.yield_unit,
       b.note as bed_note,
       b.image_path as bed_image,
       b.created_at as bed_created,
+      pl.category as plant_category,
+      pl.flower_color,
+      pl.bloom_season,
+      pl.height,
+      pl.sun_requirement,
+      pl.latin_name,
+      pl.is_perennial,
       sh.id as spray_id,
       sh.spray_name,
       sh.spray_type,
@@ -59,13 +70,15 @@ router.get('/plots/:id/details', auth, (req, res) => {
       sh.created_at as spray_created
     FROM plots p
     LEFT JOIN beds b ON p.id = b.plot_id
+    LEFT JOIN plants pl ON (b.plant_name = pl.name OR b.plant_name = pl.display_name) AND (pl.user_id = ? OR pl.user_id IS NULL)
     LEFT JOIN spray_history sh ON b.id = sh.bed_id
     WHERE p.id = ? AND p.user_id = ?
     ORDER BY b.row_number, sh.spray_date DESC
   `;
 
-  db.all(query, [plotId, req.user.id], (err, rows) => {
+  db.all(query, [req.user.id, plotId, req.user.id], (err, rows) => {
     if (err) {
+      console.error('Error fetching plot details:', err);
       return res.status(500).json({ error: 'Błąd serwera' });
     }
 
@@ -96,9 +109,21 @@ router.get('/plots/:id/details', auth, (req, res) => {
           plant_name: row.plant_name,
           plant_variety: row.plant_variety,
           planted_date: row.planted_date,
+          expected_harvest_date: row.expected_harvest_date,
+          actual_harvest_date: row.actual_harvest_date,
+          yield_amount: row.yield_amount,
+          yield_unit: row.yield_unit,
           note: row.bed_note,
           image_path: row.bed_image,
           created_at: row.bed_created,
+          // Plant data from JOIN
+          category: row.plant_category,
+          flower_color: row.flower_color,
+          bloom_season: row.bloom_season,
+          height: row.height,
+          sun_requirement: row.sun_requirement,
+          latin_name: row.latin_name,
+          is_perennial: row.is_perennial,
           sprays: []
         });
       }

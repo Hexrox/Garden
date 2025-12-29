@@ -7,6 +7,7 @@ import WeatherWidget from '../components/WeatherWidget';
 import TaskList from '../components/TaskList';
 import UpcomingHarvests from '../components/UpcomingHarvests';
 import SuccessionWidget from '../components/SuccessionWidget';
+import BloomCalendar from '../components/BloomCalendar';
 import OnboardingWizard from '../components/onboarding/OnboardingWizard';
 import WelcomeCard from '../components/onboarding/WelcomeCard';
 import EmailVerificationBanner from '../components/EmailVerificationBanner';
@@ -221,11 +222,12 @@ const Dashboard = () => {
         />
       )}
 
-      {/* Widgets Row - Weather, Tasks, Harvests */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+      {/* Widgets Row - Weather, Tasks, Harvests, Bloom Calendar */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6">
         <WeatherWidget />
         <TaskList />
         <UpcomingHarvests />
+        <BloomCalendar />
       </div>
 
       {/* Succession Planting Widget */}

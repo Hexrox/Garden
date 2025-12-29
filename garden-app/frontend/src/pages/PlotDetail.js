@@ -307,11 +307,41 @@ const PlotDetail = () => {
                     <h3 className="text-sm font-medium text-gray-900 dark:text-white">
                       Rząd {bed.row_number} - {bed.plant_name || 'Brak rośliny'}
                     </h3>
+                    {bed.latin_name && (
+                      <p className="text-xs text-gray-500 dark:text-gray-400 italic mt-0.5">{bed.latin_name}</p>
+                    )}
                     {bed.plant_variety && (
                       <p className="text-sm text-gray-600 dark:text-gray-400">Odmiana: {bed.plant_variety}</p>
                     )}
+
+                    {/* Flower-specific data */}
+                    {(bed.flower_color || bed.bloom_season || bed.height || bed.sun_requirement) && (
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {bed.flower_color && (
+                          <span className="text-xs bg-pink-100 dark:bg-pink-900 text-pink-800 dark:text-pink-200 px-2 py-1 rounded-full">
+                            🌸 {bed.flower_color.split(',')[0]}
+                          </span>
+                        )}
+                        {bed.bloom_season && (
+                          <span className="text-xs bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-2 py-1 rounded-full">
+                            📅 {bed.bloom_season}
+                          </span>
+                        )}
+                        {bed.height && (
+                          <span className="text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded-full">
+                            📏 {bed.height}
+                          </span>
+                        )}
+                        {bed.sun_requirement && (
+                          <span className="text-xs bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 px-2 py-1 rounded-full">
+                            ☀️ {bed.sun_requirement === 'full_sun' ? 'Pełne słońce' : bed.sun_requirement === 'partial_shade' ? 'Półcień' : 'Cień'}
+                          </span>
+                        )}
+                      </div>
+                    )}
+
                     {bed.planted_date && (
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Posadzone: {bed.planted_date}</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">Posadzone: {bed.planted_date}</p>
                     )}
                     {bed.expected_harvest_date && !bed.actual_harvest_date && (
                       <p className="text-sm text-green-700 dark:text-green-400 font-medium mt-1">
