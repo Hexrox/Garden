@@ -17,6 +17,11 @@ import PlotDetail from './pages/PlotDetail';
 import PlotForm from './pages/PlotForm';
 import SprayHistory from './pages/SprayHistory';
 import CareForm from './pages/CareForm';
+import FertilizationSchedule from './pages/FertilizationSchedule';
+import BloomTimeline from './pages/BloomTimeline';
+import WinterProtection from './pages/WinterProtection';
+import PropagationTracking from './pages/PropagationTracking';
+import DeadheadingReminders from './pages/DeadheadingReminders';
 import Reminders from './pages/Reminders';
 import Export from './pages/Export';
 import Profile from './pages/Profile';
@@ -198,6 +203,46 @@ function AppRoutes() {
           element={
             <ProtectedRoute forceRender={forceRender}>
               <SprayHistory />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/fertilization"
+          element={
+            <ProtectedRoute forceRender={forceRender}>
+              <FertilizationSchedule />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/bloom-timeline"
+          element={
+            <ProtectedRoute forceRender={forceRender}>
+              <BloomTimeline />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/winter-protection"
+          element={
+            <ProtectedRoute forceRender={forceRender}>
+              <WinterProtection />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/propagation"
+          element={
+            <ProtectedRoute forceRender={forceRender}>
+              <PropagationTracking />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/deadheading"
+          element={
+            <ProtectedRoute forceRender={forceRender}>
+              <DeadheadingReminders />
             </ProtectedRoute>
           }
         />

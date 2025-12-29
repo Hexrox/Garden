@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from '../config/axios';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, X, Sprout, Flower2, Leaf } from 'lucide-react';
+import { seasonalHints } from '../data/seasonalHints';
 
 /**
  * Strona Kalendarza
@@ -185,6 +186,92 @@ const Calendar = () => {
             </div>
           </div>
         </div>
+
+        {/* Seasonal Hints Section */}
+        {seasonalHints[month + 1] && (
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+            {/* Header */}
+            <div className={`p-4 ${
+              seasonalHints[month + 1].priority === 'high'
+                ? 'bg-gradient-to-r from-green-500 to-emerald-600'
+                : seasonalHints[month + 1].priority === 'medium'
+                ? 'bg-gradient-to-r from-yellow-500 to-orange-500'
+                : 'bg-gradient-to-r from-blue-400 to-cyan-500'
+            }`}>
+              <div className="flex items-center gap-3">
+                <span className="text-4xl">{seasonalHints[month + 1].icon}</span>
+                <div className="flex-1">
+                  <h3 className="text-xl font-bold text-white">
+                    Co robić w {seasonalHints[month + 1].month.toLowerCase()}?
+                  </h3>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-xs font-semibold text-white/90 bg-white/20 px-2 py-0.5 rounded-full uppercase">
+                      {seasonalHints[month + 1].priority === 'high' && 'Wysoki priorytet'}
+                      {seasonalHints[month + 1].priority === 'medium' && 'Średni priorytet'}
+                      {seasonalHints[month + 1].priority === 'low' && 'Niski priorytet'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4 space-y-4">
+              {/* Vegetables Section */}
+              {seasonalHints[month + 1].vegetables.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Sprout className="text-green-600 dark:text-green-400" size={20} />
+                    <h4 className="font-bold text-gray-900 dark:text-white">Warzywa i zioła</h4>
+                  </div>
+                  <ul className="space-y-2">
+                    {seasonalHints[month + 1].vegetables.map((tip, idx) => (
+                      <li key={idx} className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
+                        <span className="text-green-500 mt-0.5">•</span>
+                        <span>{tip}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Flowers Section */}
+              {seasonalHints[month + 1].flowers.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Flower2 className="text-pink-600 dark:text-pink-400" size={20} />
+                    <h4 className="font-bold text-gray-900 dark:text-white">Kwiaty i rośliny ozdobne</h4>
+                  </div>
+                  <ul className="space-y-2">
+                    {seasonalHints[month + 1].flowers.map((tip, idx) => (
+                      <li key={idx} className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
+                        <span className="text-pink-500 mt-0.5">•</span>
+                        <span>{tip}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* General Section */}
+              {seasonalHints[month + 1].general.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Leaf className="text-blue-600 dark:text-blue-400" size={20} />
+                    <h4 className="font-bold text-gray-900 dark:text-white">Ogólne prace</h4>
+                  </div>
+                  <ul className="space-y-2">
+                    {seasonalHints[month + 1].general.map((tip, idx) => (
+                      <li key={idx} className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
+                        <span className="text-blue-500 mt-0.5">•</span>
+                        <span>{tip}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Calendar Grid */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
