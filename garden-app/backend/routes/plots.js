@@ -357,7 +357,7 @@ router.delete('/plots/:id', auth, (req, res) => {
  * Eliminates N+1 problem - returns all plots with beds in single query
  * Used by flower tracking components (BloomTimeline, WinterProtection, etc.)
  */
-router.get('/plots/all-with-details', auth, (req, res) => {
+router.get('/all-with-details', auth, (req, res) => {
   const query = `
     SELECT
       p.id as plot_id,
