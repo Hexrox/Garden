@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Users,
   LayoutGrid,
   CheckSquare,
   Droplets,
-  Database,
   TrendingUp,
   Clock,
   MapPin,
@@ -34,17 +33,7 @@ const AdminPanel = () => {
   const [userToDelete, setUserToDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
-  useEffect(() => {
-    // Sprawdź czy użytkownik to admin
-    if (!user || user.username !== 'admin') {
-      navigate('/dashboard');
-      return;
-    }
-
-    fetchAdminStats();
-  }, [user, navigate]);
-
-  const fetchAdminStats = async () => {
+  const fetchAdminStats = useCallback(async () => {
     try {
       setLoading(true);
       const response = await axios.get('/api/admin/stats');
@@ -63,7 +52,17 @@ const AdminPanel = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [navigate]);
+
+  useEffect(() => {
+    // Sprawdź czy użytkownik to admin
+    if (!user || user.username !== 'admin') {
+      navigate('/dashboard');
+      return;
+    }
+
+    fetchAdminStats();
+  }, [user, navigate, fetchAdminStats]);
 
   const handleDeleteUser = async () => {
     if (!userToDelete) return;

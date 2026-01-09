@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import axios from '../config/axios';
 import { useAuth } from '../context/AuthContext';
@@ -72,6 +72,37 @@ const Profile = () => {
     }
   }, [location.city]);
 
+  const checkUsernameAvailability = useCallback(async (username) => {
+    // Validate format first
+    if (!/^[a-zA-Z0-9_-]{3,30}$/.test(username)) {
+      setUsernameAvailable(false);
+      return;
+    }
+
+    // If it's our own username, it's available
+    if (username === originalUsername) {
+      setUsernameAvailable(true);
+      return;
+    }
+
+    try {
+      setCheckingUsername(true);
+      // Try to fetch the public profile with this username
+      await axios.get(`/api/g/${username}`);
+      // If we get a response, username is taken by someone else
+      setUsernameAvailable(false);
+    } catch (error) {
+      // If 404, username is available
+      if (error.response?.status === 404) {
+        setUsernameAvailable(true);
+      } else {
+        setUsernameAvailable(null);
+      }
+    } finally {
+      setCheckingUsername(false);
+    }
+  }, [originalUsername]);
+
   // Debounce username validation
   useEffect(() => {
     if (publicProfile.username.length >= 3) {
@@ -84,7 +115,7 @@ const Profile = () => {
     } else {
       setUsernameAvailable(null);
     }
-  }, [publicProfile.username]);
+  }, [publicProfile.username, checkUsernameAvailability]);
 
   const loadAnalytics = async () => {
     try {
@@ -297,36 +328,6 @@ const Profile = () => {
   };
 
   // Public profile handlers
-  const checkUsernameAvailability = async (username) => {
-    // Validate format first
-    if (!/^[a-zA-Z0-9_-]{3,30}$/.test(username)) {
-      setUsernameAvailable(false);
-      return;
-    }
-
-    // If it's our own username, it's available
-    if (username === originalUsername) {
-      setUsernameAvailable(true);
-      return;
-    }
-
-    try {
-      setCheckingUsername(true);
-      // Try to fetch the public profile with this username
-      const response = await axios.get(`/api/g/${username}`);
-      // If we get a response, username is taken by someone else
-      setUsernameAvailable(false);
-    } catch (error) {
-      // If 404, username is available
-      if (error.response?.status === 404) {
-        setUsernameAvailable(true);
-      } else {
-        setUsernameAvailable(null);
-      }
-    } finally {
-      setCheckingUsername(false);
-    }
-  };
 
   const sanitizeSlug = (text) => {
     return text
@@ -379,7 +380,7 @@ const Profile = () => {
 
     try {
       setSavingPublic(true);
-      const response = await axios.post('/api/profile/public', publicProfile);
+      await axios.post('/api/profile/public', publicProfile);
 
       setPublicMessage({
         type: 'success',

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from '../config/axios';
 import { Plus, X } from 'lucide-react';
@@ -17,11 +17,7 @@ const SprayHistory = () => {
   const [loadingPlots, setLoadingPlots] = useState(false);
   const [loadingBeds, setLoadingBeds] = useState(false);
 
-  useEffect(() => {
-    loadSprays();
-  }, [filter]);
-
-  const loadSprays = async () => {
+  const loadSprays = useCallback(async () => {
     try {
       const endpoint = filter === 'active' ? '/api/sprays/active' : '/api/care/user/all';
       const response = await axios.get(endpoint);
@@ -31,7 +27,11 @@ const SprayHistory = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filter]);
+
+  useEffect(() => {
+    loadSprays();
+  }, [loadSprays]);
 
   const isWithinWithdrawalPeriod = (safeHarvestDate) => {
     const today = new Date();

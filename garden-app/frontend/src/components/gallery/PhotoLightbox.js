@@ -16,7 +16,7 @@ const PhotoLightbox = ({ photo, photos, onClose, onNavigate, onDelete, onUpdateC
   useEffect(() => {
     setCaption(photo.caption || '');
     setIsEditingCaption(false);
-  }, [photo.id]);
+  }, [photo.id, photo.caption]);
 
   useEffect(() => {
     const handleKeyPress = (e) => {

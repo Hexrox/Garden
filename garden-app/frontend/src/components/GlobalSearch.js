@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, X, Image, Sprout, CheckSquare, MapPin, Calendar } from 'lucide-react';
+import { Search, X, Image, Sprout, CheckSquare, MapPin } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import axios from '../config/axios';
 

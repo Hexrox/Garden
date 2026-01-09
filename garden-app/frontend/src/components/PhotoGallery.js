@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from '../config/axios';
 import PhotoTimeline from '../features/photo-timeline/PhotoTimeline';
 import { Upload, Camera } from 'lucide-react';
@@ -14,13 +14,7 @@ const PhotoGallery = ({ bedId }) => {
   const [message, setMessage] = useState({ type: '', text: '' });
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (bedId) {
-      fetchPhotos();
-    }
-  }, [bedId]);
-
-  const fetchPhotos = async () => {
+  const fetchPhotos = useCallback(async () => {
     try {
       const response = await axios.get(`/api/beds/${bedId}/photos`);
       setPhotos(response.data);
@@ -29,7 +23,13 @@ const PhotoGallery = ({ bedId }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [bedId]);
+
+  useEffect(() => {
+    if (bedId) {
+      fetchPhotos();
+    }
+  }, [bedId, fetchPhotos]);
 
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files[0]) {

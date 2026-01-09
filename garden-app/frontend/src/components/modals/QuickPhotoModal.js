@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { X, Camera, Image as ImageIcon, Check } from 'lucide-react';
 import axios from '../../config/axios';
 
@@ -42,6 +42,24 @@ const QuickPhotoModal = ({ isOpen, onClose, onSuccess }) => {
     };
   }, []);
 
+  const loadPlots = useCallback(async () => {
+    try {
+      const response = await axios.get('/api/plots');
+      setPlots(response.data);
+    } catch (error) {
+      console.error('Error loading plots:', error);
+    }
+  }, []);
+
+  const loadBeds = useCallback(async (plotId) => {
+    try {
+      const response = await axios.get(`/api/plots/${plotId}/beds`);
+      setBeds(response.data.filter(bed => !bed.actual_harvest_date)); // Only active beds
+    } catch (error) {
+      console.error('Error loading beds:', error);
+    }
+  }, []);
+
   // Reset state when modal closes
   useEffect(() => {
     if (isOpen) {
@@ -62,7 +80,7 @@ const QuickPhotoModal = ({ isOpen, onClose, onSuccess }) => {
       setUploading(false);
       setProcessingPhoto(false);
     }
-  }, [isOpen]);
+  }, [isOpen, plots.length, loadPlots]);
 
   useEffect(() => {
     if (selectedPlot) {
@@ -71,25 +89,7 @@ const QuickPhotoModal = ({ isOpen, onClose, onSuccess }) => {
       setBeds([]);
       setSelectedBed('');
     }
-  }, [selectedPlot]);
-
-  const loadPlots = async () => {
-    try {
-      const response = await axios.get('/api/plots');
-      setPlots(response.data);
-    } catch (error) {
-      console.error('Error loading plots:', error);
-    }
-  };
-
-  const loadBeds = async (plotId) => {
-    try {
-      const response = await axios.get(`/api/plots/${plotId}/beds`);
-      setBeds(response.data.filter(bed => !bed.actual_harvest_date)); // Only active beds
-    } catch (error) {
-      console.error('Error loading beds:', error);
-    }
-  };
+  }, [selectedPlot, loadBeds]);
 
   const handlePhotoSelect = (e) => {
     const file = e.target.files[0];

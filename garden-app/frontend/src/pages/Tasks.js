@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from '../config/axios';
 import { CheckSquare, Plus, Calendar, AlertCircle, Sparkles, Trash2, Check, Repeat } from 'lucide-react';
 
@@ -26,11 +26,7 @@ const Tasks = () => {
     recurrence_times: ['anytime']
   });
 
-  useEffect(() => {
-    fetchTasks();
-  }, [filter]);
-
-  const fetchTasks = async () => {
+  const fetchTasks = useCallback(async () => {
     try {
       setLoading(true);
       let url = '/api/tasks';
@@ -50,7 +46,11 @@ const Tasks = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filter]);
+
+  useEffect(() => {
+    fetchTasks();
+  }, [fetchTasks]);
 
   const generateSmartTasks = async () => {
     try {

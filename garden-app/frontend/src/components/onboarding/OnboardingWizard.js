@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, ChevronRight, ChevronLeft, Check, MapPin, Sprout, Camera, Sparkles } from 'lucide-react';
+import { X, ChevronRight, ChevronLeft, Check, MapPin, Sprout, Sparkles } from 'lucide-react';
 import axios from '../../config/axios';
 import TemplateSelectionStep from './TemplateSelectionStep';
 

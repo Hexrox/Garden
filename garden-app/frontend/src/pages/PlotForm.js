@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from '../config/axios';
 
@@ -18,13 +18,7 @@ const PlotForm = () => {
   const [error, setError] = useState('');
   const [loadingPlot, setLoadingPlot] = useState(isEditMode);
 
-  useEffect(() => {
-    if (isEditMode) {
-      loadPlot();
-    }
-  }, [id]);
-
-  const loadPlot = async () => {
+  const loadPlot = useCallback(async () => {
     try {
       const response = await axios.get(`/api/plots/${id}`);
       setFormData({
@@ -40,7 +34,13 @@ const PlotForm = () => {
     } finally {
       setLoadingPlot(false);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    if (isEditMode) {
+      loadPlot();
+    }
+  }, [isEditMode, loadPlot]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;

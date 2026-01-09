@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import { Sprout, Calendar, Image as ImageIcon, Share2, Home, X, Instagram, Award } from 'lucide-react';
@@ -12,11 +12,7 @@ const PublicProfile = () => {
   const [showShareModal, setShowShareModal] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
 
-  useEffect(() => {
-    loadPublicProfile();
-  }, [username]);
-
-  const loadPublicProfile = async () => {
+  const loadPublicProfile = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -28,7 +24,11 @@ const PublicProfile = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [username]);
+
+  useEffect(() => {
+    loadPublicProfile();
+  }, [loadPublicProfile]);
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -106,19 +106,6 @@ const PublicProfile = () => {
         return 'from-orange-400 to-orange-600';
       default:
         return 'from-gray-400 to-gray-600';
-    }
-  };
-
-  const getBadgeBorder = (tier) => {
-    switch (tier) {
-      case 'gold':
-        return 'border-yellow-300 dark:border-yellow-600';
-      case 'silver':
-        return 'border-gray-400 dark:border-gray-500';
-      case 'bronze':
-        return 'border-orange-300 dark:border-orange-500';
-      default:
-        return 'border-gray-300 dark:border-gray-600';
     }
   };
 

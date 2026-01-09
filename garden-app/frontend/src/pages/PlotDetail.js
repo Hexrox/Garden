@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { MoreVertical, Edit2, Copy, Trash2 } from 'lucide-react';
 import axios from '../config/axios';
@@ -35,11 +35,7 @@ const PlotDetail = () => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [openMenuId, setOpenMenuId] = useState(null);
 
-  useEffect(() => {
-    loadPlotDetails();
-  }, [id]);
-
-  const loadPlotDetails = async () => {
+  const loadPlotDetails = useCallback(async () => {
     try {
       const response = await axios.get(`/api/plots/${id}/details`);
       setPlot(response.data);
@@ -48,7 +44,11 @@ const PlotDetail = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    loadPlotDetails();
+  }, [loadPlotDetails]);
 
   const handleAddBed = async (e) => {
     e.preventDefault();

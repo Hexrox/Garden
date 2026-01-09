@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Image as ImageIcon, Filter, Upload, X, CheckSquare, Trash2, Download } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Image as ImageIcon, Filter, Upload, X, CheckSquare, Trash2 } from 'lucide-react';
 import axios from '../config/axios';
 import GalleryGrid from '../components/gallery/GalleryGrid';
 import GalleryFilters from '../components/gallery/GalleryFilters';
@@ -31,45 +31,7 @@ const Gallery = () => {
 
   const PHOTOS_PER_PAGE = 20;
 
-  useEffect(() => {
-    // Reset to page 0 when filters change
-    setPage(0);
-    setPhotos([]);
-    setHasMore(true);
-    loadGallery(0, true);
-    loadStats();
-  }, [filters]);
-
-  // Listen for new photos added via QuickPhoto modal
-  useEffect(() => {
-    const handlePhotoAdded = () => {
-      setPage(0);
-      setPhotos([]);
-      setHasMore(true);
-      loadGallery(0, true);
-      loadStats();
-    };
-
-    window.addEventListener('photoAdded', handlePhotoAdded);
-    return () => window.removeEventListener('photoAdded', handlePhotoAdded);
-  }, []);
-
-  // Infinite scroll detection
-  useEffect(() => {
-    const handleScroll = () => {
-      // Check if user scrolled near bottom (within 200px)
-      const scrolledToBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 200;
-
-      if (scrolledToBottom && hasMore && !loading && !loadingMore) {
-        loadGallery();
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [hasMore, loading, loadingMore, page]);
-
-  const loadGallery = async (pageNum = page, reset = false) => {
+  const loadGallery = useCallback(async (pageNum = page, reset = false) => {
     if (!hasMore && !reset) return;
 
     try {
@@ -108,7 +70,45 @@ const Gallery = () => {
       setLoading(false);
       setLoadingMore(false);
     }
-  };
+  }, [page, hasMore, filters]);
+
+  useEffect(() => {
+    // Reset to page 0 when filters change
+    setPage(0);
+    setPhotos([]);
+    setHasMore(true);
+    loadGallery(0, true);
+    loadStats();
+  }, [filters, loadGallery]);
+
+  // Listen for new photos added via QuickPhoto modal
+  useEffect(() => {
+    const handlePhotoAdded = () => {
+      setPage(0);
+      setPhotos([]);
+      setHasMore(true);
+      loadGallery(0, true);
+      loadStats();
+    };
+
+    window.addEventListener('photoAdded', handlePhotoAdded);
+    return () => window.removeEventListener('photoAdded', handlePhotoAdded);
+  }, [loadGallery]);
+
+  // Infinite scroll detection
+  useEffect(() => {
+    const handleScroll = () => {
+      // Check if user scrolled near bottom (within 200px)
+      const scrolledToBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 200;
+
+      if (scrolledToBottom && hasMore && !loading && !loadingMore) {
+        loadGallery();
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [hasMore, loading, loadingMore, page, loadGallery]);
 
   const loadStats = async () => {
     try {

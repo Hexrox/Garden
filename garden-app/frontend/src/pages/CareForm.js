@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from '../config/axios';
 
@@ -42,21 +42,65 @@ const CareForm = () => {
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
 
+  const loadBedInfo = useCallback(async () => {
+    try {
+      const response = await axios.get(`/api/beds/${bedId}`);
+      setBedInfo(response.data);
+    } catch (error) {
+      setError('Nie udało się załadować informacji o grządce');
+      console.error('Error loading bed:', error);
+    } finally {
+      setLoadingBed(false);
+    }
+  }, [bedId]);
+
+  const calculateSafeHarvestDate = useCallback(() => {
+    if (formData.action_date && formData.withdrawal_period) {
+      const sprayDate = new Date(formData.action_date);
+      const withdrawalDays = parseInt(formData.withdrawal_period);
+
+      if (!isNaN(withdrawalDays) && withdrawalDays >= 0) {
+        sprayDate.setDate(sprayDate.getDate() + withdrawalDays);
+        setSafeHarvestDate(sprayDate.toISOString().split('T')[0]);
+      } else {
+        setSafeHarvestDate('');
+      }
+    } else {
+      setSafeHarvestDate('');
+    }
+  }, [formData.action_date, formData.withdrawal_period]);
+
+  const calculateNextApplicationDate = useCallback(() => {
+    if (formData.action_date && formData.repeat_frequency) {
+      const currentDate = new Date(formData.action_date);
+      const frequencyDays = parseInt(formData.repeat_frequency);
+
+      if (!isNaN(frequencyDays) && frequencyDays > 0) {
+        currentDate.setDate(currentDate.getDate() + frequencyDays);
+        setNextApplicationDate(currentDate.toISOString().split('T')[0]);
+      } else {
+        setNextApplicationDate('');
+      }
+    } else {
+      setNextApplicationDate('');
+    }
+  }, [formData.action_date, formData.repeat_frequency]);
+
   useEffect(() => {
     loadBedInfo();
-  }, [bedId]);
+  }, [loadBedInfo]);
 
   useEffect(() => {
     if (actionType === 'spray') {
       calculateSafeHarvestDate();
     }
-  }, [formData.action_date, formData.withdrawal_period, actionType]);
+  }, [actionType, calculateSafeHarvestDate]);
 
   useEffect(() => {
     if (actionType === 'fertilization' && formData.is_recurring && formData.repeat_frequency) {
       calculateNextApplicationDate();
     }
-  }, [formData.action_date, formData.repeat_frequency, formData.is_recurring, actionType]);
+  }, [actionType, formData.is_recurring, formData.repeat_frequency, calculateNextApplicationDate]);
 
   // Autocomplete debounced search
   useEffect(() => {
@@ -92,50 +136,6 @@ const CareForm = () => {
 
     return () => clearTimeout(timer);
   }, [formData.action_name, actionType]);
-
-  const loadBedInfo = async () => {
-    try {
-      const response = await axios.get(`/api/beds/${bedId}`);
-      setBedInfo(response.data);
-    } catch (error) {
-      setError('Nie udało się załadować informacji o grządce');
-      console.error('Error loading bed:', error);
-    } finally {
-      setLoadingBed(false);
-    }
-  };
-
-  const calculateSafeHarvestDate = () => {
-    if (formData.action_date && formData.withdrawal_period) {
-      const sprayDate = new Date(formData.action_date);
-      const withdrawalDays = parseInt(formData.withdrawal_period);
-
-      if (!isNaN(withdrawalDays) && withdrawalDays >= 0) {
-        sprayDate.setDate(sprayDate.getDate() + withdrawalDays);
-        setSafeHarvestDate(sprayDate.toISOString().split('T')[0]);
-      } else {
-        setSafeHarvestDate('');
-      }
-    } else {
-      setSafeHarvestDate('');
-    }
-  };
-
-  const calculateNextApplicationDate = () => {
-    if (formData.action_date && formData.repeat_frequency) {
-      const currentDate = new Date(formData.action_date);
-      const frequencyDays = parseInt(formData.repeat_frequency);
-
-      if (!isNaN(frequencyDays) && frequencyDays > 0) {
-        currentDate.setDate(currentDate.getDate() + frequencyDays);
-        setNextApplicationDate(currentDate.toISOString().split('T')[0]);
-      } else {
-        setNextApplicationDate('');
-      }
-    } else {
-      setNextApplicationDate('');
-    }
-  };
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;

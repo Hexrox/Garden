@@ -15,7 +15,6 @@ const Help = () => {
   const [content, setContent] = useState('');
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeSection, setActiveSection] = useState('');
   const [expandedSections, setExpandedSections] = useState(new Set(['quick-start'])); // Start with first section expanded
 
   useEffect(() => {

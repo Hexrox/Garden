@@ -1,31 +1,51 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Calendar, Flower, ChevronRight } from 'lucide-react';
 import axios from '../config/axios';
+
+// Month names constants
+const monthNames = [
+  'Styczeń', 'Luty', 'Marzec', 'Kwiecień', 'Maj', 'Czerwiec',
+  'Lipiec', 'Sierpień', 'Wrzesień', 'Październik', 'Listopad', 'Grudzień'
+];
+
+const monthNamesEn = [
+  'january', 'february', 'march', 'april', 'may', 'june',
+  'july', 'august', 'september', 'october', 'november', 'december'
+];
+
+// Helper function to filter plants by month
+const filterByMonth = (plants, month) => {
+  const monthNamePl = monthNames[month - 1].toLowerCase();
+  const monthNameEn = monthNamesEn[month - 1].toLowerCase();
+
+  return plants.filter(plant => {
+    if (!plant.bloom_season) return false;
+
+    const bloomSeason = plant.bloom_season.toLowerCase();
+
+    // Check if month name is in bloom_season string
+    // Examples: "czerwiec-wrzesień", "maj-czerwiec", "lato", "cały sezon"
+    return (
+      bloomSeason.includes(monthNamePl) ||
+      bloomSeason.includes(monthNameEn) ||
+      (month >= 6 && month <= 8 && bloomSeason.includes('lato')) ||
+      (month >= 3 && month <= 5 && bloomSeason.includes('wiosna')) ||
+      (month >= 9 && month <= 11 && bloomSeason.includes('jesień')) ||
+      bloomSeason.includes('cały sezon')
+    );
+  });
+};
 
 /**
  * BloomCalendar - Widget showing what's blooming now and next month
  */
 const BloomCalendar = () => {
-  const [currentMonth, setCurrentMonth] = useState(new Date().getMonth() + 1); // 1-12
+  const [currentMonth] = useState(new Date().getMonth() + 1); // 1-12
   const [bloomingNow, setBloomingNow] = useState([]);
   const [bloomingNext, setBloomingNext] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const monthNames = [
-    'Styczeń', 'Luty', 'Marzec', 'Kwiecień', 'Maj', 'Czerwiec',
-    'Lipiec', 'Sierpień', 'Wrzesień', 'Październik', 'Listopad', 'Grudzień'
-  ];
-
-  const monthNamesEn = [
-    'january', 'february', 'march', 'april', 'may', 'june',
-    'july', 'august', 'september', 'october', 'november', 'december'
-  ];
-
-  useEffect(() => {
-    fetchBloomingPlants();
-  }, []);
-
-  const fetchBloomingPlants = async () => {
+  const fetchBloomingPlants = useCallback(async () => {
     try {
       const response = await axios.get('/api/plants');
       const plants = response.data;
@@ -42,29 +62,11 @@ const BloomCalendar = () => {
       console.error('Error fetching blooming plants:', error);
       setLoading(false);
     }
-  };
+  }, [currentMonth]);
 
-  const filterByMonth = (plants, month) => {
-    const monthNamePl = monthNames[month - 1].toLowerCase();
-    const monthNameEn = monthNamesEn[month - 1].toLowerCase();
-
-    return plants.filter(plant => {
-      if (!plant.bloom_season) return false;
-
-      const bloomSeason = plant.bloom_season.toLowerCase();
-
-      // Check if month name is in bloom_season string
-      // Examples: "czerwiec-wrzesień", "maj-czerwiec", "lato", "cały sezon"
-      return (
-        bloomSeason.includes(monthNamePl) ||
-        bloomSeason.includes(monthNameEn) ||
-        (month >= 6 && month <= 8 && bloomSeason.includes('lato')) ||
-        (month >= 3 && month <= 5 && bloomSeason.includes('wiosna')) ||
-        (month >= 9 && month <= 11 && bloomSeason.includes('jesień')) ||
-        bloomSeason.includes('cały sezon')
-      );
-    });
-  };
+  useEffect(() => {
+    fetchBloomingPlants();
+  }, [fetchBloomingPlants]);
 
   const getFlowerIcon = (category) => {
     if (category === 'flower_perennial') return '🌸';

@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
 import axios from '../config/axios';
 
 const AuthContext = createContext();
@@ -33,6 +33,14 @@ export const AuthProvider = ({ children }) => {
     }
   }, [loading]);
 
+  const logout = useCallback(() => {
+    localStorage.removeItem('token');
+    setToken(null);
+    setUser(null);
+    delete axios.defaults.headers.common['Authorization'];
+  }, []);
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     // Fallback timeout to prevent infinite loading (max 3 seconds)
     const fallbackTimeout = setTimeout(() => {
@@ -100,7 +108,8 @@ export const AuthProvider = ({ children }) => {
       setLoading(false);
       clearTimeout(fallbackTimeout);
     }
-  }, [token]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token, logout]);
 
   const login = async (email, password) => {
     try {
@@ -151,13 +160,6 @@ export const AuthProvider = ({ children }) => {
         error: error.response?.data?.error || 'Błąd rejestracji'
       };
     }
-  };
-
-  const logout = () => {
-    localStorage.removeItem('token');
-    setToken(null);
-    setUser(null);
-    delete axios.defaults.headers.common['Authorization'];
   };
 
   const value = {

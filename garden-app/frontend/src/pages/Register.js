@@ -42,7 +42,7 @@ const Register = () => {
       return;
     }
 
-    if (!/[@$!%*?&#^()_+\-=\[\]{}|;:,.<>~]/.test(password)) {
+    if (!/[@$!%*?&#^()_+\-=[\]{}|;:,.<>~]/.test(password)) {
       setError('Hasło musi zawierać przynajmniej jeden znak specjalny (@$!%*?&#^()_+-=[]{}|;:,.<>~)');
       return;
     }

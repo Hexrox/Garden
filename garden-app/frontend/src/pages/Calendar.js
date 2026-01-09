@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from '../config/axios';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, X, Sprout, Flower2, Leaf } from 'lucide-react';
 import { seasonalHints } from '../data/seasonalHints';
@@ -17,15 +17,9 @@ const Calendar = () => {
   const [events, setEvents] = useState([]);
   const [moonPhases, setMoonPhases] = useState([]);
   const [selectedDay, setSelectedDay] = useState(null);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchEvents();
-  }, [currentDate]);
-
-  const fetchEvents = async () => {
+  const fetchEvents = useCallback(async () => {
     try {
-      setLoading(true);
       const year = currentDate.getFullYear();
       const month = currentDate.getMonth() + 1;
 
@@ -76,10 +70,12 @@ const Calendar = () => {
       setEvents(allEvents);
     } catch (err) {
       console.error('Error fetching events:', err);
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [currentDate]);
+
+  useEffect(() => {
+    fetchEvents();
+  }, [fetchEvents]);
 
   // Calendar calculations
   const year = currentDate.getFullYear();

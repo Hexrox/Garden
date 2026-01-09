@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from '../config/axios';
 
 const TaskList = () => {
@@ -24,26 +24,7 @@ const TaskList = () => {
   const [dragOverTask, setDragOverTask] = useState(null);
   const [isTouchDevice, setIsTouchDevice] = useState(false);
 
-  useEffect(() => {
-    fetchTasks();
-  }, [filter]);
-
-  useEffect(() => {
-    checkIfHasAnyTasks();
-    // Detect if touch device
-    setIsTouchDevice('ontouchstart' in window || navigator.maxTouchPoints > 0);
-  }, []);
-
-  const checkIfHasAnyTasks = async () => {
-    try {
-      const response = await axios.get('/api/tasks');
-      setHasAnyTasks(response.data.length > 0);
-    } catch (err) {
-      console.error('Error checking tasks:', err);
-    }
-  };
-
-  const fetchTasks = async () => {
+  const fetchTasks = useCallback(async () => {
     try {
       setLoading(true);
       let url = '/api/tasks';
@@ -74,6 +55,25 @@ const TaskList = () => {
       console.error('Error fetching tasks:', err);
     } finally {
       setLoading(false);
+    }
+  }, [filter]);
+
+  useEffect(() => {
+    fetchTasks();
+  }, [fetchTasks]);
+
+  useEffect(() => {
+    checkIfHasAnyTasks();
+    // Detect if touch device
+    setIsTouchDevice('ontouchstart' in window || navigator.maxTouchPoints > 0);
+  }, []);
+
+  const checkIfHasAnyTasks = async () => {
+    try {
+      const response = await axios.get('/api/tasks');
+      setHasAnyTasks(response.data.length > 0);
+    } catch (err) {
+      console.error('Error checking tasks:', err);
     }
   };
 

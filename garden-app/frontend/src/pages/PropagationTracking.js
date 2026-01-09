@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Scissors, Calendar, CheckCircle, Clock, Info, AlertCircle } from 'lucide-react';
+import { Scissors, CheckCircle, Clock, Info, AlertCircle } from 'lucide-react';
 import usePlotDetails from '../hooks/usePlotDetails';
 
 /**
