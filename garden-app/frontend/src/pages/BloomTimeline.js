@@ -282,7 +282,7 @@ const BloomTimeline = () => {
                       {month.num === new Date().getMonth() + 1 && (
                         <div className="text-xs text-pink-600 dark:text-pink-400">●</div>
                       )}
-                    </div>
+                    </button>
                   ))}
                 </div>
 
