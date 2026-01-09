@@ -1,6 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import axios from '../config/axios';
+import React, { useMemo } from 'react';
 import { Scissors, Calendar, CheckCircle, Clock, Info, AlertCircle } from 'lucide-react';
+import usePlotDetails from '../hooks/usePlotDetails';
+
+/**
+ * Calculate plant age in years from planted date string
+ */
+const calculateAge = (plantedDateStr) => {
+  if (!plantedDateStr) return null;
+  const plantedDate = new Date(plantedDateStr);
+  if (isNaN(plantedDate)) return null;
+  const now = new Date();
+  return Math.floor((now - plantedDate) / (365.25 * 24 * 60 * 60 * 1000));
+};
 
 /**
  * Propagation Tracking - Śledzenie dzielenia bylin
@@ -8,53 +19,23 @@ import { Scissors, Calendar, CheckCircle, Clock, Info, AlertCircle } from 'lucid
  * Pomaga śledzić, kiedy byliny zostały podzielone i kiedy trzeba je znowu podzielić
  */
 const PropagationTracking = () => {
-  const [perennials, setPerennials] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { beds, loading, error, refetch } = usePlotDetails();
 
-  useEffect(() => {
-    fetchPerennials();
-  }, []);
-
-  const fetchPerennials = async () => {
-    try {
-      setLoading(true);
-      const response = await axios.get('/api/plots');
-
-      // Extract all perennial plants from all plots
-      const allPerennials = [];
-      for (const plot of response.data) {
-        const detailsResponse = await axios.get(`/api/plots/${plot.id}/details`);
-        const beds = detailsResponse.data.beds || [];
-
-        // Filter only perennials
-        const perennialBeds = beds.filter(bed =>
-          bed.plant_name && bed.category === 'flower_perennial'
-        );
-
-        perennialBeds.forEach(bed => {
-          const plantedDate = bed.planted_date ? new Date(bed.planted_date) : null;
-          const yearsOld = plantedDate ? Math.floor((new Date() - plantedDate) / (365.25 * 24 * 60 * 60 * 1000)) : null;
-
-          allPerennials.push({
-            id: bed.id,
-            name: bed.plant_name,
-            variety: bed.plant_variety,
-            plot_name: plot.name,
-            row_number: bed.row_number,
-            planted_date: bed.planted_date,
-            years_old: yearsOld,
-            note: bed.note
-          });
-        });
-      }
-
-      setPerennials(allPerennials);
-    } catch (err) {
-      console.error('Error fetching perennials:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Filter only perennial plants
+  const perennials = useMemo(() => {
+    return beds.filter(bed =>
+      bed.plant_name && bed.category === 'flower_perennial'
+    ).map(bed => ({
+      id: bed.id,
+      name: bed.plant_name,
+      variety: bed.plant_variety,
+      plot_name: bed.plot_name,
+      row_number: bed.row_number,
+      planted_date: bed.planted_date,
+      years_old: calculateAge(bed.planted_date),
+      note: bed.note
+    }));
+  }, [beds]);
 
   /**
    * Get division recommendation based on plant age
@@ -89,12 +70,16 @@ const PropagationTracking = () => {
   const divisionTime = getBestDivisionTime();
 
   /**
-   * Group perennials by division urgency
+   * Group perennials by division urgency with memoization
    */
-  const urgentPerennials = perennials.filter(p => getDivisionRecommendation(p.years_old).status === 'urgent');
-  const soonPerennials = perennials.filter(p => getDivisionRecommendation(p.years_old).status === 'soon');
-  const goodPerennials = perennials.filter(p => getDivisionRecommendation(p.years_old).status === 'good');
-  const unknownPerennials = perennials.filter(p => getDivisionRecommendation(p.years_old).status === 'unknown');
+  const categorizedPerennials = useMemo(() => ({
+    urgent: perennials.filter(p => getDivisionRecommendation(p.years_old).status === 'urgent'),
+    soon: perennials.filter(p => getDivisionRecommendation(p.years_old).status === 'soon'),
+    good: perennials.filter(p => getDivisionRecommendation(p.years_old).status === 'good'),
+    unknown: perennials.filter(p => getDivisionRecommendation(p.years_old).status === 'unknown')
+  }), [perennials]);
+
+  const { urgent: urgentPerennials, soon: soonPerennials, good: goodPerennials, unknown: unknownPerennials } = categorizedPerennials;
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20 md:pb-0">
@@ -160,6 +145,27 @@ const PropagationTracking = () => {
                 <p className="text-xs sm:text-sm text-blue-700 dark:text-blue-300 mt-1">
                   Najlepszy czas: {divisionTime.months}. Zaplanuj dzielenie z wyprzedzeniem.
                 </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Error Message */}
+        {error && (
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="text-red-600 dark:text-red-400" size={20} />
+              <div>
+                <h3 className="font-semibold text-red-900 dark:text-red-100">Błąd</h3>
+                <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
+                <button
+                  type="button"
+                  onClick={refetch}
+                  aria-label="Spróbuj ponownie załadować dane"
+                  className="mt-2 px-3 py-1 text-sm text-white bg-red-600 hover:bg-red-700 rounded transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                >
+                  Spróbuj ponownie
+                </button>
               </div>
             </div>
           </div>

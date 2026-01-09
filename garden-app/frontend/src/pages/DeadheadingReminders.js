@@ -1,6 +1,52 @@
-import React, { useState, useEffect } from 'react';
-import axios from '../config/axios';
-import { Flower, Scissors, Calendar, Info, Sparkles } from 'lucide-react';
+import React, { useMemo } from 'react';
+import { Flower, Scissors, Calendar, Info, Sparkles, AlertCircle } from 'lucide-react';
+import usePlotDetails from '../hooks/usePlotDetails';
+
+// Plant priority arrays moved outside to prevent re-creation
+const HIGH_PRIORITY_PLANTS = ['róża', 'petunia', 'surfinia', 'begonia', 'pelargonia', 'cynia', 'kosmos', 'nagietki', 'dalila', 'dalia'];
+const MEDIUM_PRIORITY_PLANTS = ['lawenda', 'goździk', 'ostróżka', 'rudbekia', 'jeżówka', 'piwonia', 'liliowiec', 'floks', 'mieczyk'];
+const LOW_PRIORITY_PLANTS = ['hortensja', 'hiacynt', 'tulipan', 'narcyz', 'krokusy'];
+
+/**
+ * Get deadheading requirement level based on plant name
+ */
+const getDeadheadingRequirement = (plantName) => {
+  const name = plantName.toLowerCase();
+
+  if (HIGH_PRIORITY_PLANTS.some(plant => name.includes(plant))) {
+    return {
+      level: 'high',
+      frequency: '2-3 razy w tygodniu',
+      benefit: 'Znacząco wydłuża kwitnienie',
+      priority: 'Wysoki',
+      color: 'red'
+    };
+  } else if (MEDIUM_PRIORITY_PLANTS.some(plant => name.includes(plant))) {
+    return {
+      level: 'medium',
+      frequency: 'Raz w tygodniu',
+      benefit: 'Poprawia wygląd i kwitnienie',
+      priority: 'Średni',
+      color: 'yellow'
+    };
+  } else if (LOW_PRIORITY_PLANTS.some(plant => name.includes(plant))) {
+    return {
+      level: 'low',
+      frequency: 'Opcjonalnie',
+      benefit: 'Poprawia wygląd',
+      priority: 'Niski',
+      color: 'green'
+    };
+  } else {
+    return {
+      level: 'unknown',
+      frequency: 'Do ustalenia',
+      benefit: 'Sprawdź dla tego gatunku',
+      priority: 'Nieznany',
+      color: 'gray'
+    };
+  }
+};
 
 /**
  * Deadheading Reminders - Przypomnienia o usuwaniu przekwitniętych kwiatów
@@ -8,105 +54,27 @@ import { Flower, Scissors, Calendar, Info, Sparkles } from 'lucide-react';
  * Pomaga śledzić, które kwiaty wymagają regularnego usuwania przekwitniętych kwiatostanów
  */
 const DeadheadingReminders = () => {
-  const [flowers, setFlowers] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { beds, loading, error, refetch } = usePlotDetails();
 
-  useEffect(() => {
-    fetchFlowers();
-  }, []);
-
-  const fetchFlowers = async () => {
-    try {
-      setLoading(true);
-      const response = await axios.get('/api/plots');
-
-      // Extract all flowering plants from all plots
-      const allFlowers = [];
-      for (const plot of response.data) {
-        const detailsResponse = await axios.get(`/api/plots/${plot.id}/details`);
-        const beds = detailsResponse.data.beds || [];
-
-        // Filter only flowering plants
-        const floweringBeds = beds.filter(bed =>
-          bed.plant_name &&
-          bed.bloom_season &&
-          (bed.category === 'flower_perennial' ||
-           bed.category === 'flower_annual' ||
-           bed.category === 'flower_bulb')
-        );
-
-        floweringBeds.forEach(bed => {
-          allFlowers.push({
-            id: bed.id,
-            name: bed.plant_name,
-            variety: bed.plant_variety,
-            category: bed.category,
-            bloom_season: bed.bloom_season,
-            flower_color: bed.flower_color,
-            plot_name: plot.name,
-            row_number: bed.row_number
-          });
-        });
-      }
-
-      setFlowers(allFlowers);
-    } catch (err) {
-      console.error('Error fetching flowers:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  /**
-   * Get deadheading requirement level based on plant name
-   * (Some plants benefit more from deadheading than others)
-   */
-  const getDeadheadingRequirement = (plantName) => {
-    const name = plantName.toLowerCase();
-
-    // High priority - need frequent deadheading
-    const highPriority = ['róża', 'petunia', 'surfinia', 'begonia', 'pelargonia',
-                          'cynia', 'kosmos', 'nagietki', 'dalila', 'dalia'];
-    // Medium priority - benefit from occasional deadheading
-    const mediumPriority = ['lawenda', 'goździk', 'ostróżka', 'rudbekia', 'jeżówka',
-                            'piwonia', 'liliowiec', 'floks', 'mieczyk'];
-    // Low priority - less benefit or self-cleaning
-    const lowPriority = ['hortensja', 'hiacynt', 'tulipan', 'narcyz', 'krokusy'];
-
-    if (highPriority.some(plant => name.includes(plant))) {
-      return {
-        level: 'high',
-        frequency: '2-3 razy w tygodniu',
-        benefit: 'Znacząco wydłuża kwitnienie',
-        priority: 'Wysoki',
-        color: 'red'
-      };
-    } else if (mediumPriority.some(plant => name.includes(plant))) {
-      return {
-        level: 'medium',
-        frequency: 'Raz w tygodniu',
-        benefit: 'Poprawia wygląd i kwitnienie',
-        priority: 'Średni',
-        color: 'yellow'
-      };
-    } else if (lowPriority.some(plant => name.includes(plant))) {
-      return {
-        level: 'low',
-        frequency: 'Opcjonalnie',
-        benefit: 'Poprawia wygląd',
-        priority: 'Niski',
-        color: 'green'
-      };
-    } else {
-      return {
-        level: 'unknown',
-        frequency: 'Do ustalenia',
-        benefit: 'Sprawdź dla tego gatunku',
-        priority: 'Nieznany',
-        color: 'gray'
-      };
-    }
-  };
+  // Filter only flowering plants
+  const flowers = useMemo(() => {
+    return beds.filter(bed =>
+      bed.plant_name &&
+      bed.bloom_season &&
+      (bed.category === 'flower_perennial' ||
+       bed.category === 'flower_annual' ||
+       bed.category === 'flower_bulb')
+    ).map(bed => ({
+      id: bed.id,
+      name: bed.plant_name,
+      variety: bed.plant_variety,
+      category: bed.category,
+      bloom_season: bed.bloom_season,
+      flower_color: bed.flower_color,
+      plot_name: bed.plot_name,
+      row_number: bed.row_number
+    }));
+  }, [beds]);
 
   /**
    * Check if plant is currently blooming
@@ -148,17 +116,24 @@ const DeadheadingReminders = () => {
   };
 
   /**
-   * Group flowers by deadheading priority
+   * Group flowers by deadheading priority with memoization
    */
-  const highPriorityFlowers = flowers.filter(f => getDeadheadingRequirement(f.name).level === 'high');
-  const mediumPriorityFlowers = flowers.filter(f => getDeadheadingRequirement(f.name).level === 'medium');
-  const lowPriorityFlowers = flowers.filter(f => getDeadheadingRequirement(f.name).level === 'low');
-  const unknownFlowers = flowers.filter(f => getDeadheadingRequirement(f.name).level === 'unknown');
+  const categorizedFlowers = useMemo(() => ({
+    high: flowers.filter(f => getDeadheadingRequirement(f.name).level === 'high'),
+    medium: flowers.filter(f => getDeadheadingRequirement(f.name).level === 'medium'),
+    low: flowers.filter(f => getDeadheadingRequirement(f.name).level === 'low'),
+    unknown: flowers.filter(f => getDeadheadingRequirement(f.name).level === 'unknown')
+  }), [flowers]);
+
+  const { high: highPriorityFlowers, medium: mediumPriorityFlowers, low: lowPriorityFlowers, unknown: unknownFlowers } = categorizedFlowers;
 
   /**
-   * Count currently blooming flowers
+   * Count currently blooming flowers with memoization
    */
-  const bloomingNow = flowers.filter(f => isCurrentlyBlooming(f.bloom_season));
+  const bloomingNow = useMemo(() =>
+    flowers.filter(f => isCurrentlyBlooming(f.bloom_season)),
+    [flowers]
+  );
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20 md:pb-0">
@@ -195,6 +170,27 @@ const DeadheadingReminders = () => {
             </div>
           </div>
         </div>
+
+        {/* Error Message */}
+        {error && (
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="text-red-600 dark:text-red-400" size={20} />
+              <div>
+                <h3 className="font-semibold text-red-900 dark:text-red-100">Błąd</h3>
+                <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
+                <button
+                  type="button"
+                  onClick={refetch}
+                  aria-label="Spróbuj ponownie załadować dane"
+                  className="mt-2 px-3 py-1 text-sm text-white bg-red-600 hover:bg-red-700 rounded transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                >
+                  Spróbuj ponownie
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Info Box - Mobile Optimized */}
         <div className="bg-pink-50 dark:bg-pink-900/20 border border-pink-200 dark:border-pink-700 rounded-lg p-3 sm:p-4">

@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from '../config/axios';
 import { Calendar, Droplets, Plus, Filter, Leaf, Clock, AlertCircle } from 'lucide-react';
 
@@ -8,29 +9,40 @@ import { Calendar, Droplets, Plus, Filter, Leaf, Clock, AlertCircle } from 'luci
  * Wyświetla historię i plan nawożenia dla wszystkich roślin w ogrodzie
  */
 const FertilizationSchedule = () => {
+  const navigate = useNavigate();
   const [fertilizations, setFertilizations] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [filterType, setFilterType] = useState('all'); // all, mineral, organic, natural
   const [viewMode, setViewMode] = useState('all'); // all, upcoming, history
 
-  useEffect(() => {
-    fetchFertilizations();
-  }, []);
-
-  const fetchFertilizations = async () => {
+  const fetchFertilizations = async (signal) => {
     try {
       setLoading(true);
-      const response = await axios.get('/api/care/user/all');
+      setError(null);
+      const response = await axios.get('/api/care/user/all', { signal });
 
       // Filter only fertilization actions
       const fertilizationsOnly = response.data.filter(item => item.action_type === 'fertilization');
       setFertilizations(fertilizationsOnly);
     } catch (err) {
-      console.error('Error fetching fertilizations:', err);
+      if (err.name !== 'AbortError') {
+        console.error('Error fetching fertilizations:', err);
+        setError('Nie udało się załadować danych. Spróbuj ponownie.');
+      }
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetchFertilizations(controller.signal);
+
+    return () => {
+      controller.abort();
+    };
+  }, []);
 
   const getFertilizerTypeIcon = (type) => {
     switch (type) {
@@ -95,27 +107,31 @@ const FertilizationSchedule = () => {
     return date >= today && date <= inTwoWeeks;
   };
 
-  // Filter fertilizations
-  const filteredFertilizations = fertilizations.filter(fert => {
-    // Filter by type
-    if (filterType !== 'all' && fert.fertilizer_type !== filterType) {
-      return false;
-    }
+  // Filter fertilizations with memoization
+  const filteredFertilizations = useMemo(() => {
+    return fertilizations.filter(fert => {
+      // Filter by type
+      if (filterType !== 'all' && fert.fertilizer_type !== filterType) {
+        return false;
+      }
 
-    // Filter by view mode
-    if (viewMode === 'upcoming') {
-      return fert.next_application_date && !isPastDate(fert.next_application_date);
-    } else if (viewMode === 'history') {
-      return isPastDate(fert.action_date);
-    }
+      // Filter by view mode
+      if (viewMode === 'upcoming') {
+        return fert.next_application_date && !isPastDate(fert.next_application_date);
+      } else if (viewMode === 'history') {
+        return isPastDate(fert.action_date);
+      }
 
-    return true;
-  });
+      return true;
+    });
+  }, [fertilizations, filterType, viewMode]);
 
-  // Group by upcoming and past
-  const upcomingFertilizations = fertilizations.filter(
-    fert => fert.next_application_date && !isPastDate(fert.next_application_date)
-  );
+  // Group by upcoming and past with memoization
+  const upcomingFertilizations = useMemo(() => {
+    return fertilizations.filter(
+      fert => fert.next_application_date && !isPastDate(fert.next_application_date)
+    );
+  }, [fertilizations]);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20 md:pb-0">
@@ -133,8 +149,10 @@ const FertilizationSchedule = () => {
               </div>
             </div>
             <button
-              onClick={() => window.location.href = '/care'}
-              className="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
+              type="button"
+              onClick={() => navigate('/care')}
+              aria-label="Dodaj nowe nawożenie"
+              className="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg flex items-center gap-2 transition-colors focus:outline-none focus:ring-2 focus:ring-white/50 focus:ring-offset-2 focus:ring-offset-green-600"
             >
               <Plus size={20} />
               <span className="hidden sm:inline">Dodaj nawożenie</span>
@@ -217,6 +235,27 @@ const FertilizationSchedule = () => {
           </div>
         )}
 
+        {/* Error Message */}
+        {error && (
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="text-red-600 dark:text-red-400" size={20} />
+              <div>
+                <h3 className="font-semibold text-red-900 dark:text-red-100">Błąd</h3>
+                <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
+                <button
+                  type="button"
+                  onClick={() => fetchFertilizations(new AbortController().signal)}
+                  aria-label="Spróbuj ponownie załadować dane"
+                  className="mt-2 px-3 py-1 text-sm text-white bg-red-600 hover:bg-red-700 rounded transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                >
+                  Spróbuj ponownie
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Fertilizations List */}
         {loading ? (
           <div className="text-center py-12">
@@ -233,8 +272,10 @@ const FertilizationSchedule = () => {
               Zacznij śledzić nawożenie swoich roślin
             </p>
             <button
-              onClick={() => window.location.href = '/care'}
-              className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg inline-flex items-center gap-2"
+              type="button"
+              onClick={() => navigate('/care')}
+              aria-label="Dodaj pierwsze nawożenie"
+              className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg inline-flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
             >
               <Plus size={20} />
               Dodaj pierwsze nawożenie

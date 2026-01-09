@@ -12,7 +12,11 @@ import {
   TrendingUp,
   Image,
   Camera,
-  BookOpen
+  BookOpen,
+  Flower2,
+  Snowflake,
+  Scissors,
+  Sparkles
 } from 'lucide-react';
 
 /**
@@ -109,6 +113,38 @@ const MenuModal = ({ isOpen, onClose, onQuickPhotoClick }) => {
       description: 'Poradnik',
       color: 'bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400',
       badge: 'NOWY'
+    },
+    {
+      id: 'bloom-timeline',
+      path: '/bloom-timeline',
+      icon: Flower2,
+      label: 'Kwitnienie',
+      description: 'Kalendarz',
+      color: 'bg-pink-100 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400'
+    },
+    {
+      id: 'winter-protection',
+      path: '/winter-protection',
+      icon: Snowflake,
+      label: 'Zabezpieczanie',
+      description: 'Na zimę',
+      color: 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
+    },
+    {
+      id: 'propagation',
+      path: '/propagation',
+      icon: Scissors,
+      label: 'Dzielenie',
+      description: 'Bylin',
+      color: 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400'
+    },
+    {
+      id: 'deadheading',
+      path: '/deadheading',
+      icon: Sparkles,
+      label: 'Przekwitłe',
+      description: 'Usuwanie',
+      color: 'bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400'
     }
   ];
 
@@ -132,8 +168,10 @@ const MenuModal = ({ isOpen, onClose, onQuickPhotoClick }) => {
             </p>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+            aria-label="Zamknij menu"
+            className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
           >
             <X size={20} className="text-gray-600 dark:text-gray-300" />
           </button>
@@ -146,20 +184,21 @@ const MenuModal = ({ isOpen, onClose, onQuickPhotoClick }) => {
               const Icon = item.icon;
               const Component = item.path ? Link : 'button';
               const props = item.path
-                ? { to: item.path, onClick: onClose }
+                ? { to: item.path, onClick: onClose, 'aria-label': `${item.label} - ${item.description}` }
                 : {
                     onClick: (e) => {
                       e.stopPropagation(); // CRITICAL: Stop event from bubbling to background
                       item.action();
                     },
-                    type: 'button'
+                    type: 'button',
+                    'aria-label': `${item.label} - ${item.description}`
                   };
 
               return (
                 <Component
                   key={item.id}
                   {...props}
-                  className="group relative bg-gray-50 dark:bg-gray-900/50 rounded-xl p-4 hover:shadow-md transition-all duration-200 hover:-translate-y-1 text-left w-full"
+                  className="group relative bg-gray-50 dark:bg-gray-900/50 rounded-xl p-4 hover:shadow-md transition-all duration-200 hover:-translate-y-1 text-left w-full focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
                 >
                   {/* Badge */}
                   {item.badge && (
@@ -195,7 +234,7 @@ const MenuModal = ({ isOpen, onClose, onQuickPhotoClick }) => {
               </span>
               <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
                 <LayoutGrid size={16} />
-                <span className="font-medium">10 modułów</span>
+                <span className="font-medium">14 modułów</span>
               </div>
             </div>
           </div>

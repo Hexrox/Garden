@@ -1,6 +1,37 @@
-import React, { useState, useEffect } from 'react';
-import axios from '../config/axios';
-import { Flower2, Info, Calendar } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { Flower2, Info, Calendar, AlertCircle } from 'lucide-react';
+import usePlotDetails from '../hooks/usePlotDetails';
+
+// Constants moved outside component to prevent re-creation
+const MONTHS = [
+  { num: 1, name: 'Styczeń', short: 'Sty' },
+  { num: 2, name: 'Luty', short: 'Lut' },
+  { num: 3, name: 'Marzec', short: 'Mar' },
+  { num: 4, name: 'Kwiecień', short: 'Kwi' },
+  { num: 5, name: 'Maj', short: 'Maj' },
+  { num: 6, name: 'Czerwiec', short: 'Cze' },
+  { num: 7, name: 'Lipiec', short: 'Lip' },
+  { num: 8, name: 'Sierpień', short: 'Sie' },
+  { num: 9, name: 'Wrzesień', short: 'Wrz' },
+  { num: 10, name: 'Październik', short: 'Paź' },
+  { num: 11, name: 'Listopad', short: 'Lis' },
+  { num: 12, name: 'Grudzień', short: 'Gru' }
+];
+
+const MONTH_NAME_TO_NUMBER = {
+  'styczeń': 1, 'stycznia': 1,
+  'luty': 2, 'lutego': 2,
+  'marzec': 3, 'marca': 3,
+  'kwiecień': 4, 'kwietnia': 4,
+  'maj': 5, 'maja': 5,
+  'czerwiec': 6, 'czerwca': 6,
+  'lipiec': 7, 'lipca': 7,
+  'sierpień': 8, 'sierpnia': 8,
+  'wrzesień': 9, 'września': 9,
+  'październik': 10, 'października': 10,
+  'listopad': 11, 'listopada': 11,
+  'grudzień': 12, 'grudnia': 12
+};
 
 /**
  * Bloom Timeline - Wizualizacja kwitnienia przez cały rok
@@ -8,84 +39,28 @@ import { Flower2, Info, Calendar } from 'lucide-react';
  * Pokazuje wykres w stylu Gantt chart z kwitnieniem wszystkich kwiatów w ogrodzie
  */
 const BloomTimeline = () => {
-  const [flowers, setFlowers] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { beds, loading, error, refetch } = usePlotDetails();
   const [selectedMonth, setSelectedMonth] = useState(null);
 
-  const months = [
-    { num: 1, name: 'Styczeń', short: 'Sty' },
-    { num: 2, name: 'Luty', short: 'Lut' },
-    { num: 3, name: 'Marzec', short: 'Mar' },
-    { num: 4, name: 'Kwiecień', short: 'Kwi' },
-    { num: 5, name: 'Maj', short: 'Maj' },
-    { num: 6, name: 'Czerwiec', short: 'Cze' },
-    { num: 7, name: 'Lipiec', short: 'Lip' },
-    { num: 8, name: 'Sierpień', short: 'Sie' },
-    { num: 9, name: 'Wrzesień', short: 'Wrz' },
-    { num: 10, name: 'Październik', short: 'Paź' },
-    { num: 11, name: 'Listopad', short: 'Lis' },
-    { num: 12, name: 'Grudzień', short: 'Gru' }
-  ];
-
-  const monthNameToNumber = {
-    'styczeń': 1, 'stycznia': 1,
-    'luty': 2, 'lutego': 2,
-    'marzec': 3, 'marca': 3,
-    'kwiecień': 4, 'kwietnia': 4,
-    'maj': 5, 'maja': 5,
-    'czerwiec': 6, 'czerwca': 6,
-    'lipiec': 7, 'lipca': 7,
-    'sierpień': 8, 'sierpnia': 8,
-    'wrzesień': 9, 'września': 9,
-    'październik': 10, 'października': 10,
-    'listopad': 11, 'listopada': 11,
-    'grudzień': 12, 'grudnia': 12
-  };
-
-  useEffect(() => {
-    fetchFlowers();
-  }, []);
-
-  const fetchFlowers = async () => {
-    try {
-      setLoading(true);
-      const response = await axios.get('/api/plots');
-
-      // Extract all beds from all plots
-      const allFlowers = [];
-      for (const plot of response.data) {
-        const detailsResponse = await axios.get(`/api/plots/${plot.id}/details`);
-        const beds = detailsResponse.data.beds || [];
-
-        // Filter only flowering plants
-        const floweringBeds = beds.filter(bed =>
-          bed.bloom_season &&
-          (bed.category === 'flower_perennial' ||
-           bed.category === 'flower_annual' ||
-           bed.category === 'flower_bulb')
-        );
-
-        floweringBeds.forEach(bed => {
-          allFlowers.push({
-            id: bed.id,
-            name: bed.plant_name,
-            variety: bed.plant_variety,
-            bloom_season: bed.bloom_season,
-            flower_color: bed.flower_color,
-            plot_name: plot.name,
-            row_number: bed.row_number,
-            category: bed.category
-          });
-        });
-      }
-
-      setFlowers(allFlowers);
-    } catch (err) {
-      console.error('Error fetching flowers:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Filter only flowering plants
+  const flowers = useMemo(() => {
+    return beds.filter(bed =>
+      bed.bloom_season &&
+      bed.plant_name &&
+      (bed.category === 'flower_perennial' ||
+       bed.category === 'flower_annual' ||
+       bed.category === 'flower_bulb')
+    ).map(bed => ({
+      id: bed.id,
+      name: bed.plant_name,
+      variety: bed.plant_variety,
+      bloom_season: bed.bloom_season,
+      flower_color: bed.flower_color,
+      plot_name: bed.plot_name,
+      row_number: bed.row_number,
+      category: bed.category
+    }));
+  }, [beds]);
 
   /**
    * Parse bloom season and return array of month numbers [start, end]
@@ -109,8 +84,8 @@ const BloomTimeline = () => {
     const parts = season.split('-');
 
     if (parts.length === 2) {
-      const start = monthNameToNumber[parts[0].trim()];
-      const end = monthNameToNumber[parts[1].trim()];
+      const start = MONTH_NAME_TO_NUMBER[parts[0].trim()];
+      const end = MONTH_NAME_TO_NUMBER[parts[1].trim()];
 
       if (start && end) {
         return [start, end];
@@ -118,7 +93,7 @@ const BloomTimeline = () => {
     }
 
     // Single month like "maj"
-    const singleMonth = monthNameToNumber[season];
+    const singleMonth = MONTH_NAME_TO_NUMBER[season];
     if (singleMonth) {
       return [singleMonth, singleMonth];
     }
@@ -187,11 +162,11 @@ const BloomTimeline = () => {
   };
 
   /**
-   * Filter flowers by selected month
+   * Filter flowers by selected month with memoization
    */
-  const getFlowersForMonth = (monthNum) => {
-    return flowers.filter(flower => bloomsInMonth(flower, monthNum));
-  };
+  const getFlowersForMonth = useMemo(() => {
+    return (monthNum) => flowers.filter(flower => bloomsInMonth(flower, monthNum));
+  }, [flowers]);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20 md:pb-0">
@@ -229,6 +204,25 @@ const BloomTimeline = () => {
           </div>
         </div>
 
+        {/* Error Message */}
+        {error && (
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="text-red-600 dark:text-red-400" size={20} />
+              <div>
+                <h3 className="font-semibold text-red-900 dark:text-red-100">Błąd</h3>
+                <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
+                <button
+                  onClick={refetch}
+                  className="mt-2 px-3 py-1 text-sm text-white bg-red-600 hover:bg-red-700 rounded transition-colors"
+                >
+                  Spróbuj ponownie
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {loading ? (
           <div className="text-center py-12">
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-pink-600"></div>
@@ -259,16 +253,19 @@ const BloomTimeline = () => {
 
             {/* Timeline Chart */}
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-x-auto">
-              <div className="min-w-[800px]">
+              <div className="min-w-[600px] sm:min-w-[800px]">
                 {/* Month Headers */}
                 <div className="grid grid-cols-13 gap-px bg-gray-200 dark:bg-gray-700 border-b-2 border-gray-300 dark:border-gray-600">
                   <div className="col-span-1 bg-gray-100 dark:bg-gray-800 p-3 font-semibold text-sm text-gray-700 dark:text-gray-300">
                     Roślina
                   </div>
-                  {months.map(month => (
-                    <div
+                  {MONTHS.map(month => (
+                    <button
                       key={month.num}
-                      className={`bg-gray-100 dark:bg-gray-800 p-3 text-center cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors ${
+                      type="button"
+                      aria-label={`Filtruj według ${month.name}`}
+                      aria-pressed={selectedMonth === month.num}
+                      className={`bg-gray-100 dark:bg-gray-800 p-3 text-center cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2 ${
                         month.num === new Date().getMonth() + 1
                           ? 'bg-pink-100 dark:bg-pink-900/30 font-bold'
                           : ''
@@ -320,7 +317,7 @@ const BloomTimeline = () => {
                     </div>
 
                     {/* Month Cells with Bloom Bars */}
-                    {months.map(month => {
+                    {MONTHS.map(month => {
                       const blooming = bloomsInMonth(flower, month.num);
                       return (
                         <div
@@ -351,7 +348,7 @@ const BloomTimeline = () => {
                 <div className="flex items-center gap-3 mb-4">
                   <Calendar className="text-pink-600 dark:text-pink-400" size={24} />
                   <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                    Kwitnienie w {months.find(m => m.num === selectedMonth)?.name.toLowerCase()}
+                    Kwitnienie w {MONTHS.find(m => m.num === selectedMonth)?.name.toLowerCase()}
                   </h2>
                 </div>
 
@@ -383,7 +380,7 @@ const BloomTimeline = () => {
                           {flower.plot_name} → Rząd {flower.row_number}
                         </p>
                       </div>
-                    </div>
+                    </button>
                   ))}
                 </div>
               </div>

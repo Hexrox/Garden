@@ -1,6 +1,40 @@
-import React, { useState, useEffect } from 'react';
-import axios from '../config/axios';
-import { Snowflake, Shield, AlertTriangle, CheckCircle2, Plus, Info } from 'lucide-react';
+import React, { useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Snowflake, Shield, AlertTriangle, CheckCircle2, Plus, Info, AlertCircle } from 'lucide-react';
+import usePlotDetails from '../hooks/usePlotDetails';
+
+// Protection recommendations moved outside component to prevent re-creation
+const PROTECTION_RECOMMENDATIONS = {
+  'flower_perennial': [
+    'Ściółkowanie korą lub liśćmi (10-15cm)',
+    'Okrycie agrowłókniną dla wrażliwych gatunków',
+    'Cięcie suchych pędów (zostawić 5-10cm)'
+  ],
+  'flower_bulb': [
+    'Wykopanie wrażliwych cebul (dalie, begonie, kanny)',
+    'Przechowywanie w piwnicy w suchym piasku/torfie',
+    'Temperatura 5-10°C'
+  ],
+  'fruit_tree': [
+    'Bielenie pni wapnem (ochrona przed mrozem)',
+    'Owijanie młodych drzew agrowłókniną',
+    'Okrycie podstawy kopczykiem ziemi'
+  ],
+  'fruit_bush': [
+    'Ściółkowanie korzeni korą',
+    'Przygięcie do ziemi i okrycie (maliny)',
+    'Owijanie wrażliwych krzewów (np. borówki)'
+  ],
+  'herb': [
+    'Ściółkowanie wieloletnich ziół',
+    'Przeniesienie doniczek do pomieszczenia (bazylia, rozmaryn)',
+    'Okrycie agrowłókniną (szałwia, tymianek)'
+  ]
+};
+
+const getProtectionRecommendations = (category) => {
+  return PROTECTION_RECOMMENDATIONS[category] || ['Sprawdź wymagania dla tego gatunku'];
+};
 
 /**
  * Winter Protection - Zabezpieczanie roślin na zimę
@@ -8,90 +42,28 @@ import { Snowflake, Shield, AlertTriangle, CheckCircle2, Plus, Info } from 'luci
  * Pomaga śledzić, które rośliny zostały zabezpieczone na zimę
  */
 const WinterProtection = () => {
-  const [plants, setPlants] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [filterStatus, setFilterStatus] = useState('all'); // all, protected, unprotected
+  const navigate = useNavigate();
+  const { beds, loading, error, refetch } = usePlotDetails();
 
-  useEffect(() => {
-    fetchPlants();
-  }, []);
-
-  const fetchPlants = async () => {
-    try {
-      setLoading(true);
-      const response = await axios.get('/api/plots');
-
-      // Extract all beds from all plots
-      const allPlants = [];
-      for (const plot of response.data) {
-        const detailsResponse = await axios.get(`/api/plots/${plot.id}/details`);
-        const beds = detailsResponse.data.beds || [];
-
-        // Filter plants that need winter protection
-        const needsProtection = beds.filter(bed =>
-          bed.plant_name &&
-          (bed.category === 'flower_perennial' ||
-           bed.category === 'flower_bulb' ||
-           bed.category === 'fruit_tree' ||
-           bed.category === 'fruit_bush' ||
-           bed.category === 'herb')
-        );
-
-        needsProtection.forEach(bed => {
-          allPlants.push({
-            id: bed.id,
-            name: bed.plant_name,
-            variety: bed.plant_variety,
-            category: bed.category,
-            plot_name: plot.name,
-            row_number: bed.row_number,
-            note: bed.note
-          });
-        });
-      }
-
-      setPlants(allPlants);
-    } catch (err) {
-      console.error('Error fetching plants:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  /**
-   * Get protection recommendations based on plant category
-   */
-  const getProtectionRecommendations = (category) => {
-    const recommendations = {
-      'flower_perennial': [
-        'Ściółkowanie korą lub liśćmi (10-15cm)',
-        'Okrycie agrowłókniną dla wrażliwych gatunków',
-        'Cięcie suchych pędów (zostawić 5-10cm)'
-      ],
-      'flower_bulb': [
-        'Wykopanie wrażliwych cebul (dalie, begonie, kanny)',
-        'Przechowywanie w piwnicy w suchym piasku/torfie',
-        'Temperatura 5-10°C'
-      ],
-      'fruit_tree': [
-        'Bielenie pni wapnem (ochrona przed mrozem)',
-        'Owijanie młodych drzew agrowłókniną',
-        'Okrycie podstawy kopczykiem ziemi'
-      ],
-      'fruit_bush': [
-        'Ściółkowanie korzeni korą',
-        'Przygięcie do ziemi i okrycie (maliny)',
-        'Owijanie wrażliwych krzewów (np. borówki)'
-      ],
-      'herb': [
-        'Ściółkowanie wieloletnich ziół',
-        'Przeniesienie doniczek do pomieszczenia (bazylia, rozmaryn)',
-        'Okrycie agrowłókniną (szałwia, tymianek)'
-      ]
-    };
-
-    return recommendations[category] || ['Sprawdź wymagania dla tego gatunku'];
-  };
+  // Filter plants that need winter protection
+  const plants = useMemo(() => {
+    return beds.filter(bed =>
+      bed.plant_name &&
+      (bed.category === 'flower_perennial' ||
+       bed.category === 'flower_bulb' ||
+       bed.category === 'fruit_tree' ||
+       bed.category === 'fruit_bush' ||
+       bed.category === 'herb')
+    ).map(bed => ({
+      id: bed.id,
+      name: bed.plant_name,
+      variety: bed.plant_variety,
+      category: bed.category,
+      plot_name: bed.plot_name,
+      row_number: bed.row_number,
+      note: bed.note
+    }));
+  }, [beds]);
 
   /**
    * Get category name in Polish
@@ -124,38 +96,39 @@ const WinterProtection = () => {
   };
 
   /**
-   * Get current month to show relevant advice
+   * Get current month with memoization to avoid redundant Date() calls
    */
-  const getCurrentMonth = () => {
-    return new Date().getMonth() + 1; // 1-12
-  };
+  const currentMonth = useMemo(() => new Date().getMonth() + 1, []); // 1-12
 
   /**
    * Check if it's winter protection season (October-November)
    */
-  const isProtectionSeason = () => {
-    const month = getCurrentMonth();
-    return month >= 10 && month <= 11;
-  };
+  const isProtectionSeason = useMemo(() =>
+    currentMonth >= 10 && currentMonth <= 11,
+    [currentMonth]
+  );
 
   /**
    * Check if it's time to remove protection (March-April)
    */
-  const isRemovalSeason = () => {
-    const month = getCurrentMonth();
-    return month >= 3 && month <= 4;
-  };
+  const isRemovalSeason = useMemo(() =>
+    currentMonth >= 3 && currentMonth <= 4,
+    [currentMonth]
+  );
 
   /**
-   * Group plants by category
+   * Group plants by category with memoization
    */
-  const plantsByCategory = plants.reduce((acc, plant) => {
-    if (!acc[plant.category]) {
-      acc[plant.category] = [];
-    }
-    acc[plant.category].push(plant);
-    return acc;
-  }, {});
+  const plantsByCategory = useMemo(() =>
+    plants.reduce((acc, plant) => {
+      if (!acc[plant.category]) {
+        acc[plant.category] = [];
+      }
+      acc[plant.category].push(plant);
+      return acc;
+    }, {}),
+    [plants]
+  );
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20 md:pb-0">
@@ -186,7 +159,7 @@ const WinterProtection = () => {
             </div>
             <div className="bg-white/10 rounded-lg p-3">
               <div className="text-2xl font-bold">
-                {isProtectionSeason() ? 'Październik-Listopad' : isRemovalSeason() ? 'Marzec-Kwiecień' : 'Poza sezonem'}
+                {isProtectionSeason ? 'Październik-Listopad' : isRemovalSeason ? 'Marzec-Kwiecień' : 'Poza sezonem'}
               </div>
               <div className="text-xs text-blue-100">Sezon</div>
             </div>
@@ -197,8 +170,29 @@ const WinterProtection = () => {
           </div>
         </div>
 
+        {/* Error Message */}
+        {error && (
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="text-red-600 dark:text-red-400" size={20} />
+              <div>
+                <h3 className="font-semibold text-red-900 dark:text-red-100">Błąd</h3>
+                <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
+                <button
+                  type="button"
+                  onClick={refetch}
+                  aria-label="Spróbuj ponownie załadować dane"
+                  className="mt-2 px-3 py-1 text-sm text-white bg-red-600 hover:bg-red-700 rounded transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                >
+                  Spróbuj ponownie
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Season Alert */}
-        {isProtectionSeason() && (
+        {isProtectionSeason && (
           <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-700 rounded-lg p-4">
             <div className="flex items-start gap-3">
               <AlertTriangle className="text-orange-600 dark:text-orange-400 mt-0.5" size={20} />
@@ -214,7 +208,7 @@ const WinterProtection = () => {
           </div>
         )}
 
-        {isRemovalSeason() && (
+        {isRemovalSeason && (
           <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg p-4">
             <div className="flex items-start gap-3">
               <CheckCircle2 className="text-green-600 dark:text-green-400 mt-0.5" size={20} />
@@ -342,8 +336,10 @@ const WinterProtection = () => {
             Użyj sekcji Zadania, aby utworzyć listę kontrolną zabezpieczenia wszystkich roślin
           </p>
           <button
-            onClick={() => window.location.href = '/tasks'}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg inline-flex items-center gap-2 transition-colors"
+            type="button"
+            onClick={() => navigate('/tasks')}
+            aria-label="Przejdź do listy zadań"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg inline-flex items-center gap-2 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
           >
             <Plus size={20} />
             Przejdź do Zadań
