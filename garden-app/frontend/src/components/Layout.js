@@ -101,119 +101,21 @@ const Layout = ({ children }) => {
                   Nawożenie
                 </Link>
 
-                {/* Flowers Mega Menu */}
-                <div className="relative" ref={flowersMenuRef}>
-                  <button
-                    type="button"
-                    onClick={() => setShowFlowersMenu(!showFlowersMenu)}
-                    aria-label="Menu funkcji dla kwiatów"
-                    aria-expanded={showFlowersMenu}
-                    className={`inline-flex items-center px-1 pt-1 text-sm font-medium transition whitespace-nowrap border-b-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 ${
-                      isFlowersMenuActive()
-                        ? 'border-green-600 text-green-600 dark:text-green-400'
-                        : 'border-transparent text-gray-900 dark:text-gray-100 hover:text-green-600 dark:hover:text-green-400 hover:border-gray-300'
-                    }`}
-                  >
-                    🌸 Kwiaty
-                    <ChevronDown size={16} className="ml-1" />
-                  </button>
-
-                  {showFlowersMenu && (
-                    <div className="absolute left-0 right-0 top-full mt-1 mx-4 rounded-lg shadow-2xl bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 border border-gray-200 dark:border-gray-700 animate-fadeIn">
-                      <div className="p-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                          <Link
-                            to="/bloom-timeline"
-                            onClick={() => setShowFlowersMenu(false)}
-                            className={`group flex flex-col items-center p-6 rounded-lg transition-all duration-200 ${
-                              isActive('/bloom-timeline')
-                                ? 'bg-green-50 dark:bg-green-900/20 ring-2 ring-green-500'
-                                : 'bg-gray-50 dark:bg-gray-700/50 hover:bg-green-50 dark:hover:bg-green-900/20 hover:shadow-md'
-                            }`}
-                          >
-                            <div className="text-4xl mb-3">📅</div>
-                            <h3 className={`text-base font-semibold mb-2 text-center ${
-                              isActive('/bloom-timeline')
-                                ? 'text-green-600 dark:text-green-400'
-                                : 'text-gray-900 dark:text-gray-100 group-hover:text-green-600 dark:group-hover:text-green-400'
-                            }`}>
-                              Kalendarz kwitnienia
-                            </h3>
-                            <p className="text-xs text-gray-600 dark:text-gray-400 text-center">
-                              Planuj i śledź okresy kwitnienia kwiatów
-                            </p>
-                          </Link>
-
-                          <Link
-                            to="/winter-protection"
-                            onClick={() => setShowFlowersMenu(false)}
-                            className={`group flex flex-col items-center p-6 rounded-lg transition-all duration-200 ${
-                              isActive('/winter-protection')
-                                ? 'bg-green-50 dark:bg-green-900/20 ring-2 ring-green-500'
-                                : 'bg-gray-50 dark:bg-gray-700/50 hover:bg-green-50 dark:hover:bg-green-900/20 hover:shadow-md'
-                            }`}
-                          >
-                            <div className="text-4xl mb-3">❄️</div>
-                            <h3 className={`text-base font-semibold mb-2 text-center ${
-                              isActive('/winter-protection')
-                                ? 'text-green-600 dark:text-green-400'
-                                : 'text-gray-900 dark:text-gray-100 group-hover:text-green-600 dark:group-hover:text-green-400'
-                            }`}>
-                              Zabezpieczanie na zimę
-                            </h3>
-                            <p className="text-xs text-gray-600 dark:text-gray-400 text-center">
-                              Chroń rośliny przed mrozem i zimowymi warunkami
-                            </p>
-                          </Link>
-
-                          <Link
-                            to="/propagation"
-                            onClick={() => setShowFlowersMenu(false)}
-                            className={`group flex flex-col items-center p-6 rounded-lg transition-all duration-200 ${
-                              isActive('/propagation')
-                                ? 'bg-green-50 dark:bg-green-900/20 ring-2 ring-green-500'
-                                : 'bg-gray-50 dark:bg-gray-700/50 hover:bg-green-50 dark:hover:bg-green-900/20 hover:shadow-md'
-                            }`}
-                          >
-                            <div className="text-4xl mb-3">✂️</div>
-                            <h3 className={`text-base font-semibold mb-2 text-center ${
-                              isActive('/propagation')
-                                ? 'text-green-600 dark:text-green-400'
-                                : 'text-gray-900 dark:text-gray-100 group-hover:text-green-600 dark:group-hover:text-green-400'
-                            }`}>
-                              Dzielenie bylin
-                            </h3>
-                            <p className="text-xs text-gray-600 dark:text-gray-400 text-center">
-                              Śledź proces rozmnażania i dzielenia roślin
-                            </p>
-                          </Link>
-
-                          <Link
-                            to="/deadheading"
-                            onClick={() => setShowFlowersMenu(false)}
-                            className={`group flex flex-col items-center p-6 rounded-lg transition-all duration-200 ${
-                              isActive('/deadheading')
-                                ? 'bg-green-50 dark:bg-green-900/20 ring-2 ring-green-500'
-                                : 'bg-gray-50 dark:bg-gray-700/50 hover:bg-green-50 dark:hover:bg-green-900/20 hover:shadow-md'
-                            }`}
-                          >
-                            <div className="text-4xl mb-3">🥀</div>
-                            <h3 className={`text-base font-semibold mb-2 text-center ${
-                              isActive('/deadheading')
-                                ? 'text-green-600 dark:text-green-400'
-                                : 'text-gray-900 dark:text-gray-100 group-hover:text-green-600 dark:group-hover:text-green-400'
-                            }`}>
-                              Usuwanie przekwitłych
-                            </h3>
-                            <p className="text-xs text-gray-600 dark:text-gray-400 text-center">
-                              Przypomnienia o usuwaniu przekwitłych kwiatów
-                            </p>
-                          </Link>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
+                {/* Flowers Mega Menu Button */}
+                <button
+                  type="button"
+                  onClick={() => setShowFlowersMenu(!showFlowersMenu)}
+                  aria-label="Menu funkcji dla kwiatów"
+                  aria-expanded={showFlowersMenu}
+                  className={`inline-flex items-center px-1 pt-1 text-sm font-medium transition whitespace-nowrap border-b-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 ${
+                    isFlowersMenuActive()
+                      ? 'border-green-600 text-green-600 dark:text-green-400'
+                      : 'border-transparent text-gray-900 dark:text-gray-100 hover:text-green-600 dark:hover:text-green-400 hover:border-gray-300'
+                  }`}
+                >
+                  🌸 Kwiaty
+                  <ChevronDown size={16} className="ml-1" />
+                </button>
                 <Link
                   to="/gallery"
                   className={`inline-flex items-center px-1 pt-1 text-sm font-medium transition whitespace-nowrap border-b-2 ${
@@ -262,6 +164,107 @@ const Layout = ({ children }) => {
             </div>
           </div>
         </div>
+
+        {/* Mega Menu Panel - Full Width Below Nav */}
+        {showFlowersMenu && (
+          <div className="relative z-50 pb-2" ref={flowersMenuRef}>
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="rounded-lg shadow-2xl bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 border border-gray-200 dark:border-gray-700 animate-fadeIn">
+                <div className="p-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <Link
+                      to="/bloom-timeline"
+                      onClick={() => setShowFlowersMenu(false)}
+                      className={`group flex flex-col items-center p-6 rounded-lg transition-all duration-200 ${
+                        isActive('/bloom-timeline')
+                          ? 'bg-green-50 dark:bg-green-900/20 ring-2 ring-green-500'
+                          : 'bg-gray-50 dark:bg-gray-700/50 hover:bg-green-50 dark:hover:bg-green-900/20 hover:shadow-md'
+                      }`}
+                    >
+                      <div className="text-4xl mb-3">📅</div>
+                      <h3 className={`text-base font-semibold mb-2 text-center ${
+                        isActive('/bloom-timeline')
+                          ? 'text-green-600 dark:text-green-400'
+                          : 'text-gray-900 dark:text-gray-100 group-hover:text-green-600 dark:group-hover:text-green-400'
+                      }`}>
+                        Kalendarz kwitnienia
+                      </h3>
+                      <p className="text-xs text-gray-600 dark:text-gray-400 text-center">
+                        Planuj i śledź okresy kwitnienia kwiatów
+                      </p>
+                    </Link>
+
+                    <Link
+                      to="/winter-protection"
+                      onClick={() => setShowFlowersMenu(false)}
+                      className={`group flex flex-col items-center p-6 rounded-lg transition-all duration-200 ${
+                        isActive('/winter-protection')
+                          ? 'bg-green-50 dark:bg-green-900/20 ring-2 ring-green-500'
+                          : 'bg-gray-50 dark:bg-gray-700/50 hover:bg-green-50 dark:hover:bg-green-900/20 hover:shadow-md'
+                      }`}
+                    >
+                      <div className="text-4xl mb-3">❄️</div>
+                      <h3 className={`text-base font-semibold mb-2 text-center ${
+                        isActive('/winter-protection')
+                          ? 'text-green-600 dark:text-green-400'
+                          : 'text-gray-900 dark:text-gray-100 group-hover:text-green-600 dark:group-hover:text-green-400'
+                      }`}>
+                        Zabezpieczanie na zimę
+                      </h3>
+                      <p className="text-xs text-gray-600 dark:text-gray-400 text-center">
+                        Chroń rośliny przed mrozem i zimowymi warunkami
+                      </p>
+                    </Link>
+
+                    <Link
+                      to="/propagation"
+                      onClick={() => setShowFlowersMenu(false)}
+                      className={`group flex flex-col items-center p-6 rounded-lg transition-all duration-200 ${
+                        isActive('/propagation')
+                          ? 'bg-green-50 dark:bg-green-900/20 ring-2 ring-green-500'
+                          : 'bg-gray-50 dark:bg-gray-700/50 hover:bg-green-50 dark:hover:bg-green-900/20 hover:shadow-md'
+                      }`}
+                    >
+                      <div className="text-4xl mb-3">✂️</div>
+                      <h3 className={`text-base font-semibold mb-2 text-center ${
+                        isActive('/propagation')
+                          ? 'text-green-600 dark:text-green-400'
+                          : 'text-gray-900 dark:text-gray-100 group-hover:text-green-600 dark:group-hover:text-green-400'
+                      }`}>
+                        Dzielenie bylin
+                      </h3>
+                      <p className="text-xs text-gray-600 dark:text-gray-400 text-center">
+                        Śledź proces rozmnażania i dzielenia roślin
+                      </p>
+                    </Link>
+
+                    <Link
+                      to="/deadheading"
+                      onClick={() => setShowFlowersMenu(false)}
+                      className={`group flex flex-col items-center p-6 rounded-lg transition-all duration-200 ${
+                        isActive('/deadheading')
+                          ? 'bg-green-50 dark:bg-green-900/20 ring-2 ring-green-500'
+                          : 'bg-gray-50 dark:bg-gray-700/50 hover:bg-green-50 dark:hover:bg-green-900/20 hover:shadow-md'
+                      }`}
+                    >
+                      <div className="text-4xl mb-3">🥀</div>
+                      <h3 className={`text-base font-semibold mb-2 text-center ${
+                        isActive('/deadheading')
+                          ? 'text-green-600 dark:text-green-400'
+                          : 'text-gray-900 dark:text-gray-100 group-hover:text-green-600 dark:group-hover:text-green-400'
+                      }`}>
+                        Usuwanie przekwitłych
+                      </h3>
+                      <p className="text-xs text-gray-600 dark:text-gray-400 text-center">
+                        Przypomnienia o usuwaniu przekwitłych kwiatów
+                      </p>
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </nav>
 
       {/* Main Content */}
