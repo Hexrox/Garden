@@ -16,30 +16,44 @@ const FertilizationSchedule = () => {
   const [filterType, setFilterType] = useState('all'); // all, mineral, organic, natural
   const [viewMode, setViewMode] = useState('all'); // all, upcoming, history
 
-  const fetchFertilizations = async (signal) => {
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await axios.get('/api/care/user/all', { signal });
-
-      // Filter only fertilization actions
-      const fertilizationsOnly = response.data.filter(item => item.action_type === 'fertilization');
-      setFertilizations(fertilizationsOnly);
-    } catch (err) {
-      if (err.name !== 'AbortError') {
-        console.error('Error fetching fertilizations:', err);
-        setError('Nie udało się załadować danych. Spróbuj ponownie.');
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
+    let isMounted = true;
     const controller = new AbortController();
-    fetchFertilizations(controller.signal);
+
+    const fetchFertilizations = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const response = await axios.get('/api/care/user/all', {
+          signal: controller.signal
+        });
+
+        if (isMounted) {
+          // Filter only fertilization actions
+          const fertilizationsOnly = response.data.filter(
+            item => item.action_type === 'fertilization'
+          );
+          setFertilizations(fertilizationsOnly);
+        }
+      } catch (err) {
+        if (err.name === 'AbortError') return;
+
+        if (isMounted) {
+          console.error('Error fetching fertilizations:', err);
+          setError('Nie udało się załadować danych. Spróbuj ponownie.');
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchFertilizations();
 
     return () => {
+      isMounted = false;
       controller.abort();
     };
   }, []);
@@ -141,7 +155,7 @@ const FertilizationSchedule = () => {
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
-                <Droplets size={28} />
+                <Droplets size={28} aria-hidden="true" />
               </div>
               <div>
                 <h1 className="text-2xl font-bold">Harmonogram Nawożenia</h1>
@@ -154,7 +168,7 @@ const FertilizationSchedule = () => {
               aria-label="Dodaj nowe nawożenie"
               className="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg flex items-center gap-2 transition-colors focus:outline-none focus:ring-2 focus:ring-white/50 focus:ring-offset-2 focus:ring-offset-green-600"
             >
-              <Plus size={20} />
+              <Plus size={20} aria-hidden="true" />
               <span className="hidden sm:inline">Dodaj nawożenie</span>
             </button>
           </div>
@@ -183,13 +197,15 @@ const FertilizationSchedule = () => {
           <div className="flex flex-col sm:flex-row gap-4">
             {/* Type filter */}
             <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                <Filter size={16} className="inline mr-1" />
+              <label htmlFor="filterType" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <Filter size={16} className="inline mr-1" aria-hidden="true" />
                 Typ nawozu
               </label>
               <select
+                id="filterType"
                 value={filterType}
                 onChange={(e) => setFilterType(e.target.value)}
+                aria-label="Wybierz typ nawozu do filtrowania"
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               >
                 <option value="all">Wszystkie</option>
@@ -201,13 +217,15 @@ const FertilizationSchedule = () => {
 
             {/* View mode filter */}
             <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                <Calendar size={16} className="inline mr-1" />
+              <label htmlFor="viewMode" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <Calendar size={16} className="inline mr-1" aria-hidden="true" />
                 Widok
               </label>
               <select
+                id="viewMode"
                 value={viewMode}
                 onChange={(e) => setViewMode(e.target.value)}
+                aria-label="Wybierz widok nawożeń"
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               >
                 <option value="all">Wszystkie</option>
@@ -245,7 +263,7 @@ const FertilizationSchedule = () => {
                 <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
                 <button
                   type="button"
-                  onClick={() => fetchFertilizations(new AbortController().signal)}
+                  onClick={() => window.location.reload()}
                   aria-label="Spróbuj ponownie załadować dane"
                   className="mt-2 px-3 py-1 text-sm text-white bg-red-600 hover:bg-red-700 rounded transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
                 >

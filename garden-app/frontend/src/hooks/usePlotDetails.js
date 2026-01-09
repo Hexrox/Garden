@@ -20,21 +20,15 @@ const usePlotDetails = () => {
       setLoading(true);
       setError(null);
 
-      // Fetch all plots
-      const plotsResponse = await axios.get('/api/plots', { signal });
-
-      // Fetch details for all plots in parallel
-      const detailsPromises = plotsResponse.data.map(plot =>
-        axios.get(`/api/plots/${plot.id}/details`, { signal })
-      );
-
-      const detailsResults = await Promise.all(detailsPromises);
+      // Single request - eliminates N+1 problem!
+      // Instead of: 1 request for plots + N requests for details
+      // We now make: 1 request that returns everything
+      const response = await axios.get('/api/plots/all-with-details', { signal });
 
       // Extract all beds with plot information
       const allBeds = [];
-      detailsResults.forEach((detailsResponse, idx) => {
-        const plot = plotsResponse.data[idx];
-        const plotBeds = detailsResponse.data.beds || [];
+      response.data.forEach(plot => {
+        const plotBeds = plot.beds || [];
 
         plotBeds.forEach(bed => {
           allBeds.push({
@@ -45,9 +39,9 @@ const usePlotDetails = () => {
         });
       });
 
-      setPlots(plotsResponse.data);
+      setPlots(response.data);
       setBeds(allBeds);
-      return { plots: plotsResponse.data, beds: allBeds };
+      return { plots: response.data, beds: allBeds };
     } catch (err) {
       if (err.name !== 'AbortError') {
         console.error('Error fetching plot details:', err);

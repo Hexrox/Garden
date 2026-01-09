@@ -3,6 +3,19 @@ const router = express.Router();
 const db = require('../db');
 const auth = require('../middleware/auth');
 const { body, validationResult } = require('express-validator');
+const sanitizeHtml = require('sanitize-html');
+
+// Sanitization config - no HTML tags allowed
+const sanitizeConfig = {
+  allowedTags: [],
+  allowedAttributes: {},
+  disallowedTagsMode: 'discard'
+};
+
+const sanitizeInput = (input) => {
+  if (!input || typeof input !== 'string') return input;
+  return sanitizeHtml(input, sanitizeConfig);
+};
 
 /**
  * POST /api/care
@@ -38,20 +51,27 @@ router.post('/',
     const {
       bed_id,
       action_type,
-      action_name,
+      action_name: rawActionName,
       action_date,
-      dosage,
-      weather_conditions,
-      note,
+      dosage: rawDosage,
+      weather_conditions: rawWeatherConditions,
+      note: rawNote,
       // Spray-specific
       withdrawal_period,
       // Fertilization-specific
       fertilizer_type,
-      npk_ratio,
+      npk_ratio: rawNpkRatio,
       application_method,
       is_recurring,
       repeat_frequency
     } = req.body;
+
+    // Sanitize user inputs
+    const action_name = sanitizeInput(rawActionName);
+    const dosage = sanitizeInput(rawDosage);
+    const weather_conditions = sanitizeInput(rawWeatherConditions);
+    const note = sanitizeInput(rawNote);
+    const npk_ratio = sanitizeInput(rawNpkRatio);
 
     // Verify bed ownership
     db.get(

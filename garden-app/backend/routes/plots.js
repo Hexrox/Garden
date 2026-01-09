@@ -7,6 +7,19 @@ const upload = require('../middleware/upload');
 const { imageValidationMiddleware } = require('../utils/imageValidator');
 const { deleteFile } = require('../utils/fileCleanup');
 const { nameValidator, descriptionValidator } = require('../middleware/validators');
+const sanitizeHtml = require('sanitize-html');
+
+// Sanitization config - no HTML tags allowed
+const sanitizeConfig = {
+  allowedTags: [],
+  allowedAttributes: {},
+  disallowedTagsMode: 'discard'
+};
+
+const sanitizeInput = (input) => {
+  if (!input || typeof input !== 'string') return input;
+  return sanitizeHtml(input, sanitizeConfig);
+};
 
 // Get all plots for logged-in user
 router.get('/plots', auth, (req, res) => {
@@ -171,7 +184,15 @@ router.post('/plots',
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { name, description } = req.body;
+    const {
+      name: rawName,
+      description: rawDescription
+    } = req.body;
+
+    // Sanitize user inputs
+    const name = sanitizeInput(rawName);
+    const description = sanitizeInput(rawDescription);
+
     const imagePath = req.file ? `uploads/${req.file.filename}` : null;
 
     db.run(
@@ -213,7 +234,15 @@ router.put('/plots/:id',
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { name, description } = req.body;
+    const {
+      name: rawName,
+      description: rawDescription
+    } = req.body;
+
+    // Sanitize user inputs
+    const name = rawName !== undefined ? sanitizeInput(rawName) : undefined;
+    const description = rawDescription !== undefined ? sanitizeInput(rawDescription) : undefined;
+
     const imagePath = req.file ? `uploads/${req.file.filename}` : undefined;
 
     // If new image uploaded, delete old image first
@@ -320,6 +349,102 @@ router.delete('/plots/:id', auth, (req, res) => {
     }
 
     res.json({ message: 'Poletko usunięte pomyślnie' });
+  });
+});
+
+/**
+ * GET /api/plots/all-with-details
+ * Eliminates N+1 problem - returns all plots with beds in single query
+ * Used by flower tracking components (BloomTimeline, WinterProtection, etc.)
+ */
+router.get('/plots/all-with-details', auth, (req, res) => {
+  const query = `
+    SELECT
+      p.id as plot_id,
+      p.name as plot_name,
+      p.description as plot_description,
+      p.image_path as plot_image,
+      p.created_at as plot_created,
+      b.id as bed_id,
+      b.row_number,
+      b.plant_name,
+      b.plant_variety,
+      b.planted_date,
+      b.expected_harvest_date,
+      b.actual_harvest_date,
+      b.yield_amount,
+      b.yield_unit,
+      b.note as bed_note,
+      b.image_path as bed_image,
+      b.created_at as bed_created,
+      pl.category,
+      pl.flower_color,
+      pl.bloom_season,
+      pl.height,
+      pl.sun_requirement,
+      pl.latin_name,
+      pl.is_perennial,
+      pl.is_bee_friendly,
+      pl.is_fragrant,
+      pl.is_edible
+    FROM plots p
+    LEFT JOIN beds b ON p.id = b.plot_id
+    LEFT JOIN plants pl ON (b.plant_name = pl.name OR b.plant_name = pl.display_name)
+      AND (pl.user_id = ? OR pl.user_id IS NULL)
+    WHERE p.user_id = ?
+    ORDER BY p.id, b.row_number
+  `;
+
+  db.all(query, [req.user.id, req.user.id], (err, rows) => {
+    if (err) {
+      console.error('Error fetching all plots with details:', err);
+      return res.status(500).json({ error: 'Błąd serwera' });
+    }
+
+    // Group by plots
+    const plotsMap = {};
+    rows.forEach(row => {
+      if (!plotsMap[row.plot_id]) {
+        plotsMap[row.plot_id] = {
+          id: row.plot_id,
+          name: row.plot_name,
+          description: row.plot_description,
+          image_path: row.plot_image,
+          created_at: row.plot_created,
+          beds: []
+        };
+      }
+
+      if (row.bed_id) {
+        plotsMap[row.plot_id].beds.push({
+          id: row.bed_id,
+          plot_id: row.plot_id,
+          row_number: row.row_number,
+          plant_name: row.plant_name,
+          plant_variety: row.plant_variety,
+          planted_date: row.planted_date,
+          expected_harvest_date: row.expected_harvest_date,
+          actual_harvest_date: row.actual_harvest_date,
+          yield_amount: row.yield_amount,
+          yield_unit: row.yield_unit,
+          note: row.bed_note,
+          image_path: row.bed_image,
+          created_at: row.bed_created,
+          category: row.category,
+          flower_color: row.flower_color,
+          bloom_season: row.bloom_season,
+          height: row.height,
+          sun_requirement: row.sun_requirement,
+          latin_name: row.latin_name,
+          is_perennial: row.is_perennial,
+          is_bee_friendly: row.is_bee_friendly,
+          is_fragrant: row.is_fragrant,
+          is_edible: row.is_edible
+        });
+      }
+    });
+
+    res.json(Object.values(plotsMap));
   });
 });
 

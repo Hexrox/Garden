@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { Flower2, Info, Calendar, AlertCircle } from 'lucide-react';
 import usePlotDetails from '../hooks/usePlotDetails';
 
@@ -104,7 +104,7 @@ const BloomTimeline = () => {
   /**
    * Check if a flower blooms in a specific month
    */
-  const bloomsInMonth = (flower, monthNum) => {
+  const bloomsInMonth = useCallback((flower, monthNum) => {
     const [start, end] = parseBloomSeason(flower.bloom_season);
 
     if (!start || !end) return false;
@@ -115,7 +115,7 @@ const BloomTimeline = () => {
     }
 
     return monthNum >= start && monthNum <= end;
-  };
+  }, []);
 
   /**
    * Get the color for the bloom bar
@@ -166,7 +166,7 @@ const BloomTimeline = () => {
    */
   const getFlowersForMonth = useMemo(() => {
     return (monthNum) => flowers.filter(flower => bloomsInMonth(flower, monthNum));
-  }, [flowers]);
+  }, [flowers, bloomsInMonth]);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20 md:pb-0">
@@ -253,6 +253,14 @@ const BloomTimeline = () => {
 
             {/* Timeline Chart */}
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-x-auto">
+              {/* Mobile scroll hint */}
+              <div className="md:hidden bg-blue-50 dark:bg-blue-900/20 p-2 text-center border-b border-blue-200 dark:border-blue-700">
+                <p className="text-xs text-blue-700 dark:text-blue-300 flex items-center justify-center gap-1">
+                  <span>Przesuń w prawo aby zobaczyć wszystkie miesiące</span>
+                  <span className="animate-pulse">→</span>
+                </p>
+              </div>
+
               <div className="min-w-[600px] sm:min-w-[800px]">
                 {/* Month Headers */}
                 <div className="grid grid-cols-13 gap-px bg-gray-200 dark:bg-gray-700 border-b-2 border-gray-300 dark:border-gray-600">
@@ -301,11 +309,11 @@ const BloomTimeline = () => {
                           {getCategoryEmoji(flower.category)}
                         </span>
                         <div className="min-w-0 flex-1">
-                          <div className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                          <div className="text-sm font-semibold text-gray-900 dark:text-white truncate" title={flower.name}>
                             {flower.name}
                           </div>
                           {flower.variety && (
-                            <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                            <div className="text-xs text-gray-500 dark:text-gray-400 truncate" title={flower.variety}>
                               {flower.variety}
                             </div>
                           )}

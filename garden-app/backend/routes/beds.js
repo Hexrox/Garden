@@ -7,6 +7,19 @@ const upload = require('../middleware/upload');
 const { imageValidationMiddleware } = require('../utils/imageValidator');
 const { calculateHarvestDate } = require('../utils/harvestPredictor');
 const { buildUpdateQuery } = require('../utils/queryBuilder');
+const sanitizeHtml = require('sanitize-html');
+
+// Sanitization config - no HTML tags allowed
+const sanitizeConfig = {
+  allowedTags: [],
+  allowedAttributes: {},
+  disallowedTagsMode: 'discard'
+};
+
+const sanitizeInput = (input) => {
+  if (!input || typeof input !== 'string') return input;
+  return sanitizeHtml(input, sanitizeConfig);
+};
 
 // Get all beds for a plot
 router.get('/plots/:plotId/beds', auth, (req, res) => {
@@ -74,7 +87,19 @@ router.post('/plots/:plotId/beds',
         return res.status(404).json({ error: 'Poletko nie znalezione' });
       }
 
-      const { row_number, plant_name, plant_variety, planted_date, note } = req.body;
+      const {
+        row_number,
+        plant_name: rawPlantName,
+        plant_variety: rawPlantVariety,
+        planted_date,
+        note: rawNote
+      } = req.body;
+
+      // Sanitize user inputs
+      const plant_name = sanitizeInput(rawPlantName);
+      const plant_variety = sanitizeInput(rawPlantVariety);
+      const note = sanitizeInput(rawNote);
+
       const imagePath = req.file ? `uploads/${req.file.filename}` : null;
 
       // Check if row_number already exists for this plot
@@ -143,7 +168,23 @@ router.put('/beds/:id',
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { row_number, plant_name, plant_variety, planted_date, note, yield_amount, yield_unit, actual_harvest_date } = req.body;
+    const {
+      row_number,
+      plant_name: rawPlantName,
+      plant_variety: rawPlantVariety,
+      planted_date,
+      note: rawNote,
+      yield_amount,
+      yield_unit: rawYieldUnit,
+      actual_harvest_date
+    } = req.body;
+
+    // Sanitize user inputs
+    const plant_name = rawPlantName !== undefined ? sanitizeInput(rawPlantName) : undefined;
+    const plant_variety = rawPlantVariety !== undefined ? sanitizeInput(rawPlantVariety) : undefined;
+    const note = rawNote !== undefined ? sanitizeInput(rawNote) : undefined;
+    const yield_unit = rawYieldUnit !== undefined ? sanitizeInput(rawYieldUnit) : undefined;
+
     const imagePath = req.file ? `uploads/${req.file.filename}` : undefined;
 
     // Check if we need to recalculate harvest date
