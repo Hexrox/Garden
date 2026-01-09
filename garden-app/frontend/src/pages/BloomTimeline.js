@@ -380,7 +380,7 @@ const BloomTimeline = () => {
                           {flower.plot_name} → Rząd {flower.row_number}
                         </p>
                       </div>
-                    </button>
+                    </div>
                   ))}
                 </div>
               </div>
