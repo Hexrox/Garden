@@ -62,7 +62,7 @@ app.use(helmet({
         "blob:",
         "https://openweathermap.org"  // Weather API images
       ],
-      connectSrc: ["'self'", process.env.FRONTEND_URL || "http://localhost:3000", "https://api.openweathermap.org"],
+      connectSrc: ["'self'", ...(process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(',').map(u => u.trim()) : ["http://localhost:3000"]), "https://api.openweathermap.org"],
       fontSrc: ["'self'", "data:"],
       objectSrc: ["'none'"],
       mediaSrc: ["'self'"],

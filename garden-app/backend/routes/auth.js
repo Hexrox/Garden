@@ -272,7 +272,7 @@ router.put('/update-profile', auth, updateProfileHandler); // Alias for onboardi
 // Get user profile
 router.get('/profile', auth, (req, res) => {
   db.get(
-    'SELECT id, username, email, hardiness_zone, first_frost_date, last_frost_date, location FROM users WHERE id = ?',
+    'SELECT id, username, email, hardiness_zone, first_frost_date, last_frost_date, location, onboarding_completed, latitude, longitude, city FROM users WHERE id = ?',
     [req.user.id],
     (err, user) => {
       if (err) {

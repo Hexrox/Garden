@@ -5,7 +5,6 @@ const db = require('../db');
 const auth = require('../middleware/auth');
 const upload = require('../middleware/upload');
 const fs = require('fs');
-const { dbGet, dbAll, dbRun } = require('../utils/dbHelpers');
 
 // ==========================================
 // PUBLIC ENDPOINTS (no auth required)
