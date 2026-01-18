@@ -657,10 +657,17 @@ class WeatherService {
 
   /**
    * Sprawdź ryzyko chorób grzybowych (wysoka wilgotność)
+   * UWAGA: Nie pokazuj rekomendacji podlewania przy ujemnych/niskich temperaturach!
    */
   checkHumidityAndFungalRisk(weather, forecast) {
     const humidity = weather.humidity;
     const temp = weather.temperature;
+
+    // Przy mrozie lub niskich temperaturach (<5°C) - nie pokazuj alertów o wilgotności
+    // Wysoka wilgotność zimą jest normalna i NIE wymaga reakcji podlewania
+    if (temp < 5) {
+      return null;
+    }
 
     // WYSOKIE RYZYKO: wilgotność >80%, temp 15-25°C
     if (humidity > 80 && temp >= 15 && temp <= 25) {
@@ -673,8 +680,9 @@ class WeatherService {
       };
     }
 
-    // UMIARKOWANE RYZYKO: wilgotność >70%
-    if (humidity > 70) {
+    // UMIARKOWANE RYZYKO: wilgotność >70%, ale tylko gdy temp >= 10°C
+    // Przy temp 5-10°C wysoka wilgotność jest mniej problematyczna
+    if (humidity > 70 && temp >= 10) {
       return {
         type: 'fungal-warning',
         priority: 'medium',
@@ -697,6 +705,12 @@ class WeatherService {
 
     // SEZON ZIMOWY (listopad-marzec): rośliny w spoczynku, niska ewapotranspiracja
     const isWinter = month >= 10 || month <= 2;
+
+    // NISKIE TEMPERATURY: Nie pokazuj alertu suszy gdy temp < 5°C
+    // Przy mrozie i zimnie rośliny nie potrzebują podlewania niezależnie od sezonu
+    if (temp < 5) {
+      return null;
+    }
 
     // ZIMA: Nie pokazuj alertu gdy temp < 10°C (rośliny nieaktywne, nie potrzebują podlewania)
     if (isWinter && temp < 10) {

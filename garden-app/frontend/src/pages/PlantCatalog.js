@@ -241,45 +241,50 @@ const PlantCatalog = () => {
 
 // Plant Card Component
 const PlantCard = ({ plant, onClick }) => {
+  // Validate days_to_harvest - show only if it's a meaningful positive number
+  const hasValidHarvest = plant.days_to_harvest &&
+    plant.days_to_harvest > 0 &&
+    String(plant.days_to_harvest) !== '00';
+
   return (
     <button
       onClick={onClick}
-      className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-left w-full"
+      className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-left w-full min-w-0"
     >
-      <div className="flex items-start justify-between mb-2">
-        <div className="flex-1">
-          <h4 className="font-semibold text-gray-900 dark:text-white">
+      <div className="flex items-start justify-between mb-2 min-w-0">
+        <div className="flex-1 min-w-0">
+          <h4 className="font-semibold text-gray-900 dark:text-white text-sm leading-snug break-words">
             {plant.display_name || plant.name}
           </h4>
           {plant.latin_name && (
-            <p className="text-xs text-gray-500 dark:text-gray-400 italic mt-1">
+            <p className="text-xs text-gray-500 dark:text-gray-400 italic mt-1 truncate">
               {plant.latin_name}
             </p>
           )}
         </div>
       </div>
 
-      <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400 mt-2">
-        {plant.days_to_harvest > 0 && (
-          <span className="flex items-center gap-1">
-            <Sprout className="w-3 h-3" />
-            {plant.days_to_harvest} dni
+      <div className="flex flex-wrap items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400 mt-2">
+        {hasValidHarvest && (
+          <span className="flex items-center gap-1 whitespace-nowrap">
+            <Sprout className="w-3 h-3 flex-shrink-0" />
+            {plant.days_to_harvest}d
           </span>
         )}
         {plant.category && (
-          <span className="px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 rounded">
-            {plant.category === 'flower_perennial' && '🌸 Bylina'}
-            {plant.category === 'flower_annual' && '🌼 Jednoroczna'}
-            {plant.category === 'flower_bulb' && '🌷 Cebulowa'}
-            {plant.category === 'fruit_tree' && '🌳 Drzewo'}
-            {plant.category === 'fruit_bush' && '🍇 Krzew'}
-            {plant.category === 'herb' && '🌿 Zioło'}
-            {plant.category === 'vegetable' && '🥕 Warzywo'}
+          <span className="px-1.5 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 rounded text-xs whitespace-nowrap">
+            {plant.category === 'flower_perennial' && '🌸'}
+            {plant.category === 'flower_annual' && '🌼'}
+            {plant.category === 'flower_bulb' && '🌷'}
+            {plant.category === 'fruit_tree' && '🌳'}
+            {plant.category === 'fruit_bush' && '🍇'}
+            {plant.category === 'herb' && '🌿'}
+            {plant.category === 'vegetable' && '🥕'}
           </span>
         )}
-        {plant.soil_ph && (
-          <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 rounded">
-            pH {plant.soil_ph}
+        {plant.flower_color && (
+          <span className="px-1.5 py-0.5 bg-pink-100 dark:bg-pink-900/30 text-pink-800 dark:text-pink-200 rounded text-xs truncate max-w-[80px]" title={plant.flower_color}>
+            {plant.flower_color.split(',')[0]}
           </span>
         )}
       </div>
@@ -317,8 +322,8 @@ const PlantDetailModal = ({ plant, onClose, onPlant }) => {
         {/* Content */}
         <div className="p-6 space-y-6">
           {/* Basic Info - Extended */}
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            {plant.days_to_harvest && (
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-3">
+            {plant.days_to_harvest && plant.days_to_harvest > 0 && String(plant.days_to_harvest) !== '00' && (
               <InfoBox
                 icon={<Sprout className="w-5 h-5" />}
                 label="Dni do zbioru"
@@ -394,32 +399,32 @@ const PlantDetailModal = ({ plant, onClose, onPlant }) => {
           {/* Flower-specific info */}
           {(plant.flower_color || plant.bloom_season || plant.is_fragrant || plant.is_bee_friendly || plant.is_perennial) && (
             <Section title="🌸 Informacje o kwiatach">
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              <div className="flex flex-wrap gap-2">
                 {plant.flower_color && (
-                  <div className="p-2 bg-pink-50 dark:bg-pink-900/20 rounded">
-                    <span className="text-sm font-semibold text-pink-900 dark:text-pink-100">Kolor:</span>
-                    <span className="ml-2 text-sm text-pink-800 dark:text-pink-200">{plant.flower_color}</span>
+                  <div className="p-2 bg-pink-50 dark:bg-pink-900/20 rounded min-w-0 max-w-full">
+                    <span className="text-xs font-semibold text-pink-900 dark:text-pink-100 block">Kolor</span>
+                    <span className="text-sm text-pink-800 dark:text-pink-200 break-words">{plant.flower_color}</span>
                   </div>
                 )}
                 {plant.bloom_season && (
-                  <div className="p-2 bg-purple-50 dark:bg-purple-900/20 rounded">
-                    <span className="text-sm font-semibold text-purple-900 dark:text-purple-100">Kwitnienie:</span>
-                    <span className="ml-2 text-sm text-purple-800 dark:text-purple-200">{plant.bloom_season}</span>
+                  <div className="p-2 bg-purple-50 dark:bg-purple-900/20 rounded min-w-0 max-w-full">
+                    <span className="text-xs font-semibold text-purple-900 dark:text-purple-100 block">Kwitnienie</span>
+                    <span className="text-sm text-purple-800 dark:text-purple-200 break-words">{plant.bloom_season}</span>
                   </div>
                 )}
                 {plant.is_perennial && (
                   <div className="p-2 bg-green-50 dark:bg-green-900/20 rounded">
-                    <span className="text-sm text-green-800 dark:text-green-200">🌿 Bylina wieloletnia</span>
+                    <span className="text-sm text-green-800 dark:text-green-200">🌿 Bylina</span>
                   </div>
                 )}
                 {plant.is_fragrant && (
                   <div className="p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded">
-                    <span className="text-sm text-yellow-800 dark:text-yellow-200">🌺 Aromatyczna</span>
+                    <span className="text-sm text-yellow-800 dark:text-yellow-200">🌺 Zapachowa</span>
                   </div>
                 )}
                 {plant.is_bee_friendly && (
                   <div className="p-2 bg-amber-50 dark:bg-amber-900/20 rounded">
-                    <span className="text-sm text-amber-800 dark:text-amber-200">🐝 Przyjazna pszczołom</span>
+                    <span className="text-sm text-amber-800 dark:text-amber-200">🐝 Miododajna</span>
                   </div>
                 )}
               </div>
@@ -430,11 +435,35 @@ const PlantDetailModal = ({ plant, onClose, onPlant }) => {
           {plant.uses && (
             <Section title="🍴 Zastosowanie">
               <div className="flex flex-wrap gap-2">
-                {(typeof plant.uses === 'string' ? plant.uses.split(',') : plant.uses).map((use, idx) => (
-                  <span key={idx} className="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 rounded-full text-sm">
-                    {use.trim()}
-                  </span>
-                ))}
+                {(() => {
+                  // Parse uses - handle JSON string, array, or comma-separated string
+                  let usesArray = [];
+                  if (typeof plant.uses === 'string') {
+                    // Remove brackets if present and try to parse as JSON
+                    const cleanedUses = plant.uses.trim();
+                    if (cleanedUses.startsWith('[')) {
+                      try {
+                        usesArray = JSON.parse(cleanedUses);
+                      } catch {
+                        // If JSON parse fails, treat as comma-separated
+                        usesArray = cleanedUses.replace(/[[\]"]/g, '').split(',');
+                      }
+                    } else {
+                      usesArray = cleanedUses.split(',');
+                    }
+                  } else if (Array.isArray(plant.uses)) {
+                    usesArray = plant.uses;
+                  }
+
+                  return usesArray
+                    .map(use => (typeof use === 'string' ? use.trim() : use))
+                    .filter(use => use && use.length > 0)
+                    .map((use, idx) => (
+                      <span key={idx} className="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 rounded-full text-sm">
+                        {use}
+                      </span>
+                    ));
+                })()}
               </div>
             </Section>
           )}
@@ -590,16 +619,16 @@ const PlantDetailModal = ({ plant, onClose, onPlant }) => {
 
 // Helper Components
 const InfoBox = ({ icon, label, value, sublabel }) => (
-  <div className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+  <div className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg min-w-0">
     <div className="flex items-center gap-2 mb-1">
-      {typeof icon === 'string' ? <span>{icon}</span> : <span className="text-gray-600 dark:text-gray-400">{icon}</span>}
-      <span className="text-xs text-gray-500 dark:text-gray-400">{label}</span>
+      {typeof icon === 'string' ? <span className="flex-shrink-0">{icon}</span> : <span className="text-gray-600 dark:text-gray-400 flex-shrink-0">{icon}</span>}
+      <span className="text-xs text-gray-500 dark:text-gray-400 truncate">{label}</span>
     </div>
-    <p className="font-semibold text-gray-900 dark:text-white text-sm">
+    <p className="font-semibold text-gray-900 dark:text-white text-sm break-words leading-snug">
       {value}
     </p>
     {sublabel && (
-      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 break-words">
         {sublabel}
       </p>
     )}

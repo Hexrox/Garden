@@ -77,6 +77,11 @@ const Calendar = () => {
     fetchEvents();
   }, [fetchEvents]);
 
+  // Mark calendar as visited for onboarding checklist
+  useEffect(() => {
+    localStorage.setItem('visitedCalendar', 'true');
+  }, []);
+
   // Calendar calculations
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
