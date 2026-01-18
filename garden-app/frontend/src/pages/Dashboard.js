@@ -198,20 +198,32 @@ const Dashboard = () => {
           />
         )}
 
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
-            Witaj, {user?.username}!
-          </h1>
-          <p className="text-sm md:text-base text-gray-600 dark:text-gray-400 mt-1">Przegląd Twojego ogrodu</p>
+      {/* Hero Header with Gradient */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-green-600 via-green-500 to-emerald-400 dark:from-green-800 dark:via-green-700 dark:to-emerald-600 rounded-2xl p-6 md:p-8 shadow-lg">
+        {/* Decorative elements */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl"></div>
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full translate-y-1/2 -translate-x-1/2 blur-2xl"></div>
+
+        <div className="relative flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <p className="text-green-100 text-sm font-medium mb-1">
+              {new Date().getHours() < 12 ? 'Dzień dobry' : new Date().getHours() < 18 ? 'Cześć' : 'Dobry wieczór'},
+            </p>
+            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-white">
+              {user?.username}!
+            </h1>
+            <p className="text-green-100 mt-2 text-sm md:text-base">
+              Przegląd Twojego ogrodu na dziś
+            </p>
+          </div>
+          <Link
+            to="/calendar"
+            className="flex items-center gap-2 px-5 py-2.5 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white rounded-xl shadow-lg transition-all duration-200 font-medium border border-white/20"
+          >
+            <Calendar size={20} />
+            <span className="hidden sm:inline">Kalendarz</span>
+          </Link>
         </div>
-        <Link
-          to="/calendar"
-          className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg shadow-sm transition-colors font-medium"
-        >
-          <Calendar size={20} />
-          <span className="hidden sm:inline">Kalendarz Ogrodnika</span>
-        </Link>
       </div>
 
       {/* Welcome Card */}
@@ -235,62 +247,59 @@ const Dashboard = () => {
 
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 transition-colors">
+        <Link to="/plots" className="group bg-white dark:bg-gray-800 rounded-xl shadow-sm hover:shadow-lg p-6 transition-all duration-300 hover:-translate-y-1 cursor-pointer border border-transparent hover:border-green-200 dark:hover:border-green-800">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
-                <Sprout className="w-6 h-6 text-green-600 dark:text-green-400" />
+              <div className="w-14 h-14 bg-gradient-to-br from-green-100 to-green-50 dark:from-green-900/40 dark:to-green-800/20 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                <Sprout className="w-7 h-7 text-green-600 dark:text-green-400" />
               </div>
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Poletka</p>
-              <p className="text-2xl font-semibold text-gray-900 dark:text-white">{stats.totalPlots}</p>
+              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Poletka</p>
+              <p className="text-3xl font-bold text-gray-900 dark:text-white">{stats.totalPlots}</p>
             </div>
           </div>
-          <div className="mt-4">
-            <Link to="/plots" className="text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 text-sm font-medium">
-              Zobacz wszystkie →
-            </Link>
+          <div className="mt-4 flex items-center text-green-600 dark:text-green-400 text-sm font-medium group-hover:translate-x-1 transition-transform">
+            Zobacz wszystkie
+            <span className="ml-1 group-hover:ml-2 transition-all">→</span>
           </div>
-        </div>
+        </Link>
 
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 transition-colors">
+        <Link to="/sprays" className="group bg-white dark:bg-gray-800 rounded-xl shadow-sm hover:shadow-lg p-6 transition-all duration-300 hover:-translate-y-1 cursor-pointer border border-transparent hover:border-blue-200 dark:hover:border-blue-800">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
-                <Droplets className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+              <div className="w-14 h-14 bg-gradient-to-br from-blue-100 to-blue-50 dark:from-blue-900/40 dark:to-blue-800/20 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                <Droplets className="w-7 h-7 text-blue-600 dark:text-blue-400" />
               </div>
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Aktywne opryski</p>
-              <p className="text-2xl font-semibold text-gray-900 dark:text-white">{stats.activeSprays}</p>
+              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Aktywne opryski</p>
+              <p className="text-3xl font-bold text-gray-900 dark:text-white">{stats.activeSprays}</p>
             </div>
           </div>
-          <div className="mt-4">
-            <Link to="/sprays" className="text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 text-sm font-medium">
-              Zobacz historię →
-            </Link>
+          <div className="mt-4 flex items-center text-blue-600 dark:text-blue-400 text-sm font-medium group-hover:translate-x-1 transition-transform">
+            Zobacz historię
+            <span className="ml-1 group-hover:ml-2 transition-all">→</span>
           </div>
-        </div>
+        </Link>
 
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 transition-colors">
+        <Link to="/reminders" className="group bg-white dark:bg-gray-800 rounded-xl shadow-sm hover:shadow-lg p-6 transition-all duration-300 hover:-translate-y-1 cursor-pointer border border-transparent hover:border-amber-200 dark:hover:border-amber-800">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <div className="w-12 h-12 bg-amber-100 dark:bg-amber-900/30 rounded-lg flex items-center justify-center">
-                <Bell className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+              <div className="w-14 h-14 bg-gradient-to-br from-amber-100 to-amber-50 dark:from-amber-900/40 dark:to-amber-800/20 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                <Bell className="w-7 h-7 text-amber-600 dark:text-amber-400" />
               </div>
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Przypomnienia</p>
-              <p className="text-2xl font-semibold text-gray-900 dark:text-white">{reminders.length}</p>
+              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Przypomnienia</p>
+              <p className="text-3xl font-bold text-gray-900 dark:text-white">{reminders.length}</p>
             </div>
           </div>
-          <div className="mt-4">
-            <Link to="/reminders" className="text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 text-sm font-medium">
-              Zobacz wszystkie →
-            </Link>
+          <div className="mt-4 flex items-center text-amber-600 dark:text-amber-400 text-sm font-medium group-hover:translate-x-1 transition-transform">
+            Zobacz wszystkie
+            <span className="ml-1 group-hover:ml-2 transition-all">→</span>
           </div>
-        </div>
+        </Link>
       </div>
 
       {/* Reminders Section */}

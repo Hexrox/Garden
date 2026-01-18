@@ -111,9 +111,9 @@ const EditPhotoModal = ({ photo, isOpen, onClose, onSuccess }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4 overflow-y-auto" onClick={onClose}>
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4 overflow-y-auto animate-fade-in" onClick={onClose}>
       <div
-        className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-2xl w-full my-auto max-h-[95vh] flex flex-col"
+        className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl rounded-2xl shadow-2xl max-w-2xl w-full my-auto max-h-[95vh] flex flex-col border border-white/20 dark:border-gray-700/50 animate-fade-in-up"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header - sticky */}

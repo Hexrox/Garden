@@ -65,15 +65,18 @@ const BottomNav = () => {
             );
           })}
 
-          {/* Central Menu Button */}
+          {/* Central Menu Button - Enlarged FAB */}
           <button
             onClick={() => setActiveModal('menu')}
-            className="flex flex-col items-center justify-center flex-1 h-full transition-colors text-gray-600 dark:text-gray-400 hover:text-green-600 dark:hover:text-green-400 hover:bg-gray-50 dark:hover:bg-gray-700 relative"
+            className="flex flex-col items-center justify-center flex-1 h-full transition-colors text-gray-600 dark:text-gray-400 relative"
+            aria-label="Otwórz menu"
           >
-            <div className="absolute -top-2 w-14 h-14 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl shadow-lg flex items-center justify-center">
-              <Menu size={28} className="text-white" />
+            <div className="absolute -top-4 w-16 h-16 bg-gradient-to-br from-green-500 via-green-500 to-emerald-500 rounded-2xl shadow-xl flex items-center justify-center transform hover:scale-105 active:scale-95 transition-all duration-200 ring-4 ring-white dark:ring-gray-800">
+              <Menu size={30} className="text-white" />
+              {/* Glow effect */}
+              <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-green-400 to-emerald-500 opacity-0 hover:opacity-20 blur-xl transition-opacity"></div>
             </div>
-            <span className="text-xs font-medium mt-9">Menu</span>
+            <span className="text-xs font-medium mt-10 text-gray-500 dark:text-gray-400">Menu</span>
           </button>
 
           {/* Last 2 items */}

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
+import { ToastProvider } from './context/ToastContext';
 import Layout from './components/Layout';
 import ErrorBoundary from './components/ErrorBoundary';
 import CookieConsent from './components/CookieConsent';
@@ -346,10 +347,12 @@ function App() {
   return (
     <ErrorBoundary>
       <ThemeProvider>
-        <AuthProvider>
-          <AppRoutes />
-          <CookieConsent />
-        </AuthProvider>
+        <ToastProvider>
+          <AuthProvider>
+            <AppRoutes />
+            <CookieConsent />
+          </AuthProvider>
+        </ToastProvider>
       </ThemeProvider>
     </ErrorBoundary>
   );
