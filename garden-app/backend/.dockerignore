@@ -1,0 +1,14 @@
+node_modules
+npm-debug.log
+.env
+.env.*
+garden.db
+garden.db.*
+uploads/*
+!uploads/.gitkeep
+*.log
+.git
+.gitignore
+CLAUDE.md
+*.md
+test-*.js
