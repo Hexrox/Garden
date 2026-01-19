@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronDown, ChevronUp, Leaf, Droplets, Sun, Sprout, AlertCircle, Plus } from 'lucide-react';
+import { ChevronDown, ChevronUp, Leaf, Droplets, Sun, Sprout, AlertCircle, Plus, X } from 'lucide-react';
 import axios from '../config/axios';
 import PlantingWizard from '../components/PlantingWizard';
 
@@ -321,6 +321,9 @@ const PlantDetailModal = ({ plant, onClose, onPlant }) => {
 
         {/* Content */}
         <div className="p-6 space-y-6">
+          {/* Plant Images */}
+          <PlantImages plant={plant} />
+
           {/* Basic Info - Extended */}
           <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-3">
             {plant.days_to_harvest && plant.days_to_harvest > 0 && String(plant.days_to_harvest) !== '00' && (
@@ -643,6 +646,105 @@ const Section = ({ title, children, icon }) => (
     <div>{children}</div>
   </div>
 );
+
+// Plant Images Component - displays photo and/or illustration with attribution
+const PlantImages = ({ plant }) => {
+  const [selectedImage, setSelectedImage] = useState(null);
+  const API_URL = process.env.REACT_APP_API_URL || '';
+
+  const images = [];
+  if (plant.photo_path) {
+    images.push({
+      type: 'photo',
+      label: 'Zdjęcie',
+      path: plant.photo_path,
+      thumb: plant.photo_thumb,
+      author: plant.photo_author,
+      source: plant.photo_source,
+      license: plant.photo_license,
+      sourceUrl: plant.photo_source_url
+    });
+  }
+  if (plant.illustration_path) {
+    images.push({
+      type: 'illustration',
+      label: 'Ilustracja botaniczna',
+      path: plant.illustration_path,
+      thumb: plant.illustration_thumb,
+      author: plant.illustration_author,
+      source: plant.illustration_source,
+      license: plant.illustration_license,
+      sourceUrl: plant.illustration_source_url
+    });
+  }
+
+  if (images.length === 0) return null;
+
+  return (
+    <>
+      <div className={'grid gap-4 ' + (images.length > 1 ? 'grid-cols-2' : 'grid-cols-1')}>
+        {images.map((img) => (
+          <div key={img.type} className="relative group">
+            <button
+              onClick={() => setSelectedImage(img)}
+              className="w-full aspect-[4/3] rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-700 hover:ring-2 ring-green-500 transition-all"
+            >
+              <img
+                src={API_URL + (img.thumb || img.path)}
+                alt={plant.display_name + ' - ' + img.label}
+                className="w-full h-full object-cover"
+              />
+            </button>
+            <div className="absolute bottom-2 left-2 right-2 text-xs text-white bg-black/60 rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <span className="font-medium">{img.label}</span>
+              {img.author && <span className="ml-1">• {img.author}</span>}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Lightbox */}
+      {selectedImage && (
+        <div
+          className="fixed inset-0 bg-black/90 z-[60] flex items-center justify-center p-4"
+          onClick={() => setSelectedImage(null)}
+        >
+          <div className="relative max-w-4xl w-full" onClick={e => e.stopPropagation()}>
+            <img
+              src={API_URL + selectedImage.path}
+              alt={plant.display_name + ' - ' + selectedImage.label}
+              className="w-full max-h-[80vh] object-contain rounded-lg"
+            />
+            <button
+              onClick={() => setSelectedImage(null)}
+              className="absolute top-4 right-4 p-2 bg-black/50 hover:bg-black/70 rounded-full text-white"
+              aria-label="Zamknij"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            {/* Attribution */}
+            <div className="mt-3 text-center text-white/80 text-sm">
+              <p className="font-medium">{selectedImage.label}</p>
+              {selectedImage.author && <p>Autor: {selectedImage.author}</p>}
+              {selectedImage.source && <p>Źródło: {selectedImage.source}</p>}
+              {selectedImage.license && <p>Licencja: {selectedImage.license}</p>}
+              {selectedImage.sourceUrl && (
+                <a
+                  href={selectedImage.sourceUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-green-400 hover:text-green-300 underline"
+                >
+                  Zobacz oryginał
+                </a>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+};
 
 // Add Plant Modal Component
 const AddPlantModal = ({ onClose, onSuccess }) => {
