@@ -36,6 +36,7 @@ const sprayProductsRoutes = require('./routes/sprayProducts');
 const plantProblemsRoutes = require('./routes/plantProblems');
 const careRoutes = require('./routes/care');
 const fertilizersRoutes = require('./routes/fertilizers');
+const adminImagesRoutes = require('./routes/admin-images');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -222,6 +223,7 @@ app.get('/api/health', (req, res) => {
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/admin/images', adminImagesRoutes);
 app.use('/api', plotRoutes);
 app.use('/api', bedRoutes);
 app.use('/api', sprayRoutes);
