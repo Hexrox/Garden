@@ -34,6 +34,7 @@ import Analytics from './pages/Analytics';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import Help from './pages/Help';
 import AdminPanel from './pages/AdminPanel';
+import AdminImages from './pages/AdminImages';
 import Gallery from './pages/Gallery';
 import PublicProfile from './pages/PublicProfile';
 import NotFound from './pages/NotFound';
@@ -316,6 +317,14 @@ function AppRoutes() {
           element={
             <ProtectedRoute forceRender={forceRender}>
               <AdminPanel />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/images"
+          element={
+            <ProtectedRoute forceRender={forceRender}>
+              <AdminImages />
             </ProtectedRoute>
           }
         />

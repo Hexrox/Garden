@@ -15,15 +15,15 @@ const UPLOAD_BASE = path.join(__dirname, '../uploads/plants');
  * Middleware - tylko admin
  */
 const adminOnly = (req, res, next) => {
-  // Na razie sprawdzamy czy user istnieje
-  // W przyszłości można dodać role
   if (!req.user) {
     return res.status(401).json({ error: 'Wymagane zalogowanie' });
   }
-  // TODO: Dodać sprawdzanie roli admina
-  // if (req.user.role !== 'admin') {
-  //   return res.status(403).json({ error: 'Brak uprawnień' });
-  // }
+
+  // Sprawdź rolę admina
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Brak uprawnień. Wymagana rola administratora.' });
+  }
+
   next();
 };
 

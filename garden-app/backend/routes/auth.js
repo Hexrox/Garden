@@ -105,7 +105,7 @@ router.post('/register',
 
             // Create token (bez email dla bezpieczeństwa - PII)
             const token = jwt.sign(
-              { id: userId, username },
+              { id: userId, username, role: 'user' },
               process.env.JWT_SECRET,
               { expiresIn: process.env.JWT_EXPIRES_IN }
             );
@@ -113,7 +113,7 @@ router.post('/register',
             res.status(201).json({
               message: 'Użytkownik utworzony pomyślnie. Sprawdź swoją skrzynkę email aby zweryfikować konto.',
               token,
-              user: { id: userId, username }
+              user: { id: userId, username, role: 'user' }
             });
           }
         );
@@ -186,7 +186,7 @@ router.post('/login',
 
         // Create token (bez email dla bezpieczeństwa - PII)
         const token = jwt.sign(
-          { id: user.id, username: user.username },
+          { id: user.id, username: user.username, role: user.role || 'user' },
           process.env.JWT_SECRET,
           { expiresIn: process.env.JWT_EXPIRES_IN }
         );
@@ -197,6 +197,7 @@ router.post('/login',
           user: {
             id: user.id,
             username: user.username,
+            role: user.role || 'user',
             email: user.email
           }
         });
@@ -772,7 +773,7 @@ router.post('/account/restore', async (req, res) => {
 
             // Generuj JWT dla auto-login
             const jwtToken = jwt.sign(
-              { id: deletedAccount.user_id, username: deletedAccount.username },
+              { id: deletedAccount.user_id, username: deletedAccount.username, role: 'user' },
               process.env.JWT_SECRET,
               { expiresIn: process.env.JWT_EXPIRES_IN }
             );
