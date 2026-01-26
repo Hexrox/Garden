@@ -1,16 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronDown, ChevronUp, Leaf, Droplets, Sun, Sprout, AlertCircle, Plus, X } from 'lucide-react';
+import { ChevronDown, ChevronUp, Leaf, Droplets, Sun, Sprout, AlertCircle, Plus, X, Clock, XCircle, Upload, Camera } from 'lucide-react';
 import axios from '../config/axios';
 import PlantingWizard from '../components/PlantingWizard';
 
 const PlantCatalog = () => {
   const [plants, setPlants] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [expandedCategories, setExpandedCategories] = useState(['Warzywa']);
+  const [expandedCategories, setExpandedCategories] = useState([]);
   const [selectedPlant, setSelectedPlant] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [plantingPlant, setPlantingPlant] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [userZone, setUserZone] = useState(null);
 
   // Mapowanie kategorii na polski
   const translateCategory = (category) => {
@@ -21,13 +22,21 @@ const PlantCatalog = () => {
       'flower_annual': 'Kwiaty jednoroczne',
       'fruit_tree': 'Drzewa owocowe',
       'fruit_bush': 'Krzewy owocowe',
-      'herb': 'Zioła'
+      'herb': 'Zioła',
+      'grass': 'Trawy ozdobne',
+      'tree_ornamental': 'Drzewa ozdobne',
+      'shrub_ornamental': 'Krzewy ozdobne',
+      'climber': 'Pnącza',
+      'groundcover': 'Rośliny okrywowe',
+      'fern': 'Paprocie',
+      'succulent': 'Sukulenty'
     };
     return translations[category] || category;
   };
 
   useEffect(() => {
     fetchPlants();
+    fetchUserZone();
   }, []);
 
   const fetchPlants = async () => {
@@ -38,6 +47,17 @@ const PlantCatalog = () => {
       console.error('Error fetching plants:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchUserZone = async () => {
+    try {
+      const response = await axios.get('/api/auth/profile');
+      if (response.data?.hardiness_zone) {
+        setUserZone(response.data.hardiness_zone);
+      }
+    } catch (error) {
+      // User may not be logged in
     }
   };
 
@@ -92,7 +112,14 @@ const PlantCatalog = () => {
       'Kwiaty jednoroczne': '🌼',
       'Drzewa owocowe': '🌳',
       'Krzewy owocowe': '🍇',
-      'Zioła': '🌿'
+      'Zioła': '🌿',
+      'Trawy ozdobne': '🌾',
+      'Drzewa ozdobne': '🌲',
+      'Krzewy ozdobne': '🌺',
+      'Pnącza': '🪴',
+      'Rośliny okrywowe': '🍀',
+      'Paprocie': '☘️',
+      'Sukulenty': '🌵'
     };
     return icons[category] || '🌱';
   };
@@ -155,8 +182,19 @@ const PlantCatalog = () => {
         ) : (
           Object.entries(filteredCategories)
             .sort(([a], [b]) => {
-              const order = ['Warzywa', 'Byliny', 'Kwiaty cebulowe', 'Kwiaty jednoroczne', 'Drzewa owocowe', 'Krzewy owocowe', 'Zioła'];
-              return order.indexOf(a) - order.indexOf(b);
+              const order = [
+                'Warzywa', 'Byliny', 'Kwiaty cebulowe', 'Kwiaty jednoroczne',
+                'Drzewa owocowe', 'Krzewy owocowe', 'Zioła', 'Trawy ozdobne',
+                'Drzewa ozdobne', 'Krzewy ozdobne', 'Pnącza', 'Rośliny okrywowe',
+                'Paprocie', 'Sukulenty'
+              ];
+              const indexA = order.indexOf(a);
+              const indexB = order.indexOf(b);
+              // Nieznane kategorie na końcu
+              if (indexA === -1 && indexB === -1) return a.localeCompare(b);
+              if (indexA === -1) return 1;
+              if (indexB === -1) return -1;
+              return indexA - indexB;
             })
             .map(([category, categoryPlants]) => (
               <div
@@ -209,6 +247,7 @@ const PlantCatalog = () => {
       {selectedPlant && (
         <PlantDetailModal
           plant={selectedPlant}
+          userZone={userZone}
           onClose={() => setSelectedPlant(null)}
           onPlant={(plant) => {
             setPlantingPlant(plant);
@@ -246,11 +285,30 @@ const PlantCard = ({ plant, onClick }) => {
     plant.days_to_harvest > 0 &&
     String(plant.days_to_harvest) !== '00';
 
+  const isPending = plant.status === 'pending';
+  const isRejected = plant.status === 'rejected';
+
   return (
     <button
       onClick={onClick}
-      className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-left w-full min-w-0"
+      className={`p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-left w-full min-w-0 relative ${
+        isPending ? 'ring-2 ring-yellow-400 ring-opacity-50' : ''
+      } ${isRejected ? 'ring-2 ring-red-400 ring-opacity-50' : ''}`}
     >
+      {/* Status Badge */}
+      {isPending && (
+        <div className="absolute -top-2 -right-2 px-2 py-0.5 bg-yellow-500 text-white text-xs font-semibold rounded-full flex items-center gap-1 shadow-sm">
+          <Clock className="w-3 h-3" />
+          Oczekuje
+        </div>
+      )}
+      {isRejected && (
+        <div className="absolute -top-2 -right-2 px-2 py-0.5 bg-red-500 text-white text-xs font-semibold rounded-full flex items-center gap-1 shadow-sm">
+          <XCircle className="w-3 h-3" />
+          Odrzucono
+        </div>
+      )}
+
       <div className="flex items-start justify-between mb-2 min-w-0">
         <div className="flex-1 min-w-0">
           <h4 className="font-semibold text-gray-900 dark:text-white text-sm leading-snug break-words">
@@ -273,13 +331,20 @@ const PlantCard = ({ plant, onClick }) => {
         )}
         {plant.category && (
           <span className="px-1.5 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 rounded text-xs whitespace-nowrap">
+            {plant.category === 'vegetable' && '🥕'}
             {plant.category === 'flower_perennial' && '🌸'}
-            {plant.category === 'flower_annual' && '🌼'}
             {plant.category === 'flower_bulb' && '🌷'}
+            {plant.category === 'flower_annual' && '🌼'}
             {plant.category === 'fruit_tree' && '🌳'}
             {plant.category === 'fruit_bush' && '🍇'}
             {plant.category === 'herb' && '🌿'}
-            {plant.category === 'vegetable' && '🥕'}
+            {plant.category === 'grass' && '🌾'}
+            {plant.category === 'tree_ornamental' && '🌲'}
+            {plant.category === 'shrub_ornamental' && '🌺'}
+            {plant.category === 'climber' && '🪴'}
+            {plant.category === 'groundcover' && '🍀'}
+            {plant.category === 'fern' && '☘️'}
+            {plant.category === 'succulent' && '🌵'}
           </span>
         )}
         {plant.flower_color && (
@@ -292,8 +357,34 @@ const PlantCard = ({ plant, onClick }) => {
   );
 };
 
+// Helper function to check zone compatibility
+const checkZoneCompatibility = (plantZone, userZone) => {
+  if (!plantZone || !userZone) return null;
+
+  // Parse zone numbers (e.g., "6a" -> 6, "7b" -> 7)
+  const parseZone = (zone) => {
+    const match = zone.match(/(\d+)/);
+    return match ? parseInt(match[1]) : null;
+  };
+
+  const plantZoneNum = parseZone(plantZone);
+  const userZoneNum = parseZone(userZone);
+
+  if (!plantZoneNum || !userZoneNum) return null;
+
+  // Plant zone indicates minimum cold tolerance
+  // If user's zone number >= plant's zone number, plant should survive
+  if (userZoneNum >= plantZoneNum) {
+    return { compatible: true, message: 'Odpowiednia dla Twojej strefy' };
+  } else {
+    return { compatible: false, message: 'Może wymagać ochrony zimowej' };
+  }
+};
+
 // Plant Detail Modal Component
-const PlantDetailModal = ({ plant, onClose, onPlant }) => {
+const PlantDetailModal = ({ plant, onClose, onPlant, userZone }) => {
+  const zoneCompatibility = checkZoneCompatibility(plant.hardiness_zone, userZone);
+
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 pb-24 lg:pb-4 z-50">
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-3xl w-full max-h-full overflow-y-auto">
@@ -321,6 +412,41 @@ const PlantDetailModal = ({ plant, onClose, onPlant }) => {
 
         {/* Content */}
         <div className="p-6 space-y-6">
+          {/* Status Alerts */}
+          {plant.status === 'pending' && (
+            <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+              <div className="flex items-start gap-3">
+                <Clock className="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-semibold text-yellow-800 dark:text-yellow-200">Oczekuje na moderację</p>
+                  <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
+                    Ta roślina została dodana przez Ciebie i czeka na zatwierdzenie przez administratora.
+                    Po zatwierdzeniu będzie widoczna dla wszystkich użytkowników.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {plant.status === 'rejected' && (
+            <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+              <div className="flex items-start gap-3">
+                <XCircle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-semibold text-red-800 dark:text-red-200">Roślina odrzucona</p>
+                  {plant.rejection_reason && (
+                    <p className="text-sm text-red-700 dark:text-red-300 mt-1">
+                      <strong>Powód:</strong> {plant.rejection_reason}
+                    </p>
+                  )}
+                  <p className="text-sm text-red-600 dark:text-red-400 mt-2">
+                    Możesz dodać poprawioną wersję tej rośliny.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Plant Images */}
           <PlantImages plant={plant} />
 
@@ -384,11 +510,35 @@ const PlantDetailModal = ({ plant, onClose, onPlant }) => {
               />
             )}
             {plant.hardiness_zone && (
-              <InfoBox
-                icon="❄️"
-                label="Strefa USDA"
-                value={plant.hardiness_zone}
-              />
+              <div className={`p-3 rounded-lg min-w-0 ${
+                zoneCompatibility?.compatible === true
+                  ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800'
+                  : zoneCompatibility?.compatible === false
+                  ? 'bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800'
+                  : 'bg-gray-50 dark:bg-gray-700/50'
+              }`}>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="flex-shrink-0">❄️</span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400 truncate">Strefa USDA</span>
+                </div>
+                <p className="font-semibold text-gray-900 dark:text-white text-sm break-words leading-snug">
+                  {plant.hardiness_zone}
+                </p>
+                {zoneCompatibility && (
+                  <p className={`text-xs mt-1 ${
+                    zoneCompatibility.compatible
+                      ? 'text-green-600 dark:text-green-400'
+                      : 'text-orange-600 dark:text-orange-400'
+                  }`}>
+                    {zoneCompatibility.compatible ? '✓' : '⚠️'} {zoneCompatibility.message}
+                  </p>
+                )}
+                {userZone && (
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                    Twoja strefa: {userZone}
+                  </p>
+                )}
+              </div>
             )}
             {plant.origin && (
               <InfoBox
@@ -767,10 +917,16 @@ const AddPlantModal = ({ onClose, onSuccess }) => {
     bloom_season: '',
     is_perennial: false,
     is_fragrant: false,
-    is_bee_friendly: false
+    is_bee_friendly: false,
+    // Photo info
+    photo_author: '',
+    photo_license: ''
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [photoFile, setPhotoFile] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState(null);
+  const [successMessage, setSuccessMessage] = useState('');
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -780,32 +936,82 @@ const AddPlantModal = ({ onClose, onSuccess }) => {
     }));
   };
 
+  const handlePhotoChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Validate file type
+      if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+        setError('Dozwolone są tylko pliki JPEG, PNG i WebP');
+        return;
+      }
+      // Validate file size (10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        setError('Plik jest za duży. Maksymalny rozmiar to 10MB');
+        return;
+      }
+      setPhotoFile(file);
+      setPhotoPreview(URL.createObjectURL(file));
+      setError('');
+    }
+  };
+
+  const removePhoto = () => {
+    setPhotoFile(null);
+    setPhotoPreview(null);
+    setFormData(prev => ({ ...prev, photo_author: '', photo_license: '' }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
+    setSuccessMessage('');
+
+    // Validate photo_author if photo is uploaded
+    if (photoFile && !formData.photo_author.trim()) {
+      setError('Autor zdjęcia jest wymagany gdy dodajesz zdjęcie');
+      setLoading(false);
+      return;
+    }
 
     try {
-      // Prepare data - only send non-empty fields
-      const plantData = {};
+      // Use FormData for file upload
+      const submitData = new FormData();
+
+      // Add all form fields
       Object.entries(formData).forEach(([key, value]) => {
         if (value !== '' && value !== false) {
-          plantData[key] = value;
+          submitData.append(key, value);
         }
       });
 
-      // Set name based on display_name (required by backend)
-      plantData.name = formData.display_name.toLowerCase().replace(/\s+/g, '_');
+      // Set name based on display_name
+      submitData.set('name', formData.display_name.toLowerCase().replace(/\s+/g, '_'));
 
-      // Convert days_to_harvest to number or 0
-      if (plantData.days_to_harvest) {
-        plantData.days_to_harvest = parseInt(plantData.days_to_harvest) || 0;
+      // Convert days_to_harvest to number
+      if (formData.days_to_harvest) {
+        submitData.set('days_to_harvest', parseInt(formData.days_to_harvest) || 0);
       } else {
-        plantData.days_to_harvest = 0;
+        submitData.set('days_to_harvest', 0);
       }
 
-      await axios.post('/api/plants', plantData);
-      onSuccess();
+      // Add photo if selected
+      if (photoFile) {
+        submitData.append('photo', photoFile);
+      }
+
+      const response = await axios.post('/api/plants', submitData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+
+      setSuccessMessage(response.data.message);
+
+      // Auto close after showing success message
+      setTimeout(() => {
+        onSuccess();
+      }, 3000);
     } catch (err) {
       console.error('Error adding plant:', err);
       setError(err.response?.data?.error || 'Błąd podczas dodawania rośliny');
@@ -821,7 +1027,14 @@ const AddPlantModal = ({ onClose, onSuccess }) => {
     { value: 'flower_annual', label: '🌼 Kwiat jednoroczny', needsHarvest: false },
     { value: 'fruit_tree', label: '🌳 Drzewo owocowe', needsHarvest: false },
     { value: 'fruit_bush', label: '🍇 Krzew owocowy', needsHarvest: false },
-    { value: 'herb', label: '🌿 Zioło', needsHarvest: true }
+    { value: 'herb', label: '🌿 Zioło', needsHarvest: true },
+    { value: 'grass', label: '🌾 Trawa ozdobna', needsHarvest: false },
+    { value: 'tree_ornamental', label: '🌲 Drzewo ozdobne', needsHarvest: false },
+    { value: 'shrub_ornamental', label: '🌺 Krzew ozdobny', needsHarvest: false },
+    { value: 'climber', label: '🪴 Pnącze', needsHarvest: false },
+    { value: 'groundcover', label: '🍀 Roślina okrywowa', needsHarvest: false },
+    { value: 'fern', label: '☘️ Paproć', needsHarvest: false },
+    { value: 'succulent', label: '🌵 Sukulent', needsHarvest: false }
   ];
 
   const selectedCategory = categories.find(c => c.value === formData.category);
@@ -848,6 +1061,20 @@ const AddPlantModal = ({ onClose, onSuccess }) => {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          {successMessage && (
+            <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 bg-green-100 dark:bg-green-800 rounded-full flex items-center justify-center flex-shrink-0">
+                  <span className="text-green-600 dark:text-green-300 text-lg">✓</span>
+                </div>
+                <div>
+                  <p className="font-semibold text-green-800 dark:text-green-200">Sukces!</p>
+                  <p className="text-sm text-green-700 dark:text-green-300 mt-1">{successMessage}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {error && (
             <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-800 dark:text-red-200">
               {error}
@@ -1131,6 +1358,100 @@ const AddPlantModal = ({ onClose, onSuccess }) => {
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500"
               placeholder="Dodatkowe informacje o uprawie..."
             />
+          </div>
+
+          {/* Photo Upload */}
+          <div className="space-y-4">
+            <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+              <Camera className="w-5 h-5" />
+              Zdjęcie rośliny (opcjonalne)
+            </h3>
+
+            {!photoPreview ? (
+              <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:border-green-500 transition-colors bg-gray-50 dark:bg-gray-700/50">
+                <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                  <Upload className="w-8 h-8 mb-2 text-gray-400" />
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    <span className="font-semibold">Kliknij aby dodać zdjęcie</span>
+                  </p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                    JPEG, PNG lub WebP (max 10MB)
+                  </p>
+                </div>
+                <input
+                  type="file"
+                  className="hidden"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={handlePhotoChange}
+                />
+              </label>
+            ) : (
+              <div className="relative">
+                <img
+                  src={photoPreview}
+                  alt="Podgląd"
+                  className="w-full h-48 object-cover rounded-lg"
+                />
+                <button
+                  type="button"
+                  onClick={removePhoto}
+                  className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+
+            {/* Photo author field - required when photo is uploaded */}
+            {photoPreview && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Autor zdjęcia *
+                  </label>
+                  <input
+                    type="text"
+                    name="photo_author"
+                    value={formData.photo_author}
+                    onChange={handleChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500"
+                    placeholder="np. Jan Kowalski lub własne"
+                  />
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Wymagane dla praw autorskich
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Licencja / źródło
+                  </label>
+                  <input
+                    type="text"
+                    name="photo_license"
+                    value={formData.photo_license}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500"
+                    placeholder="np. CC BY-SA 4.0, własne"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Moderation Info */}
+          <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+            <div className="flex items-start gap-3">
+              <Clock className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-semibold text-blue-800 dark:text-blue-200">Moderacja roślin</p>
+                <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
+                  Dodana roślina zostanie wysłana do moderacji. Po zatwierdzeniu przez administratora
+                  będzie widoczna dla wszystkich użytkowników w katalogu.
+                </p>
+              </div>
+            </div>
           </div>
 
           {/* Footer */}

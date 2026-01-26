@@ -139,6 +139,9 @@ db.serialize(() => {
   db.run(`ALTER TABLE plants ADD COLUMN winter_care TEXT`, (err) => {});
   db.run(`ALTER TABLE plants ADD COLUMN propagation_method TEXT`, (err) => {});
 
+  // Hardiness zone for cold tolerance (e.g., "6a", "7b")
+  db.run(`ALTER TABLE plants ADD COLUMN hardiness_zone TEXT`, (err) => {});
+
   // ==========================================
   // COMMUNITY PLANT MODERATION SYSTEM
   // ==========================================

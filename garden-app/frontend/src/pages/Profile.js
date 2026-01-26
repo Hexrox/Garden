@@ -2,7 +2,45 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import axios from '../config/axios';
 import { useAuth } from '../context/AuthContext';
-import { Share2, Eye, Check, X, Image as ImageIcon, TrendingUp, Users, Calendar } from 'lucide-react';
+import { Share2, Eye, Check, X, Image as ImageIcon, TrendingUp, Users, Calendar, MapPin } from 'lucide-react';
+
+// Helper function to determine hardiness zone from coordinates
+// Based on Polish geography and climate zones
+const getHardinessZoneFromCoords = (lat, lon) => {
+  // Poland coordinates roughly: lat 49-55, lon 14-24
+  if (!lat || !lon) return null;
+
+  const latitude = parseFloat(lat);
+  const longitude = parseFloat(lon);
+
+  // Coastal areas (near Baltic Sea) - warmest
+  if (latitude > 54 && longitude < 19) {
+    return { zone: '8a', lastFrost: '04-25', firstFrost: '10-25' };
+  }
+
+  // Northeast (Suwalszczyzna, Podlasie) - coldest
+  if (latitude > 53.5 && longitude > 22) {
+    return { zone: '6a', lastFrost: '05-20', firstFrost: '09-25' };
+  }
+
+  // Northern Poland (Warmia, Mazury)
+  if (latitude > 53.5) {
+    return { zone: '6b', lastFrost: '05-15', firstFrost: '10-01' };
+  }
+
+  // Western Poland (Wielkopolska, Dolny Śląsk) - milder
+  if (longitude < 17 && latitude < 52.5) {
+    return { zone: '7b', lastFrost: '05-01', firstFrost: '10-20' };
+  }
+
+  // Southern mountains (Tatry, Beskidy) - can be cold
+  if (latitude < 50) {
+    return { zone: '6b', lastFrost: '05-15', firstFrost: '10-01' };
+  }
+
+  // Central Poland (Warszawa, Łódź, Kraków, Poznań)
+  return { zone: '7a', lastFrost: '05-10', firstFrost: '10-10' };
+};
 
 const Profile = () => {
   const { user } = useAuth();
@@ -134,14 +172,44 @@ const Profile = () => {
       setLoading(true);
       // Load profile data including frost dates
       const response = await axios.get('/api/auth/profile');
-      if (response.data) {
-        setProfile({
-          hardiness_zone: response.data.hardiness_zone || '',
-          first_frost_date: response.data.first_frost_date || '',
-          last_frost_date: response.data.last_frost_date || '',
-          location: response.data.location || ''
-        });
+      let profileData = {
+        hardiness_zone: response.data?.hardiness_zone || '',
+        first_frost_date: response.data?.first_frost_date || '',
+        last_frost_date: response.data?.last_frost_date || '',
+        location: response.data?.location || ''
+      };
+
+      // Load weather location to auto-suggest zone
+      try {
+        const weatherResponse = await axios.get('/api/weather/location');
+        if (weatherResponse.data) {
+          const { latitude, longitude, city } = weatherResponse.data;
+          setLocation({
+            city: city || '',
+            latitude: latitude || '',
+            longitude: longitude || ''
+          });
+
+          // Auto-suggest zone if not already set
+          if (!profileData.hardiness_zone && latitude && longitude) {
+            const suggested = getHardinessZoneFromCoords(latitude, longitude);
+            if (suggested) {
+              profileData.hardiness_zone = suggested.zone;
+              const year = new Date().getFullYear();
+              if (!profileData.last_frost_date) {
+                profileData.last_frost_date = `${year}-${suggested.lastFrost}`;
+              }
+              if (!profileData.first_frost_date) {
+                profileData.first_frost_date = `${year}-${suggested.firstFrost}`;
+              }
+            }
+          }
+        }
+      } catch (e) {
+        // Weather location not set - ignore
       }
+
+      setProfile(profileData);
 
       // Load public profile settings
       const publicResponse = await axios.get('/api/profile/public');
@@ -251,6 +319,25 @@ const Profile = () => {
         longitude: lon,
         city: location.city || null
       });
+
+      // Auto-suggest hardiness zone based on new location
+      if (!profile.hardiness_zone) {
+        const suggested = getHardinessZoneFromCoords(lat, lon);
+        if (suggested) {
+          const year = new Date().getFullYear();
+          setProfile(prev => ({
+            ...prev,
+            hardiness_zone: suggested.zone,
+            last_frost_date: prev.last_frost_date || `${year}-${suggested.lastFrost}`,
+            first_frost_date: prev.first_frost_date || `${year}-${suggested.firstFrost}`
+          }));
+          setMessage({
+            type: 'success',
+            text: `Lokalizacja zapisana! Automatycznie wykryto strefę ${suggested.zone}. Sprawdź i zapisz ustawienia klimatyczne poniżej.`
+          });
+          return;
+        }
+      }
 
       setMessage({
         type: 'success',
@@ -675,17 +762,24 @@ const Profile = () => {
 
       {/* Frost Dates & Hardiness Zone */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-          Strefy Mrozoodporności i Daty Przymrozków
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+          <span className="text-2xl">🌡️</span>
+          Strefa Mrozoodporności USDA
         </h2>
 
-        <div className="mb-4 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
-          <p className="text-sm text-purple-800 dark:text-purple-200">
-            <span className="font-semibold">🌱 Wskazówka:</span> Te informacje pomogą Ci planować sadzenie i chronić rośliny przed przymrozkami
-          </p>
+        <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+          <h3 className="text-sm font-semibold text-blue-900 dark:text-blue-200 mb-2">
+            Dlaczego to ważne?
+          </h3>
+          <ul className="text-sm text-blue-800 dark:text-blue-300 space-y-1">
+            <li>• Pomoże dobrać rośliny odporne na mróz w Twojej okolicy</li>
+            <li>• System będzie ostrzegał przed przymrozkami i sugerował ochronę</li>
+            <li>• Planner automatycznie dobierze daty sadzenia i wykopywania</li>
+            <li>• Otrzymasz spersonalizowane rekomendacje sezonowe</li>
+          </ul>
         </div>
 
-        <form onSubmit={handleSaveProfile} className="space-y-4">
+        <form onSubmit={handleSaveProfile} className="space-y-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Lokalizacja ogólna
@@ -699,58 +793,175 @@ const Profile = () => {
             />
           </div>
 
+          {/* Hardiness Zone Selection with Visual */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Strefa mrozoodporności
-            </label>
-            <select
-              value={profile.hardiness_zone}
-              onChange={(e) => handleProfileChange('hardiness_zone', e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-            >
-              <option value="">Wybierz strefę</option>
-              <option value="6a">6a (-23.3°C do -20.6°C) - Północ Polski</option>
-              <option value="6b">6b (-20.6°C do -17.8°C) - Centralna Polska</option>
-              <option value="7a">7a (-17.8°C do -15.0°C) - Zachodnia Polska</option>
-              <option value="7b">7b (-15.0°C do -12.2°C) - Południowy Zachód</option>
-              <option value="8a">8a (-12.2°C do -9.4°C) - Wybrzeże</option>
-              <option value="8b">8b (-9.4°C do -6.7°C) - Najcieplejsze rejony</option>
-            </select>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              Strefa określa najniższą średnią temperaturę w Twojej okolicy
-            </p>
+            <div className="flex items-center justify-between mb-3">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Wybierz swoją strefę mrozoodporności
+              </label>
+              {location.latitude && location.longitude && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const suggested = getHardinessZoneFromCoords(location.latitude, location.longitude);
+                    if (suggested) {
+                      const year = new Date().getFullYear();
+                      setProfile(prev => ({
+                        ...prev,
+                        hardiness_zone: suggested.zone,
+                        last_frost_date: `${year}-${suggested.lastFrost}`,
+                        first_frost_date: `${year}-${suggested.firstFrost}`
+                      }));
+                      setProfileMessage({
+                        type: 'success',
+                        text: `Wykryto strefę ${suggested.zone} na podstawie Twojej lokalizacji (${location.city || 'współrzędne'})`
+                      });
+                    }
+                  }}
+                  className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-900/30 rounded-lg hover:bg-purple-200 dark:hover:bg-purple-900/50 transition"
+                >
+                  <MapPin size={14} />
+                  Wykryj z lokalizacji
+                </button>
+              )}
+            </div>
+
+            {/* Zone Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
+              {[
+                { zone: '6a', temp: '-23°C do -21°C', region: 'Północny-wschód, Suwalszczyzna', color: 'from-blue-600 to-blue-700', lastFrost: '05-20', firstFrost: '09-25' },
+                { zone: '6b', temp: '-21°C do -18°C', region: 'Centralna Polska, Mazowsze', color: 'from-blue-500 to-blue-600', lastFrost: '05-15', firstFrost: '10-01' },
+                { zone: '7a', temp: '-18°C do -15°C', region: 'Warszawa, Kraków, Poznań, Gdańsk', color: 'from-green-600 to-green-700', lastFrost: '05-10', firstFrost: '10-10' },
+                { zone: '7b', temp: '-15°C do -12°C', region: 'Zachodnia Polska, doliny rzeczne', color: 'from-green-500 to-green-600', lastFrost: '05-01', firstFrost: '10-20' },
+                { zone: '8a', temp: '-12°C do -9°C', region: 'Wybrzeże Bałtyku, Szczecin', color: 'from-yellow-500 to-orange-500', lastFrost: '04-25', firstFrost: '10-25' },
+                { zone: '8b', temp: '-9°C do -7°C', region: 'Najcieplejsze rejony nadmorskie', color: 'from-orange-500 to-red-500', lastFrost: '04-20', firstFrost: '11-01' }
+              ].map(({ zone, temp, region, color, lastFrost, firstFrost }) => (
+                <button
+                  key={zone}
+                  type="button"
+                  onClick={() => {
+                    handleProfileChange('hardiness_zone', zone);
+                    // Auto-suggest frost dates if not already set
+                    if (!profile.last_frost_date) {
+                      const year = new Date().getFullYear();
+                      handleProfileChange('last_frost_date', `${year}-${lastFrost}`);
+                    }
+                    if (!profile.first_frost_date) {
+                      const year = new Date().getFullYear();
+                      handleProfileChange('first_frost_date', `${year}-${firstFrost}`);
+                    }
+                  }}
+                  className={`p-4 rounded-xl border-2 text-left transition-all ${
+                    profile.hardiness_zone === zone
+                      ? 'border-purple-500 dark:border-purple-400 ring-2 ring-purple-500/50 shadow-lg scale-[1.02]'
+                      : 'border-gray-200 dark:border-gray-700 hover:border-purple-300 dark:hover:border-purple-600'
+                  }`}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className={`w-12 h-12 rounded-lg bg-gradient-to-br ${color} flex items-center justify-center text-white font-bold text-lg shadow-md`}>
+                      {zone}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-semibold text-gray-900 dark:text-white">
+                        Strefa {zone}
+                      </div>
+                      <div className="text-xs text-gray-600 dark:text-gray-400 font-medium">
+                        {temp}
+                      </div>
+                      <div className="text-xs text-gray-500 dark:text-gray-500 mt-1 truncate">
+                        {region}
+                      </div>
+                    </div>
+                    {profile.hardiness_zone === zone && (
+                      <div className="text-purple-600 dark:text-purple-400">
+                        <Check size={20} />
+                      </div>
+                    )}
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            {profile.hardiness_zone && (
+              <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
+                <div className="flex items-start gap-3">
+                  <div className="text-2xl">
+                    {profile.hardiness_zone.startsWith('6') ? '❄️' : profile.hardiness_zone.startsWith('7') ? '🌿' : '☀️'}
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-purple-900 dark:text-purple-200">
+                      Twoja strefa: {profile.hardiness_zone}
+                    </h4>
+                    <p className="text-sm text-purple-800 dark:text-purple-300 mt-1">
+                      {profile.hardiness_zone === '6a' && 'Najzimniejszy region Polski. Rośliny muszą wytrzymać mrozy do -23°C. Wykopuj bulwy we wrześniu, sadź dopiero po 20 maja.'}
+                      {profile.hardiness_zone === '6b' && 'Klimat umiarkowanie surowy. Większość polskich bylin dobrze sobie radzi. Zimni ogrodnicy (12-15 maja) to kluczowy okres.'}
+                      {profile.hardiness_zone === '7a' && 'Typowy klimat dla dużych polskich miast. Możesz uprawiać większość roślin ogrodowych. Bezpiecznie sadź po 10 maja.'}
+                      {profile.hardiness_zone === '7b' && 'Łagodniejszy klimat. Niektóre wrażliwe byliny mogą zimować w gruncie z okryciem. Dłuższy sezon wegetacyjny.'}
+                      {profile.hardiness_zone === '8a' && 'Ciepły klimat nadmorski. Wiele roślin uznawanych za wrażliwe może tu zimować. Przymrozki rzadkie.'}
+                      {profile.hardiness_zone === '8b' && 'Najcieplejsza strefa w Polsce. Możesz eksperymentować z roślinami subtropikalnymi. Wykopywanie bulw często niepotrzebne.'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Ostatni przymrozek wiosenny
-              </label>
-              <input
-                type="date"
-                value={profile.last_frost_date}
-                onChange={(e) => handleProfileChange('last_frost_date', e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-              />
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                Kiedy zazwyczaj kończy się okres przymrozków wiosną
-              </p>
+          {/* Frost Dates */}
+          <div>
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+              <Calendar size={16} />
+              Daty przymrozków w Twojej okolicy
+            </h3>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                <label className="flex items-center gap-2 text-sm font-medium text-green-800 dark:text-green-300 mb-2">
+                  <span className="text-lg">🌸</span>
+                  Ostatni przymrozek wiosenny
+                </label>
+                <input
+                  type="date"
+                  value={profile.last_frost_date}
+                  onChange={(e) => handleProfileChange('last_frost_date', e.target.value)}
+                  className="w-full px-4 py-2 border border-green-300 dark:border-green-700 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                />
+                <p className="text-xs text-green-700 dark:text-green-400 mt-2">
+                  Po tej dacie bezpiecznie sadzić rośliny ciepłolubne
+                </p>
+              </div>
+
+              <div className="p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
+                <label className="flex items-center gap-2 text-sm font-medium text-orange-800 dark:text-orange-300 mb-2">
+                  <span className="text-lg">🍂</span>
+                  Pierwszy przymrozek jesienny
+                </label>
+                <input
+                  type="date"
+                  value={profile.first_frost_date}
+                  onChange={(e) => handleProfileChange('first_frost_date', e.target.value)}
+                  className="w-full px-4 py-2 border border-orange-300 dark:border-orange-700 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                />
+                <p className="text-xs text-orange-700 dark:text-orange-400 mt-2">
+                  Przed tą datą wykop wrażliwe bulwy i zabezpiecz rośliny
+                </p>
+              </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Pierwszy przymrozek jesienny
-              </label>
-              <input
-                type="date"
-                value={profile.first_frost_date}
-                onChange={(e) => handleProfileChange('first_frost_date', e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-              />
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                Kiedy zazwyczaj zaczynają się przymrozki jesienią
-              </p>
-            </div>
+            {profile.last_frost_date && profile.first_frost_date && (
+              <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                <div className="flex items-center gap-3">
+                  <div className="text-2xl">📊</div>
+                  <div>
+                    <span className="font-semibold text-blue-900 dark:text-blue-200">
+                      Twój sezon wegetacyjny: ~{Math.round((new Date(profile.first_frost_date) - new Date(profile.last_frost_date)) / (1000 * 60 * 60 * 24))} dni
+                    </span>
+                    <p className="text-sm text-blue-700 dark:text-blue-300">
+                      Od {new Date(profile.last_frost_date).toLocaleDateString('pl-PL', { day: 'numeric', month: 'long' })} do {new Date(profile.first_frost_date).toLocaleDateString('pl-PL', { day: 'numeric', month: 'long' })}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           <button
@@ -758,7 +969,7 @@ const Profile = () => {
             disabled={savingProfile}
             className="w-full px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition disabled:opacity-50 disabled:cursor-not-allowed font-medium"
           >
-            {savingProfile ? 'Zapisywanie...' : 'Zapisz profil'}
+            {savingProfile ? 'Zapisywanie...' : 'Zapisz ustawienia klimatyczne'}
           </button>
         </form>
 
@@ -774,15 +985,35 @@ const Profile = () => {
           </div>
         )}
 
-        <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg">
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">
-            Typowe daty przymrozków w Polsce
+        {/* Info Section - Zimni Ogrodnicy */}
+        <div className="mt-6 p-4 bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
+          <h3 className="text-sm font-semibold text-amber-900 dark:text-amber-200 mb-2 flex items-center gap-2">
+            <span>📅</span> Zimni Ogrodnicy i Zimna Zośka
           </h3>
-          <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
-            <li>🌸 Północ Polski: Ostatni przymrozek ~15 maja, Pierwszy ~1 października</li>
-            <li>🌸 Centralna Polska: Ostatni przymrozek ~10 maja, Pierwszy ~15 października</li>
-            <li>🌸 Południe Polski: Ostatni przymrozek ~1 maja, Pierwszy ~25 października</li>
+          <p className="text-sm text-amber-800 dark:text-amber-300 mb-2">
+            W Polsce tradycyjnie przyjmuje się, że <strong>12-15 maja</strong> (Zimni Ogrodnicy + Zimna Zośka) to ostatnie dni z ryzykiem przymrozków.
+          </p>
+          <ul className="text-xs text-amber-700 dark:text-amber-400 space-y-1">
+            <li>• <strong>12-14 maja</strong> - Trzej Zimni Ogrodnicy (św. Pankracy, Serwacy, Bonifacy)</li>
+            <li>• <strong>15 maja</strong> - Zimna Zośka (św. Zofia)</li>
+            <li>• Po 15 maja bezpiecznie sadź pomidory, paprykę, ogórki, dynie i inne ciepłolubne</li>
           </ul>
+        </div>
+
+        {/* Bulb digging info */}
+        <div className="mt-4 p-4 bg-gradient-to-r from-red-50 to-pink-50 dark:from-red-900/20 dark:to-pink-900/20 rounded-lg border border-red-200 dark:border-red-800">
+          <h3 className="text-sm font-semibold text-red-900 dark:text-red-200 mb-2 flex items-center gap-2">
+            <span>⛏️</span> Rośliny do wykopania przed zimą
+          </h3>
+          <p className="text-sm text-red-800 dark:text-red-300 mb-2">
+            Te rośliny nie przeżyją polskiej zimy w gruncie - wykop je przed pierwszym przymrozkiem:
+          </p>
+          <div className="grid grid-cols-2 gap-2 text-xs text-red-700 dark:text-red-400">
+            <div>• <strong>Dalie</strong> - po pierwszych przymrozkach, 5°C</div>
+            <div>• <strong>Mieczyki</strong> - połowa września, 5-8°C</div>
+            <div>• <strong>Begonie bulwiaste</strong> - październik, 5-8°C</div>
+            <div>• <strong>Kanny</strong> - po przymrozkach, 8-10°C</div>
+          </div>
         </div>
       </div>
 

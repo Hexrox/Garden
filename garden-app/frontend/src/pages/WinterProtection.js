@@ -78,22 +78,50 @@ const WinterProtection = () => {
   const [showPlanForm, setShowPlanForm] = useState(false);
   const [planPrefill, setPlanPrefill] = useState(null);
   const [plots, setPlots] = useState([]);
+  const [userFrostInfo, setUserFrostInfo] = useState(null);
 
-  // Pobierz listę poletek dla formularza planowania
+  // Pobierz listę poletek i dane o przymrozkach użytkownika
   useEffect(() => {
     axios.get('/api/plots')
       .then(res => setPlots(res.data))
       .catch(() => setPlots([]));
+
+    // Pobierz datę pierwszego przymrozku jesiennego użytkownika
+    axios.get('/api/auth/profile')
+      .then(res => {
+        if (res.data) {
+          setUserFrostInfo({
+            firstFrost: res.data.first_frost_date,
+            lastFrost: res.data.last_frost_date,
+            zone: res.data.hardiness_zone
+          });
+        }
+      })
+      .catch(() => {});
   }, []);
 
   // Obsługa planowania zabezpieczenia rośliny
   const handlePlanProtection = (plant, actionType = 'protect') => {
-    // Domyślna data: jeśli jest sezon (paźdz-list), to za tydzień, inaczej 15 października
     const now = new Date();
     const month = now.getMonth() + 1;
     let plannedDate;
 
-    if (month >= 10 && month <= 11) {
+    // Użyj daty pierwszego przymrozku użytkownika jeśli dostępna
+    if (userFrostInfo?.firstFrost) {
+      const frostDate = new Date(userFrostInfo.firstFrost);
+      // Ustaw datę na 2 tygodnie przed przymrozkiem (czas na zabezpieczenie)
+      const twoWeeksBefore = new Date(frostDate);
+      twoWeeksBefore.setDate(twoWeeksBefore.getDate() - 14);
+
+      // Jeśli ta data już minęła w tym roku, ustaw na za tydzień
+      if (twoWeeksBefore < now) {
+        const nextWeek = new Date();
+        nextWeek.setDate(nextWeek.getDate() + 7);
+        plannedDate = nextWeek.toISOString().split('T')[0];
+      } else {
+        plannedDate = twoWeeksBefore.toISOString().split('T')[0];
+      }
+    } else if (month >= 10 && month <= 11) {
       // W sezonie - za tydzień
       const nextWeek = new Date();
       nextWeek.setDate(nextWeek.getDate() + 7);
@@ -259,10 +287,34 @@ const WinterProtection = () => {
               <div className="text-xs text-blue-100">Sezon</div>
             </div>
             <div className="bg-white/10 rounded-lg p-3">
-              <div className="text-2xl font-bold">-5°C</div>
-              <div className="text-xs text-blue-100">Temperatura krytyczna</div>
+              {userFrostInfo?.firstFrost ? (
+                <>
+                  <div className="text-2xl font-bold">
+                    {Math.max(0, Math.ceil((new Date(userFrostInfo.firstFrost) - new Date()) / (1000 * 60 * 60 * 24)))} dni
+                  </div>
+                  <div className="text-xs text-blue-100">Do przymrozku ({new Date(userFrostInfo.firstFrost).toLocaleDateString('pl-PL', { day: 'numeric', month: 'short' })})</div>
+                </>
+              ) : (
+                <>
+                  <div className="text-2xl font-bold">-5°C</div>
+                  <div className="text-xs text-blue-100">Temperatura krytyczna</div>
+                </>
+              )}
             </div>
           </div>
+
+          {/* Frost Date Info */}
+          {userFrostInfo?.firstFrost && (
+            <div className="mt-4 p-3 bg-white/10 rounded-lg">
+              <div className="flex items-center gap-2 text-sm">
+                <Calendar size={16} />
+                <span>
+                  Twoja data pierwszego przymrozku jesiennego: <strong>{new Date(userFrostInfo.firstFrost).toLocaleDateString('pl-PL', { day: 'numeric', month: 'long' })}</strong>
+                  {userFrostInfo.zone && <span className="ml-2 px-2 py-0.5 bg-white/20 rounded text-xs">Strefa {userFrostInfo.zone}</span>}
+                </span>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Error Message */}

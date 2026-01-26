@@ -9,6 +9,7 @@ import UpcomingHarvests from '../components/UpcomingHarvests';
 import UpcomingPlans from '../components/UpcomingPlans';
 import SuccessionWidget from '../components/SuccessionWidget';
 import BloomCalendar from '../components/BloomCalendar';
+import SeasonWidget from '../components/SeasonWidget';
 import OnboardingWizard from '../components/onboarding/OnboardingWizard';
 import WelcomeCard from '../components/onboarding/WelcomeCard';
 import EmailVerificationBanner from '../components/EmailVerificationBanner';
@@ -233,6 +234,9 @@ const Dashboard = () => {
           onShowTour={handleShowTour}
         />
       )}
+
+      {/* Season Widget - Frost countdown and seasonal info */}
+      <SeasonWidget />
 
       {/* Widgets Row - Weather, Tasks, Harvests */}
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
