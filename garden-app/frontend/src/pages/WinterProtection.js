@@ -1,7 +1,9 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Snowflake, Shield, AlertTriangle, CheckCircle2, Plus, Info, AlertCircle } from 'lucide-react';
+import { Snowflake, Shield, AlertTriangle, CheckCircle2, Plus, Info, AlertCircle, Calendar } from 'lucide-react';
 import usePlotDetails from '../hooks/usePlotDetails';
+import PlanForm from '../components/PlanForm';
+import axios from '../config/axios';
 
 // Protection recommendations moved outside component to prevent re-creation
 const PROTECTION_RECOMMENDATIONS = {
@@ -29,6 +31,35 @@ const PROTECTION_RECOMMENDATIONS = {
     'Ściółkowanie wieloletnich ziół',
     'Przeniesienie doniczek do pomieszczenia (bazylia, rozmaryn)',
     'Okrycie agrowłókniną (szałwia, tymianek)'
+  ],
+  'tree_ornamental': [
+    'Bielenie pni wapnem',
+    'Owijanie młodych drzew agrowłókniną',
+    'Ściółkowanie wokół pnia (10-15cm)'
+  ],
+  'shrub_ornamental': [
+    'Ściółkowanie korzeni korą lub liśćmi',
+    'Okrycie agrowłókniną wrażliwych gatunków',
+    'Owijanie krzewów jutą (np. różaneczniki)'
+  ],
+  'climber': [
+    'Owijanie pędów agrowłókniną',
+    'Ściółkowanie podstawy rośliny',
+    'Ochrona młodych pędów przed mrozem'
+  ],
+  'groundcover': [
+    'Ściółkowanie liśćmi lub korą',
+    'Okrycie agrowłókniną wrażliwych gatunków'
+  ],
+  'fern': [
+    'Ściółkowanie liśćmi (15-20cm)',
+    'Pozostawienie suchych liści jako naturalnej ochrony',
+    'Okrycie agrowłókniną w surowym klimacie'
+  ],
+  'succulent': [
+    'Przeniesienie do pomieszczenia (większość gatunków)',
+    'Ograniczenie podlewania',
+    'Temperatura min. 5°C dla zimujących na zewnątrz'
   ]
 };
 
@@ -44,18 +75,70 @@ const getProtectionRecommendations = (category) => {
 const WinterProtection = () => {
   const navigate = useNavigate();
   const { beds, loading, error, refetch } = usePlotDetails();
+  const [showPlanForm, setShowPlanForm] = useState(false);
+  const [planPrefill, setPlanPrefill] = useState(null);
+  const [plots, setPlots] = useState([]);
+
+  // Pobierz listę poletek dla formularza planowania
+  useEffect(() => {
+    axios.get('/api/plots')
+      .then(res => setPlots(res.data))
+      .catch(() => setPlots([]));
+  }, []);
+
+  // Obsługa planowania zabezpieczenia rośliny
+  const handlePlanProtection = (plant, actionType = 'protect') => {
+    // Domyślna data: jeśli jest sezon (paźdz-list), to za tydzień, inaczej 15 października
+    const now = new Date();
+    const month = now.getMonth() + 1;
+    let plannedDate;
+
+    if (month >= 10 && month <= 11) {
+      // W sezonie - za tydzień
+      const nextWeek = new Date();
+      nextWeek.setDate(nextWeek.getDate() + 7);
+      plannedDate = nextWeek.toISOString().split('T')[0];
+    } else {
+      // Poza sezonem - 15 października tego lub następnego roku
+      const year = month > 11 ? now.getFullYear() + 1 : now.getFullYear();
+      plannedDate = `${year}-10-15`;
+    }
+
+    const title = actionType === 'dig_up'
+      ? `Wykopać ${plant.name}`
+      : `Zabezpieczyć ${plant.name} na zimę`;
+
+    setPlanPrefill({
+      action_type: actionType,
+      title,
+      planned_date: plannedDate,
+      plant_id: plant.plant_id || null,
+      bed_id: plant.id,
+      plot_id: plant.plot_id || '',
+      notes: `${plant.plot_name} → Rząd ${plant.row_number}`,
+      weather_dependent: true,
+      reminder_days: 7
+    });
+    setShowPlanForm(true);
+  };
+
+  const handlePlanSuccess = () => {
+    setShowPlanForm(false);
+    setPlanPrefill(null);
+  };
 
   // Filter plants that need winter protection
   const plants = useMemo(() => {
+    const winterCategories = [
+      'flower_perennial', 'flower_bulb', 'fruit_tree', 'fruit_bush', 'herb',
+      'tree_ornamental', 'shrub_ornamental', 'climber', 'groundcover', 'fern', 'succulent'
+    ];
     return beds.filter(bed =>
-      bed.plant_name &&
-      (bed.category === 'flower_perennial' ||
-       bed.category === 'flower_bulb' ||
-       bed.category === 'fruit_tree' ||
-       bed.category === 'fruit_bush' ||
-       bed.category === 'herb')
+      bed.plant_name && winterCategories.includes(bed.category)
     ).map(bed => ({
       id: bed.id,
+      plant_id: bed.plant_id,
+      plot_id: bed.plot_id,
       name: bed.plant_name,
       variety: bed.plant_variety,
       category: bed.category,
@@ -74,7 +157,13 @@ const WinterProtection = () => {
       'flower_bulb': 'Cebulowe',
       'fruit_tree': 'Drzewa owocowe',
       'fruit_bush': 'Krzewy owocowe',
-      'herb': 'Zioła wieloletnie'
+      'herb': 'Zioła wieloletnie',
+      'tree_ornamental': 'Drzewa ozdobne',
+      'shrub_ornamental': 'Krzewy ozdobne',
+      'climber': 'Pnącza',
+      'groundcover': 'Rośliny okrywowe',
+      'fern': 'Paprocie',
+      'succulent': 'Sukulenty'
     };
 
     return names[category] || category;
@@ -89,7 +178,13 @@ const WinterProtection = () => {
       'flower_bulb': '🌷',
       'fruit_tree': '🌳',
       'fruit_bush': '🍇',
-      'herb': '🌿'
+      'herb': '🌿',
+      'tree_ornamental': '🌲',
+      'shrub_ornamental': '🌺',
+      'climber': '🪴',
+      'groundcover': '🍀',
+      'fern': '☘️',
+      'succulent': '🌵'
     };
 
     return emojis[category] || '🌱';
@@ -316,6 +411,30 @@ const WinterProtection = () => {
                                 {plant.note}
                               </p>
                             )}
+                            {/* Przyciski planowania */}
+                            <div className="mt-3 flex flex-wrap gap-2">
+                              {plant.category === 'flower_bulb' ? (
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={() => handlePlanProtection(plant, 'dig_up')}
+                                    className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-orange-700 dark:text-orange-300 bg-orange-100 dark:bg-orange-900/30 rounded-lg hover:bg-orange-200 dark:hover:bg-orange-900/50 transition-colors"
+                                  >
+                                    <Calendar size={12} />
+                                    Zaplanuj wykopanie
+                                  </button>
+                                </>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => handlePlanProtection(plant, 'protect')}
+                                  className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/30 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
+                                >
+                                  <Calendar size={12} />
+                                  Zaplanuj zabezpieczenie
+                                </button>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -330,22 +449,34 @@ const WinterProtection = () => {
         {/* Action Button */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 text-center">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-            Zapisz postępy zabezpieczania
+            Zaplanuj zabezpieczanie w Plannerze
           </h3>
           <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-            Użyj sekcji Zadania, aby utworzyć listę kontrolną zabezpieczenia wszystkich roślin
+            Użyj Plannera ogrodnika, aby zaplanować zabezpieczenie wszystkich roślin z przypomnieniami
           </p>
           <button
             type="button"
-            onClick={() => navigate('/tasks')}
-            aria-label="Przejdź do listy zadań"
+            onClick={() => navigate('/planner')}
+            aria-label="Przejdź do Plannera"
             className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg inline-flex items-center gap-2 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
           >
-            <Plus size={20} />
-            Przejdź do Zadań
+            <Calendar size={20} />
+            Przejdź do Plannera
           </button>
         </div>
       </div>
+
+      {/* Modal formularza planowania */}
+      <PlanForm
+        isOpen={showPlanForm}
+        onClose={() => {
+          setShowPlanForm(false);
+          setPlanPrefill(null);
+        }}
+        onSuccess={handlePlanSuccess}
+        plots={plots}
+        prefillData={planPrefill}
+      />
     </div>
   );
 };

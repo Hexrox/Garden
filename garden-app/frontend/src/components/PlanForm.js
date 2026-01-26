@@ -4,8 +4,8 @@ import axios from '../config/axios';
 import { useToast } from '../context/ToastContext';
 import PlantSelector from './PlantSelector';
 
-// Typy akcji
-const ACTION_TYPES = [
+// Typy akcji - podstawowe
+const BASIC_ACTION_TYPES = [
   { type: 'plant', label: 'Posadzić', icon: '🌱', requiresPlant: true },
   { type: 'spray', label: 'Oprysk', icon: '🧴', requiresPlant: false },
   { type: 'water', label: 'Podlać', icon: '💧', requiresPlant: false },
@@ -16,7 +16,18 @@ const ACTION_TYPES = [
   { type: 'custom', label: 'Inne', icon: '📝', requiresPlant: false }
 ];
 
-const PlanForm = ({ isOpen, onClose, onSuccess, editPlan, plots }) => {
+// Typy akcji - pielęgnacja kwiatów
+const FLOWER_CARE_ACTION_TYPES = [
+  { type: 'dig_up', label: 'Wykopać', icon: '⛏️', requiresPlant: true },
+  { type: 'protect', label: 'Zabezpieczyć', icon: '❄️', requiresPlant: true },
+  { type: 'propagate', label: 'Podzielić', icon: '🌿', requiresPlant: true },
+  { type: 'deadhead', label: 'Usunąć przekwitłe', icon: '🥀', requiresPlant: false }
+];
+
+// Wszystkie typy akcji
+const ACTION_TYPES = [...BASIC_ACTION_TYPES, ...FLOWER_CARE_ACTION_TYPES];
+
+const PlanForm = ({ isOpen, onClose, onSuccess, editPlan, plots, prefillData }) => {
   const { showToast } = useToast();
   const [loading, setLoading] = useState(false);
   const [beds, setBeds] = useState([]);
@@ -38,7 +49,7 @@ const PlanForm = ({ isOpen, onClose, onSuccess, editPlan, plots }) => {
     recurrence_end_date: ''
   });
 
-  // Inicjalizacja formularza przy edycji
+  // Inicjalizacja formularza przy edycji lub prefill
   useEffect(() => {
     if (editPlan) {
       setFormData({
@@ -56,16 +67,47 @@ const PlanForm = ({ isOpen, onClose, onSuccess, editPlan, plots }) => {
         recurrence_unit: editPlan.recurrence_unit || 'days',
         recurrence_end_date: editPlan.recurrence_end_date || ''
       });
+    } else if (prefillData) {
+      // Domyślna data na podstawie prefill lub jutro
+      const defaultDate = prefillData.planned_date || (() => {
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        return tomorrow.toISOString().split('T')[0];
+      })();
+
+      setFormData({
+        action_type: prefillData.action_type || 'plant',
+        title: prefillData.title || '',
+        planned_date: defaultDate,
+        plant_id: prefillData.plant_id || null,
+        plot_id: prefillData.plot_id || '',
+        bed_id: prefillData.bed_id || '',
+        reminder_days: prefillData.reminder_days ?? 3,
+        notes: prefillData.notes || '',
+        weather_dependent: prefillData.weather_dependent ?? false,
+        is_recurring: prefillData.is_recurring ?? false,
+        recurrence_interval: prefillData.recurrence_interval || 7,
+        recurrence_unit: prefillData.recurrence_unit || 'days',
+        recurrence_end_date: prefillData.recurrence_end_date || ''
+      });
     } else {
       // Domyślna data: jutro
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
       setFormData(prev => ({
         ...prev,
+        action_type: 'plant',
+        title: '',
+        plant_id: null,
+        plot_id: '',
+        bed_id: '',
+        notes: '',
+        weather_dependent: false,
+        is_recurring: false,
         planned_date: tomorrow.toISOString().split('T')[0]
       }));
     }
-  }, [editPlan]);
+  }, [editPlan, prefillData]);
 
   // Pobierz grządki gdy zmieni się poletko
   useEffect(() => {
@@ -147,8 +189,9 @@ const PlanForm = ({ isOpen, onClose, onSuccess, editPlan, plots }) => {
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
               Typ akcji
             </label>
-            <div className="grid grid-cols-4 gap-2">
-              {ACTION_TYPES.map(action => (
+            {/* Podstawowe akcje */}
+            <div className="grid grid-cols-4 gap-2 mb-3">
+              {BASIC_ACTION_TYPES.map(action => (
                 <button
                   key={action.type}
                   type="button"
@@ -161,6 +204,27 @@ const PlanForm = ({ isOpen, onClose, onSuccess, editPlan, plots }) => {
                 >
                   <span className="text-2xl mb-1">{action.icon}</span>
                   <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                    {action.label}
+                  </span>
+                </button>
+              ))}
+            </div>
+            {/* Pielęgnacja kwiatów */}
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Pielęgnacja kwiatów:</p>
+            <div className="grid grid-cols-4 gap-2">
+              {FLOWER_CARE_ACTION_TYPES.map(action => (
+                <button
+                  key={action.type}
+                  type="button"
+                  onClick={() => handleChange('action_type', action.type)}
+                  className={`flex flex-col items-center p-3 rounded-xl border-2 transition-all ${
+                    formData.action_type === action.type
+                      ? 'border-pink-500 bg-pink-50 dark:bg-pink-900/20'
+                      : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
+                  }`}
+                >
+                  <span className="text-2xl mb-1">{action.icon}</span>
+                  <span className="text-xs font-medium text-gray-700 dark:text-gray-300 text-center leading-tight">
                     {action.label}
                   </span>
                 </button>

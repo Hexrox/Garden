@@ -17,6 +17,11 @@ const ACTION_TYPES = {
   transplant: { label: 'Przesadzić', icon: '🔄', requiresPlant: true, weatherCheck: 'frost' },
   fertilize: { label: 'Nawozić', icon: '🧪', requiresPlant: false, weatherCheck: 'rain' },
   prune: { label: 'Przyciąć', icon: '✂️', requiresPlant: false, weatherCheck: null },
+  // Nowe typy dla modułów pielęgnacji kwiatów
+  dig_up: { label: 'Wykopać', icon: '⛏️', requiresPlant: true, weatherCheck: 'frost' },
+  protect: { label: 'Zabezpieczyć', icon: '❄️', requiresPlant: true, weatherCheck: 'frost' },
+  propagate: { label: 'Podzielić', icon: '🌿', requiresPlant: true, weatherCheck: null },
+  deadhead: { label: 'Usunąć przekwitłe', icon: '🥀', requiresPlant: false, weatherCheck: null },
   custom: { label: 'Inne', icon: '📝', requiresPlant: false, weatherCheck: null }
 };
 

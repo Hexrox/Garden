@@ -1,6 +1,9 @@
-import React, { useMemo } from 'react';
-import { Flower, Scissors, Calendar, Info, Sparkles, AlertCircle } from 'lucide-react';
+import React, { useMemo, useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Flower, Scissors, Calendar, Info, Sparkles, AlertCircle, CalendarPlus } from 'lucide-react';
 import usePlotDetails from '../hooks/usePlotDetails';
+import PlanForm from '../components/PlanForm';
+import axios from '../config/axios';
 
 // Plant priority arrays moved outside to prevent re-creation
 const HIGH_PRIORITY_PLANTS = ['róża', 'petunia', 'surfinia', 'begonia', 'pelargonia', 'cynia', 'kosmos', 'nagietki', 'dalila', 'dalia'];
@@ -54,7 +57,60 @@ const getDeadheadingRequirement = (plantName) => {
  * Pomaga śledzić, które kwiaty wymagają regularnego usuwania przekwitniętych kwiatostanów
  */
 const DeadheadingReminders = () => {
+  const navigate = useNavigate();
   const { beds, loading, error, refetch } = usePlotDetails();
+  const [showPlanForm, setShowPlanForm] = useState(false);
+  const [planPrefill, setPlanPrefill] = useState(null);
+  const [plots, setPlots] = useState([]);
+
+  // Pobierz listę poletek dla formularza planowania
+  useEffect(() => {
+    axios.get('/api/plots')
+      .then(res => setPlots(res.data))
+      .catch(() => setPlots([]));
+  }, []);
+
+  // Obsługa planowania usuwania przekwitłych kwiatów
+  const handlePlanDeadhead = (flower, isRecurring = false) => {
+    const req = getDeadheadingRequirement(flower.name);
+
+    // Domyślna data: za 2 dni
+    const plannedDate = new Date();
+    plannedDate.setDate(plannedDate.getDate() + 2);
+
+    // Dla planu cyklicznego ustaw interwał na podstawie częstotliwości
+    let recurrenceInterval = 3;
+    let recurrenceUnit = 'days';
+
+    if (req.level === 'high') {
+      recurrenceInterval = 3; // 2-3 razy w tygodniu
+      recurrenceUnit = 'days';
+    } else if (req.level === 'medium') {
+      recurrenceInterval = 7; // raz w tygodniu
+      recurrenceUnit = 'days';
+    }
+
+    setPlanPrefill({
+      action_type: 'deadhead',
+      title: `Usunąć przekwitłe - ${flower.name}`,
+      planned_date: plannedDate.toISOString().split('T')[0],
+      plant_id: flower.plant_id || null,
+      bed_id: flower.id,
+      plot_id: flower.plot_id || '',
+      notes: `${flower.plot_name} → Rząd ${flower.row_number}\nCzęstotliwość: ${req.frequency}`,
+      weather_dependent: false,
+      reminder_days: 1,
+      is_recurring: isRecurring,
+      recurrence_interval: recurrenceInterval,
+      recurrence_unit: recurrenceUnit
+    });
+    setShowPlanForm(true);
+  };
+
+  const handlePlanSuccess = () => {
+    setShowPlanForm(false);
+    setPlanPrefill(null);
+  };
 
   // Filter only flowering plants
   const flowers = useMemo(() => {
@@ -66,6 +122,8 @@ const DeadheadingReminders = () => {
        bed.category === 'flower_bulb')
     ).map(bed => ({
       id: bed.id,
+      plant_id: bed.plant_id,
+      plot_id: bed.plot_id,
       name: bed.plant_name,
       variety: bed.plant_variety,
       category: bed.category,
@@ -294,6 +352,19 @@ const DeadheadingReminders = () => {
                                   {req.benefit}
                                 </p>
                               </div>
+                              {/* Przyciski planowania */}
+                              {blooming && (
+                                <div className="mt-2 flex flex-wrap gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => handlePlanDeadhead(flower, true)}
+                                    className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-pink-700 dark:text-pink-300 bg-pink-100 dark:bg-pink-900/30 rounded-lg hover:bg-pink-200 dark:hover:bg-pink-900/50 transition-colors"
+                                  >
+                                    <CalendarPlus size={12} />
+                                    Zaplanuj cyklicznie
+                                  </button>
+                                </div>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -365,6 +436,17 @@ const DeadheadingReminders = () => {
                                   <span className="truncate">{req.frequency}</span>
                                 </div>
                               </div>
+                              {/* Przycisk planowania */}
+                              {blooming && (
+                                <button
+                                  type="button"
+                                  onClick={() => handlePlanDeadhead(flower, true)}
+                                  className="mt-2 inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-pink-700 dark:text-pink-300 bg-pink-100 dark:bg-pink-900/30 rounded-lg hover:bg-pink-200 dark:hover:bg-pink-900/50 transition-colors"
+                                >
+                                  <CalendarPlus size={12} />
+                                  Zaplanuj cyklicznie
+                                </button>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -396,9 +478,40 @@ const DeadheadingReminders = () => {
                 </div>
               </div>
             )}
+
+            {/* Przycisk do Plannera */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 text-center">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                Zaplanuj pielęgnację w Plannerze
+              </h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                Użyj Plannera ogrodnika, aby zaplanować regularne usuwanie przekwitłych kwiatów
+              </p>
+              <button
+                type="button"
+                onClick={() => navigate('/planner')}
+                aria-label="Przejdź do Plannera"
+                className="bg-pink-600 hover:bg-pink-700 text-white px-6 py-2 rounded-lg inline-flex items-center gap-2 transition-colors focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2"
+              >
+                <Calendar size={20} />
+                Przejdź do Plannera
+              </button>
+            </div>
           </div>
         )}
       </div>
+
+      {/* Modal formularza planowania */}
+      <PlanForm
+        isOpen={showPlanForm}
+        onClose={() => {
+          setShowPlanForm(false);
+          setPlanPrefill(null);
+        }}
+        onSuccess={handlePlanSuccess}
+        plots={plots}
+        prefillData={planPrefill}
+      />
     </div>
   );
 };

@@ -10,8 +10,8 @@ const Layout = ({ children }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [showFlowersMenu, setShowFlowersMenu] = useState(false);
-  const flowersMenuRef = useRef(null);
+  const [showPlantsMenu, setShowPlantsMenu] = useState(false);
+  const plantsMenuRef = useRef(null);
   const [pendingPlantsCount, setPendingPlantsCount] = useState(0);
 
   // Fetch pending plants count for admin badge
@@ -27,8 +27,8 @@ const Layout = ({ children }) => {
     return location.pathname === path || location.pathname.startsWith(path + '/');
   };
 
-  const isFlowersMenuActive = () => {
-    return ['/bloom-timeline', '/winter-protection', '/propagation', '/deadheading'].some(
+  const isPlantsMenuActive = () => {
+    return ['/plants', '/sprays', '/fertilization', '/bloom-timeline', '/winter-protection', '/propagation', '/deadheading'].some(
       path => location.pathname.startsWith(path)
     );
   };
@@ -41,8 +41,8 @@ const Layout = ({ children }) => {
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (flowersMenuRef.current && !flowersMenuRef.current.contains(event.target)) {
-        setShowFlowersMenu(false);
+      if (plantsMenuRef.current && !plantsMenuRef.current.contains(event.target)) {
+        setShowPlantsMenu(false);
       }
     };
 
@@ -81,36 +81,21 @@ const Layout = ({ children }) => {
                 >
                   Działki
                 </Link>
-                <Link
-                  to="/plants"
-                  className={`inline-flex items-center px-1 pt-1 text-sm font-medium transition whitespace-nowrap border-b-2 ${
-                    isActive('/plants')
+                {/* Plants Mega Menu Button */}
+                <button
+                  type="button"
+                  onClick={() => setShowPlantsMenu(!showPlantsMenu)}
+                  aria-label="Menu roślin i opieki"
+                  aria-expanded={showPlantsMenu}
+                  className={`inline-flex items-center px-1 pt-1 text-sm font-medium transition whitespace-nowrap border-b-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 ${
+                    isPlantsMenuActive()
                       ? 'border-green-600 text-green-600 dark:text-green-400'
                       : 'border-transparent text-gray-900 dark:text-gray-100 hover:text-green-600 dark:hover:text-green-400 hover:border-gray-300'
                   }`}
                 >
-                  Rośliny
-                </Link>
-                <Link
-                  to="/sprays"
-                  className={`inline-flex items-center px-1 pt-1 text-sm font-medium transition whitespace-nowrap border-b-2 ${
-                    isActive('/sprays')
-                      ? 'border-green-600 text-green-600 dark:text-green-400'
-                      : 'border-transparent text-gray-900 dark:text-gray-100 hover:text-green-600 dark:hover:text-green-400 hover:border-gray-300'
-                  }`}
-                >
-                  Opryski
-                </Link>
-                <Link
-                  to="/fertilization"
-                  className={`inline-flex items-center px-1 pt-1 text-sm font-medium transition whitespace-nowrap border-b-2 ${
-                    isActive('/fertilization')
-                      ? 'border-green-600 text-green-600 dark:text-green-400'
-                      : 'border-transparent text-gray-900 dark:text-gray-100 hover:text-green-600 dark:hover:text-green-400 hover:border-gray-300'
-                  }`}
-                >
-                  Nawożenie
-                </Link>
+                  🌿 Rośliny
+                  <ChevronDown size={16} className="ml-1" />
+                </button>
                 <Link
                   to="/planner"
                   className={`inline-flex items-center px-1 pt-1 text-sm font-medium transition whitespace-nowrap border-b-2 ${
@@ -121,22 +106,6 @@ const Layout = ({ children }) => {
                 >
                   Planner
                 </Link>
-
-                {/* Flowers Mega Menu Button */}
-                <button
-                  type="button"
-                  onClick={() => setShowFlowersMenu(!showFlowersMenu)}
-                  aria-label="Menu funkcji dla kwiatów"
-                  aria-expanded={showFlowersMenu}
-                  className={`inline-flex items-center px-1 pt-1 text-sm font-medium transition whitespace-nowrap border-b-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 ${
-                    isFlowersMenuActive()
-                      ? 'border-green-600 text-green-600 dark:text-green-400'
-                      : 'border-transparent text-gray-900 dark:text-gray-100 hover:text-green-600 dark:hover:text-green-400 hover:border-gray-300'
-                  }`}
-                >
-                  🌸 Kwiaty
-                  <ChevronDown size={16} className="ml-1" />
-                </button>
                 <Link
                   to="/gallery"
                   className={`inline-flex items-center px-1 pt-1 text-sm font-medium transition whitespace-nowrap border-b-2 ${
@@ -146,16 +115,6 @@ const Layout = ({ children }) => {
                   }`}
                 >
                   Galeria
-                </Link>
-                <Link
-                  to="/profile"
-                  className={`inline-flex items-center px-1 pt-1 text-sm font-medium transition whitespace-nowrap border-b-2 ${
-                    isActive('/profile')
-                      ? 'border-green-600 text-green-600 dark:text-green-400'
-                      : 'border-transparent text-gray-900 dark:text-gray-100 hover:text-green-600 dark:hover:text-green-400 hover:border-gray-300'
-                  }`}
-                >
-                  Profil
                 </Link>
                 {user?.username === 'admin' && (
                   <Link
@@ -177,7 +136,12 @@ const Layout = ({ children }) => {
               </div>
             </div>
             <div className="flex items-center gap-3 flex-shrink-0">
-              <span className="hidden md:block text-sm text-gray-700 dark:text-gray-300">{user?.username}</span>
+              <Link
+                to="/profile"
+                className="hidden md:block text-sm text-gray-700 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 transition"
+              >
+                {user?.username}
+              </Link>
               <DarkModeToggle />
               <button
                 type="button"
@@ -191,99 +155,164 @@ const Layout = ({ children }) => {
           </div>
         </div>
 
-        {/* Mega Menu Panel - Full Width Below Nav */}
-        {showFlowersMenu && (
-          <div className="relative z-50 pb-2" ref={flowersMenuRef}>
+        {/* Plants Mega Menu Panel - Full Width Below Nav */}
+        {showPlantsMenu && (
+          <div className="relative z-50 pb-2" ref={plantsMenuRef}>
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <div className="rounded-lg shadow-2xl bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 border border-gray-200 dark:border-gray-700 animate-fadeIn">
                 <div className="p-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {/* Główne sekcje */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                     <Link
-                      to="/bloom-timeline"
-                      onClick={() => setShowFlowersMenu(false)}
+                      to="/plants"
+                      onClick={() => setShowPlantsMenu(false)}
                       className={`group flex flex-col items-center p-6 rounded-lg transition-all duration-200 ${
-                        isActive('/bloom-timeline')
+                        isActive('/plants')
                           ? 'bg-green-50 dark:bg-green-900/20 ring-2 ring-green-500'
                           : 'bg-gray-50 dark:bg-gray-700/50 hover:bg-green-50 dark:hover:bg-green-900/20 hover:shadow-md'
                       }`}
                     >
-                      <div className="text-4xl mb-3">📅</div>
+                      <div className="text-4xl mb-3">📚</div>
                       <h3 className={`text-base font-semibold mb-2 text-center ${
-                        isActive('/bloom-timeline')
+                        isActive('/plants')
                           ? 'text-green-600 dark:text-green-400'
                           : 'text-gray-900 dark:text-gray-100 group-hover:text-green-600 dark:group-hover:text-green-400'
                       }`}>
-                        Kalendarz kwitnienia
+                        Katalog roślin
                       </h3>
                       <p className="text-xs text-gray-600 dark:text-gray-400 text-center">
-                        Planuj i śledź okresy kwitnienia kwiatów
+                        Baza wiedzy o roślinach ogrodowych
                       </p>
+                    </Link>
+
+                    <Link
+                      to="/sprays"
+                      onClick={() => setShowPlantsMenu(false)}
+                      className={`group flex flex-col items-center p-6 rounded-lg transition-all duration-200 ${
+                        isActive('/sprays')
+                          ? 'bg-green-50 dark:bg-green-900/20 ring-2 ring-green-500'
+                          : 'bg-gray-50 dark:bg-gray-700/50 hover:bg-green-50 dark:hover:bg-green-900/20 hover:shadow-md'
+                      }`}
+                    >
+                      <div className="text-4xl mb-3">🧴</div>
+                      <h3 className={`text-base font-semibold mb-2 text-center ${
+                        isActive('/sprays')
+                          ? 'text-green-600 dark:text-green-400'
+                          : 'text-gray-900 dark:text-gray-100 group-hover:text-green-600 dark:group-hover:text-green-400'
+                      }`}>
+                        Opryski
+                      </h3>
+                      <p className="text-xs text-gray-600 dark:text-gray-400 text-center">
+                        Historia oprysków i karencja
+                      </p>
+                    </Link>
+
+                    <Link
+                      to="/fertilization"
+                      onClick={() => setShowPlantsMenu(false)}
+                      className={`group flex flex-col items-center p-6 rounded-lg transition-all duration-200 ${
+                        isActive('/fertilization')
+                          ? 'bg-green-50 dark:bg-green-900/20 ring-2 ring-green-500'
+                          : 'bg-gray-50 dark:bg-gray-700/50 hover:bg-green-50 dark:hover:bg-green-900/20 hover:shadow-md'
+                      }`}
+                    >
+                      <div className="text-4xl mb-3">🧪</div>
+                      <h3 className={`text-base font-semibold mb-2 text-center ${
+                        isActive('/fertilization')
+                          ? 'text-green-600 dark:text-green-400'
+                          : 'text-gray-900 dark:text-gray-100 group-hover:text-green-600 dark:group-hover:text-green-400'
+                      }`}>
+                        Nawożenie
+                      </h3>
+                      <p className="text-xs text-gray-600 dark:text-gray-400 text-center">
+                        Harmonogram nawożenia roślin
+                      </p>
+                    </Link>
+                  </div>
+
+                  {/* Separator */}
+                  <div className="border-t border-gray-200 dark:border-gray-700 mb-6">
+                    <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mt-4 mb-4 flex items-center">
+                      🌸 Kwiaty i byliny
+                    </h4>
+                  </div>
+
+                  {/* Sekcja Kwiaty */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <Link
+                      to="/bloom-timeline"
+                      onClick={() => setShowPlantsMenu(false)}
+                      className={`group flex flex-col items-center p-4 rounded-lg transition-all duration-200 ${
+                        isActive('/bloom-timeline')
+                          ? 'bg-pink-50 dark:bg-pink-900/20 ring-2 ring-pink-500'
+                          : 'bg-gray-50 dark:bg-gray-700/50 hover:bg-pink-50 dark:hover:bg-pink-900/20 hover:shadow-md'
+                      }`}
+                    >
+                      <div className="text-3xl mb-2">📅</div>
+                      <h3 className={`text-sm font-semibold text-center ${
+                        isActive('/bloom-timeline')
+                          ? 'text-pink-600 dark:text-pink-400'
+                          : 'text-gray-900 dark:text-gray-100 group-hover:text-pink-600 dark:group-hover:text-pink-400'
+                      }`}>
+                        Kalendarz kwitnienia
+                      </h3>
                     </Link>
 
                     <Link
                       to="/winter-protection"
-                      onClick={() => setShowFlowersMenu(false)}
-                      className={`group flex flex-col items-center p-6 rounded-lg transition-all duration-200 ${
+                      onClick={() => setShowPlantsMenu(false)}
+                      className={`group flex flex-col items-center p-4 rounded-lg transition-all duration-200 ${
                         isActive('/winter-protection')
-                          ? 'bg-green-50 dark:bg-green-900/20 ring-2 ring-green-500'
-                          : 'bg-gray-50 dark:bg-gray-700/50 hover:bg-green-50 dark:hover:bg-green-900/20 hover:shadow-md'
+                          ? 'bg-pink-50 dark:bg-pink-900/20 ring-2 ring-pink-500'
+                          : 'bg-gray-50 dark:bg-gray-700/50 hover:bg-pink-50 dark:hover:bg-pink-900/20 hover:shadow-md'
                       }`}
                     >
-                      <div className="text-4xl mb-3">❄️</div>
-                      <h3 className={`text-base font-semibold mb-2 text-center ${
+                      <div className="text-3xl mb-2">❄️</div>
+                      <h3 className={`text-sm font-semibold text-center ${
                         isActive('/winter-protection')
-                          ? 'text-green-600 dark:text-green-400'
-                          : 'text-gray-900 dark:text-gray-100 group-hover:text-green-600 dark:group-hover:text-green-400'
+                          ? 'text-pink-600 dark:text-pink-400'
+                          : 'text-gray-900 dark:text-gray-100 group-hover:text-pink-600 dark:group-hover:text-pink-400'
                       }`}>
                         Zabezpieczanie na zimę
                       </h3>
-                      <p className="text-xs text-gray-600 dark:text-gray-400 text-center">
-                        Chroń rośliny przed mrozem i zimowymi warunkami
-                      </p>
                     </Link>
 
                     <Link
                       to="/propagation"
-                      onClick={() => setShowFlowersMenu(false)}
-                      className={`group flex flex-col items-center p-6 rounded-lg transition-all duration-200 ${
+                      onClick={() => setShowPlantsMenu(false)}
+                      className={`group flex flex-col items-center p-4 rounded-lg transition-all duration-200 ${
                         isActive('/propagation')
-                          ? 'bg-green-50 dark:bg-green-900/20 ring-2 ring-green-500'
-                          : 'bg-gray-50 dark:bg-gray-700/50 hover:bg-green-50 dark:hover:bg-green-900/20 hover:shadow-md'
+                          ? 'bg-pink-50 dark:bg-pink-900/20 ring-2 ring-pink-500'
+                          : 'bg-gray-50 dark:bg-gray-700/50 hover:bg-pink-50 dark:hover:bg-pink-900/20 hover:shadow-md'
                       }`}
                     >
-                      <div className="text-4xl mb-3">✂️</div>
-                      <h3 className={`text-base font-semibold mb-2 text-center ${
+                      <div className="text-3xl mb-2">✂️</div>
+                      <h3 className={`text-sm font-semibold text-center ${
                         isActive('/propagation')
-                          ? 'text-green-600 dark:text-green-400'
-                          : 'text-gray-900 dark:text-gray-100 group-hover:text-green-600 dark:group-hover:text-green-400'
+                          ? 'text-pink-600 dark:text-pink-400'
+                          : 'text-gray-900 dark:text-gray-100 group-hover:text-pink-600 dark:group-hover:text-pink-400'
                       }`}>
                         Dzielenie bylin
                       </h3>
-                      <p className="text-xs text-gray-600 dark:text-gray-400 text-center">
-                        Śledź proces rozmnażania i dzielenia roślin
-                      </p>
                     </Link>
 
                     <Link
                       to="/deadheading"
-                      onClick={() => setShowFlowersMenu(false)}
-                      className={`group flex flex-col items-center p-6 rounded-lg transition-all duration-200 ${
+                      onClick={() => setShowPlantsMenu(false)}
+                      className={`group flex flex-col items-center p-4 rounded-lg transition-all duration-200 ${
                         isActive('/deadheading')
-                          ? 'bg-green-50 dark:bg-green-900/20 ring-2 ring-green-500'
-                          : 'bg-gray-50 dark:bg-gray-700/50 hover:bg-green-50 dark:hover:bg-green-900/20 hover:shadow-md'
+                          ? 'bg-pink-50 dark:bg-pink-900/20 ring-2 ring-pink-500'
+                          : 'bg-gray-50 dark:bg-gray-700/50 hover:bg-pink-50 dark:hover:bg-pink-900/20 hover:shadow-md'
                       }`}
                     >
-                      <div className="text-4xl mb-3">🥀</div>
-                      <h3 className={`text-base font-semibold mb-2 text-center ${
+                      <div className="text-3xl mb-2">🥀</div>
+                      <h3 className={`text-sm font-semibold text-center ${
                         isActive('/deadheading')
-                          ? 'text-green-600 dark:text-green-400'
-                          : 'text-gray-900 dark:text-gray-100 group-hover:text-green-600 dark:group-hover:text-green-400'
+                          ? 'text-pink-600 dark:text-pink-400'
+                          : 'text-gray-900 dark:text-gray-100 group-hover:text-pink-600 dark:group-hover:text-pink-400'
                       }`}>
                         Usuwanie przekwitłych
                       </h3>
-                      <p className="text-xs text-gray-600 dark:text-gray-400 text-center">
-                        Przypomnienia o usuwaniu przekwitłych kwiatów
-                      </p>
                     </Link>
                   </div>
                 </div>

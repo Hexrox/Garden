@@ -1,6 +1,9 @@
-import React, { useMemo } from 'react';
-import { Scissors, CheckCircle, Clock, Info, AlertCircle } from 'lucide-react';
+import React, { useMemo, useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Scissors, CheckCircle, Clock, Info, AlertCircle, Calendar } from 'lucide-react';
 import usePlotDetails from '../hooks/usePlotDetails';
+import PlanForm from '../components/PlanForm';
+import axios from '../config/axios';
 
 /**
  * Calculate plant age in years from planted date string
@@ -19,7 +22,63 @@ const calculateAge = (plantedDateStr) => {
  * Pomaga śledzić, kiedy byliny zostały podzielone i kiedy trzeba je znowu podzielić
  */
 const PropagationTracking = () => {
+  const navigate = useNavigate();
   const { beds, loading, error, refetch } = usePlotDetails();
+  const [showPlanForm, setShowPlanForm] = useState(false);
+  const [planPrefill, setPlanPrefill] = useState(null);
+  const [plots, setPlots] = useState([]);
+
+  // Pobierz listę poletek dla formularza planowania
+  useEffect(() => {
+    axios.get('/api/plots')
+      .then(res => setPlots(res.data))
+      .catch(() => setPlots([]));
+  }, []);
+
+  // Obsługa planowania dzielenia byliny
+  const handlePlanPropagate = (plant) => {
+    // Sprawdź najlepszy czas na dzielenie (wiosna lub jesień)
+    const now = new Date();
+    const month = now.getMonth() + 1;
+    let plannedDate;
+
+    if (month >= 3 && month <= 4) {
+      // Wiosna - za tydzień
+      const nextWeek = new Date();
+      nextWeek.setDate(nextWeek.getDate() + 7);
+      plannedDate = nextWeek.toISOString().split('T')[0];
+    } else if (month >= 9 && month <= 10) {
+      // Jesień - za tydzień
+      const nextWeek = new Date();
+      nextWeek.setDate(nextWeek.getDate() + 7);
+      plannedDate = nextWeek.toISOString().split('T')[0];
+    } else if (month > 4 && month < 9) {
+      // Lato - zaplanuj na wrzesień
+      plannedDate = `${now.getFullYear()}-09-15`;
+    } else {
+      // Zima - zaplanuj na marzec następnego roku
+      const year = month < 3 ? now.getFullYear() : now.getFullYear() + 1;
+      plannedDate = `${year}-03-15`;
+    }
+
+    setPlanPrefill({
+      action_type: 'propagate',
+      title: `Podzielić ${plant.name}`,
+      planned_date: plannedDate,
+      plant_id: plant.plant_id || null,
+      bed_id: plant.id,
+      plot_id: plant.plot_id || '',
+      notes: `${plant.plot_name} → Rząd ${plant.row_number}${plant.years_old ? ` (${plant.years_old} lat)` : ''}`,
+      weather_dependent: false,
+      reminder_days: 7
+    });
+    setShowPlanForm(true);
+  };
+
+  const handlePlanSuccess = () => {
+    setShowPlanForm(false);
+    setPlanPrefill(null);
+  };
 
   // Filter only perennial plants
   const perennials = useMemo(() => {
@@ -27,6 +86,8 @@ const PropagationTracking = () => {
       bed.plant_name && bed.category === 'flower_perennial'
     ).map(bed => ({
       id: bed.id,
+      plant_id: bed.plant_id,
+      plot_id: bed.plot_id,
       name: bed.plant_name,
       variety: bed.plant_variety,
       plot_name: bed.plot_name,
@@ -252,6 +313,14 @@ const PropagationTracking = () => {
                                 </p>
                               )}
                             </div>
+                            <button
+                              type="button"
+                              onClick={() => handlePlanPropagate(plant)}
+                              className="mt-2 inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-900/30 rounded-lg hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-colors"
+                            >
+                              <Calendar size={12} />
+                              Zaplanuj dzielenie
+                            </button>
                           </div>
                         </div>
                       </div>
@@ -306,6 +375,14 @@ const PropagationTracking = () => {
                                 </p>
                               )}
                             </div>
+                            <button
+                              type="button"
+                              onClick={() => handlePlanPropagate(plant)}
+                              className="mt-2 inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-900/30 rounded-lg hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-colors"
+                            >
+                              <Calendar size={12} />
+                              Zaplanuj dzielenie
+                            </button>
                           </div>
                         </div>
                       </div>
@@ -390,9 +467,40 @@ const PropagationTracking = () => {
                 </div>
               </div>
             )}
+
+            {/* Przycisk do Plannera */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 text-center">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                Zaplanuj dzielenie w Plannerze
+              </h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                Użyj Plannera ogrodnika, aby zaplanować dzielenie bylin z przypomnieniami
+              </p>
+              <button
+                type="button"
+                onClick={() => navigate('/planner')}
+                aria-label="Przejdź do Plannera"
+                className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg inline-flex items-center gap-2 transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+              >
+                <Calendar size={20} />
+                Przejdź do Plannera
+              </button>
+            </div>
           </div>
         )}
       </div>
+
+      {/* Modal formularza planowania */}
+      <PlanForm
+        isOpen={showPlanForm}
+        onClose={() => {
+          setShowPlanForm(false);
+          setPlanPrefill(null);
+        }}
+        onSuccess={handlePlanSuccess}
+        plots={plots}
+        prefillData={planPrefill}
+      />
     </div>
   );
 };
