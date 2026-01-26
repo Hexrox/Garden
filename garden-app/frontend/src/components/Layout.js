@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import BottomNav from './BottomNav';
 import DarkModeToggle from './DarkModeToggle';
 import { ChevronDown } from 'lucide-react';
+import axios from '../config/axios';
 
 const Layout = ({ children }) => {
   const { user, logout } = useAuth();
@@ -11,6 +12,16 @@ const Layout = ({ children }) => {
   const location = useLocation();
   const [showFlowersMenu, setShowFlowersMenu] = useState(false);
   const flowersMenuRef = useRef(null);
+  const [pendingPlantsCount, setPendingPlantsCount] = useState(0);
+
+  // Fetch pending plants count for admin badge
+  useEffect(() => {
+    if (user?.role === 'admin' || user?.username === 'admin') {
+      axios.get('/api/admin/plants/stats')
+        .then(res => setPendingPlantsCount(res.data?.pending_count || 0))
+        .catch(() => setPendingPlantsCount(0));
+    }
+  }, [user, location.pathname]);
 
   const isActive = (path) => {
     return location.pathname === path || location.pathname.startsWith(path + '/');
@@ -100,6 +111,16 @@ const Layout = ({ children }) => {
                 >
                   Nawożenie
                 </Link>
+                <Link
+                  to="/planner"
+                  className={`inline-flex items-center px-1 pt-1 text-sm font-medium transition whitespace-nowrap border-b-2 ${
+                    isActive('/planner')
+                      ? 'border-green-600 text-green-600 dark:text-green-400'
+                      : 'border-transparent text-gray-900 dark:text-gray-100 hover:text-green-600 dark:hover:text-green-400 hover:border-gray-300'
+                  }`}
+                >
+                  Planner
+                </Link>
 
                 {/* Flowers Mega Menu Button */}
                 <button
@@ -139,13 +160,18 @@ const Layout = ({ children }) => {
                 {user?.username === 'admin' && (
                   <Link
                     to="/admin"
-                    className={`inline-flex items-center px-1 pt-1 text-sm font-medium transition whitespace-nowrap border-b-2 ${
+                    className={`inline-flex items-center px-1 pt-1 text-sm font-medium transition whitespace-nowrap border-b-2 relative ${
                       isActive('/admin')
                         ? 'border-green-600 text-green-600 dark:text-green-400'
                         : 'border-transparent text-gray-900 dark:text-gray-100 hover:text-green-600 dark:hover:text-green-400 hover:border-gray-300'
                     }`}
                   >
                     Admin
+                    {pendingPlantsCount > 0 && (
+                      <span className="absolute -top-1 -right-3 px-1.5 py-0.5 bg-yellow-500 text-white text-xs font-bold rounded-full min-w-[18px] text-center animate-pulse">
+                        {pendingPlantsCount}
+                      </span>
+                    )}
                   </Link>
                 )}
               </div>

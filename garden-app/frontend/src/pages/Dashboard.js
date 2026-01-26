@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import WeatherWidget from '../components/WeatherWidget';
 import TaskList from '../components/TaskList';
 import UpcomingHarvests from '../components/UpcomingHarvests';
+import UpcomingPlans from '../components/UpcomingPlans';
 import SuccessionWidget from '../components/SuccessionWidget';
 import BloomCalendar from '../components/BloomCalendar';
 import OnboardingWizard from '../components/onboarding/OnboardingWizard';
@@ -50,22 +51,21 @@ const Dashboard = () => {
       const profile = profileRes.data;
       if (profile.city && (!profile.latitude || !profile.longitude)) {
         try {
-          console.log('Auto-geocoding city:', profile.city);
           const geocodeResponse = await fetch(
             `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(profile.city)}&limit=1`
           );
-          const geocodeData = await geocodeResponse.json();
-
-          if (geocodeData && geocodeData.length > 0) {
-            const { lat, lon } = geocodeData[0];
-            await axios.put('/api/auth/update-profile', {
-              latitude: parseFloat(lat),
-              longitude: parseFloat(lon)
-            });
-            console.log('✅ Auto-geocoded city successfully');
+          if (geocodeResponse.ok) {
+            const geocodeData = await geocodeResponse.json();
+            if (geocodeData && geocodeData.length > 0) {
+              const { lat, lon } = geocodeData[0];
+              await axios.put('/api/auth/update-profile', {
+                latitude: parseFloat(lat),
+                longitude: parseFloat(lon)
+              });
+            }
           }
-        } catch (error) {
-          console.error('Error auto-geocoding city:', error);
+        } catch {
+          // Ignore geocoding errors silently
         }
       }
 
@@ -78,8 +78,8 @@ const Dashboard = () => {
         try {
           await axios.put('/api/auth/complete-onboarding');
           setOnboardingCompleted(true);
-        } catch (error) {
-          console.error('Error auto-completing onboarding:', error);
+        } catch {
+          // Ignore error silently
         }
         // Show welcome card for existing users
         const dismissed = localStorage.getItem('welcomeCardDismissed');
@@ -234,13 +234,18 @@ const Dashboard = () => {
         />
       )}
 
-      {/* Widgets Row - Weather, Tasks, Harvests, Bloom Calendar */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6">
+      {/* Widgets Row - Weather, Tasks, Harvests */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
         <WeatherWidget />
         <TaskList />
         <UpcomingHarvests />
-        <BloomCalendar />
       </div>
+
+      {/* Upcoming Plans Widget */}
+      <UpcomingPlans />
+
+      {/* Bloom Calendar - Horizontal Layout */}
+      <BloomCalendar horizontal />
 
       {/* Succession Planting Widget */}
       <SuccessionWidget />

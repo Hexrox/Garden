@@ -139,6 +139,63 @@ db.serialize(() => {
   db.run(`ALTER TABLE plants ADD COLUMN winter_care TEXT`, (err) => {});
   db.run(`ALTER TABLE plants ADD COLUMN propagation_method TEXT`, (err) => {});
 
+  // ==========================================
+  // COMMUNITY PLANT MODERATION SYSTEM
+  // ==========================================
+
+  // Status: pending (awaiting moderation), approved, rejected
+  db.run(`ALTER TABLE plants ADD COLUMN status TEXT DEFAULT 'approved'`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding status column:', err.message);
+    }
+  });
+
+  // Who contributed this plant (user_id of contributor)
+  db.run(`ALTER TABLE plants ADD COLUMN contributor_id INTEGER`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding contributor_id column:', err.message);
+    }
+  });
+
+  // Admin who reviewed the plant
+  db.run(`ALTER TABLE plants ADD COLUMN reviewed_by INTEGER`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding reviewed_by column:', err.message);
+    }
+  });
+
+  // When was it reviewed
+  db.run(`ALTER TABLE plants ADD COLUMN reviewed_at DATETIME`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding reviewed_at column:', err.message);
+    }
+  });
+
+  // Rejection reason (if rejected)
+  db.run(`ALTER TABLE plants ADD COLUMN rejection_reason TEXT`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding rejection_reason column:', err.message);
+    }
+  });
+
+  // Photo author (required when photo is uploaded)
+  db.run(`ALTER TABLE plants ADD COLUMN photo_author TEXT`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding photo_author column:', err.message);
+    }
+  });
+
+  // Photo license/source info
+  db.run(`ALTER TABLE plants ADD COLUMN photo_license TEXT`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding photo_license column:', err.message);
+    }
+  });
+
+  // Create index for fast status filtering
+  db.run('CREATE INDEX IF NOT EXISTS idx_plants_status ON plants(status)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_plants_contributor ON plants(contributor_id)');
+
   // Add columns for frost dates and hardiness zones
   db.run(`ALTER TABLE users ADD COLUMN hardiness_zone TEXT`, (err) => {});
   db.run(`ALTER TABLE users ADD COLUMN first_frost_date TEXT`, (err) => {});
@@ -1121,6 +1178,79 @@ db.serialize(() => {
       });
     }
   });
+
+  // ==========================================
+  // PHOTO REVIEW SYSTEM (Admin verification)
+  // ==========================================
+
+  // Photo reviews table - tracks admin verification of plant photos
+  db.run(`CREATE TABLE IF NOT EXISTS photo_reviews (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    plant_id INTEGER NOT NULL,
+    reviewed_by INTEGER,
+    is_correct BOOLEAN,
+    review_notes TEXT,
+    reviewed_at DATETIME,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(plant_id) REFERENCES plants(id) ON DELETE CASCADE,
+    FOREIGN KEY(reviewed_by) REFERENCES users(id) ON DELETE SET NULL,
+    UNIQUE(plant_id)
+  )`);
+
+  // Create index for photo reviews
+  db.run('CREATE INDEX IF NOT EXISTS idx_photo_reviews_plant_id ON photo_reviews(plant_id)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_photo_reviews_is_correct ON photo_reviews(is_correct)');
+
+  // ==========================================
+  // GARDEN PLANNER FEATURE
+  // ==========================================
+
+  // Planned actions table - for planning future garden activities
+  db.run(`CREATE TABLE IF NOT EXISTS planned_actions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    action_type TEXT NOT NULL CHECK(action_type IN ('plant', 'spray', 'water', 'harvest', 'transplant', 'fertilize', 'prune', 'custom')),
+
+    -- Powiazania (opcjonalne)
+    plant_id INTEGER,
+    bed_id INTEGER,
+    plot_id INTEGER,
+
+    -- Planowanie
+    title TEXT NOT NULL,
+    planned_date DATE NOT NULL,
+    reminder_days INTEGER DEFAULT 3,
+    notes TEXT,
+
+    -- Pogoda
+    weather_dependent BOOLEAN DEFAULT 0,
+
+    -- Status
+    status TEXT DEFAULT 'planned' CHECK(status IN ('planned', 'reminded', 'completed', 'cancelled', 'overdue')),
+    completed_date DATE,
+
+    -- Powtarzalnosc
+    is_recurring BOOLEAN DEFAULT 0,
+    recurrence_interval INTEGER,
+    recurrence_unit TEXT CHECK(recurrence_unit IN ('days', 'weeks', 'months')),
+    recurrence_end_date DATE,
+    parent_plan_id INTEGER,
+
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (plant_id) REFERENCES plants(id) ON DELETE SET NULL,
+    FOREIGN KEY (bed_id) REFERENCES beds(id) ON DELETE SET NULL,
+    FOREIGN KEY (plot_id) REFERENCES plots(id) ON DELETE SET NULL,
+    FOREIGN KEY (parent_plan_id) REFERENCES planned_actions(id) ON DELETE SET NULL
+  )`);
+
+  // Indeksy dla planned_actions
+  db.run('CREATE INDEX IF NOT EXISTS idx_planned_actions_user_id ON planned_actions(user_id)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_planned_actions_date ON planned_actions(planned_date)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_planned_actions_status ON planned_actions(status)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_planned_actions_type ON planned_actions(action_type)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_planned_actions_parent ON planned_actions(parent_plan_id)');
 
   console.log('✅ Database tables and indexes created successfully');
 });

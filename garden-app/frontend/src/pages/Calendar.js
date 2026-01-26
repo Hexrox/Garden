@@ -23,13 +23,14 @@ const Calendar = () => {
       const year = currentDate.getFullYear();
       const month = currentDate.getMonth() + 1;
 
-      // Fetch all event types for the month including moon phases
-      const [tasks, reminders, succession, sprays, moon] = await Promise.all([
+      // Fetch all event types for the month including moon phases and planner
+      const [tasks, reminders, succession, sprays, moon, planner] = await Promise.all([
         axios.get(`/api/tasks`).catch(() => ({ data: [] })),
         axios.get(`/api/reminders`).catch(() => ({ data: [] })),
         axios.get(`/api/succession`).catch(() => ({ data: [] })),
         axios.get(`/api/sprays/history`).catch(() => ({ data: [] })),
-        axios.get(`/api/calendar/moon/month/${year}/${month}`).catch(() => ({ data: [] }))
+        axios.get(`/api/calendar/moon/month/${year}/${month}`).catch(() => ({ data: [] })),
+        axios.get(`/api/planner/calendar/${year}/${month}`).catch(() => ({ data: [] }))
       ]);
 
       // Store moon phases separately
@@ -64,6 +65,14 @@ const Calendar = () => {
           type: 'spray',
           title: `Oprysk: ${s.spray_name}`,
           color: 'bg-red-500'
+        })),
+        ...planner.data.map(p => ({
+          date: p.planned_date,
+          type: 'plan',
+          title: `${p.action_info?.icon || '📋'} ${p.title}`,
+          color: 'bg-orange-500',
+          status: p.status,
+          planId: p.id
         }))
       ];
 

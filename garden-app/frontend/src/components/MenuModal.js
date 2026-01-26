@@ -16,7 +16,8 @@ import {
   Flower2,
   Snowflake,
   Scissors,
-  Sparkles
+  Sparkles,
+  ClipboardList
 } from 'lucide-react';
 
 /**
@@ -63,6 +64,15 @@ const MenuModal = ({ isOpen, onClose, onQuickPhotoClick }) => {
       label: 'Galeria',
       description: 'Zdjęcia',
       color: 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400',
+      badge: 'NOWY'
+    },
+    {
+      id: 'planner',
+      path: '/planner',
+      icon: ClipboardList,
+      label: 'Planner',
+      description: 'Planowanie',
+      color: 'bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400',
       badge: 'NOWY'
     },
     {
@@ -234,7 +244,7 @@ const MenuModal = ({ isOpen, onClose, onQuickPhotoClick }) => {
               </span>
               <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
                 <LayoutGrid size={16} />
-                <span className="font-medium">14 modułów</span>
+                <span className="font-medium">15 modułów</span>
               </div>
             </div>
           </div>

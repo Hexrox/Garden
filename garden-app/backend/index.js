@@ -37,6 +37,9 @@ const plantProblemsRoutes = require('./routes/plantProblems');
 const careRoutes = require('./routes/care');
 const fertilizersRoutes = require('./routes/fertilizers');
 const adminImagesRoutes = require('./routes/admin-images');
+const adminPlantsRoutes = require('./routes/admin-plants');
+const photoReviewsRoutes = require('./routes/photo-reviews');
+const plannerRoutes = require('./routes/planner');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -145,7 +148,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // General API rate limiter (per IP)
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 200, // 200 requests per window per IP
+  max: 2000, // 2000 requests per window per IP (increased from 1000)
   message: { error: 'Zbyt wiele żądań. Spróbuj ponownie za 15 minut.' },
   standardHeaders: true,
   legacyHeaders: false,
@@ -155,7 +158,7 @@ const apiLimiter = rateLimit({
 // Stricter rate limiting for auth endpoints
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10, // 10 requests per window (increased for UX)
+  max: 30, // 30 requests per window (increased for UX)
   message: { error: 'Zbyt wiele prób logowania. Spróbuj ponownie za 15 minut.' },
   standardHeaders: true,
   legacyHeaders: false
@@ -164,7 +167,7 @@ const authLimiter = rateLimit({
 // Moderate rate limiting for mutations (POST, PUT, DELETE)
 const mutationLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // 100 mutations per window
+  max: 500, // 500 mutations per window (increased from 300)
   message: { error: 'Zbyt wiele operacji. Spróbuj ponownie za chwilę.' },
   standardHeaders: true,
   legacyHeaders: false,
@@ -224,6 +227,8 @@ app.get('/api/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/admin/images', adminImagesRoutes);
+app.use('/api/admin/plants', adminPlantsRoutes);
+app.use('/api/admin/photo-reviews', photoReviewsRoutes);
 app.use('/api', plotRoutes);
 app.use('/api', bedRoutes);
 app.use('/api', sprayRoutes);
@@ -245,6 +250,7 @@ app.use('/api/spray-products', sprayProductsRoutes);
 app.use('/api/plant-problems', plantProblemsRoutes);
 app.use('/api/care', careRoutes);
 app.use('/api/fertilizers', fertilizersRoutes);
+app.use('/api/planner', plannerRoutes);
 
 // 404 handler
 app.use((req, res) => {

@@ -28,6 +28,7 @@ import Export from './pages/Export';
 import Profile from './pages/Profile';
 import PlantCatalog from './pages/PlantCatalog';
 import SuccessionPlanting from './pages/SuccessionPlanting';
+import Planner from './pages/Planner';
 import Tasks from './pages/Tasks';
 import Calendar from './pages/Calendar';
 import Analytics from './pages/Analytics';
@@ -35,6 +36,8 @@ import PrivacyPolicy from './pages/PrivacyPolicy';
 import Help from './pages/Help';
 import AdminPanel from './pages/AdminPanel';
 import AdminImages from './pages/AdminImages';
+import AdminPlants from './pages/AdminPlants';
+import PhotoReview from './pages/PhotoReview';
 import Gallery from './pages/Gallery';
 import PublicProfile from './pages/PublicProfile';
 import NotFound from './pages/NotFound';
@@ -281,6 +284,14 @@ function AppRoutes() {
           }
         />
         <Route
+          path="/planner"
+          element={
+            <ProtectedRoute forceRender={forceRender}>
+              <Planner />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/tasks"
           element={
             <ProtectedRoute forceRender={forceRender}>
@@ -325,6 +336,22 @@ function AppRoutes() {
           element={
             <ProtectedRoute forceRender={forceRender}>
               <AdminImages />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/photo-review"
+          element={
+            <ProtectedRoute forceRender={forceRender}>
+              <PhotoReview />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/plants"
+          element={
+            <ProtectedRoute forceRender={forceRender}>
+              <AdminPlants />
             </ProtectedRoute>
           }
         />
