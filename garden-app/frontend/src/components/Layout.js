@@ -106,7 +106,7 @@ const Layout = ({ children }) => {
                       : 'border-transparent text-gray-900 dark:text-gray-100 hover:text-green-600 dark:hover:text-green-400 hover:border-gray-300'
                   }`}
                 >
-                  Planner
+                  Planer
                 </Link>
                 <Link
                   to="/gallery"

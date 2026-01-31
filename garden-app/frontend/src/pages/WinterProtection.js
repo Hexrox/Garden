@@ -501,19 +501,19 @@ const WinterProtection = () => {
         {/* Action Button */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 text-center">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-            Zaplanuj zabezpieczanie w Plannerze
+            Zaplanuj zabezpieczanie w Planerze
           </h3>
           <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-            Użyj Plannera ogrodnika, aby zaplanować zabezpieczenie wszystkich roślin z przypomnieniami
+            Użyj Planera ogrodnika, aby zaplanować zabezpieczenie wszystkich roślin z przypomnieniami
           </p>
           <button
             type="button"
             onClick={() => navigate('/planner')}
-            aria-label="Przejdź do Plannera"
+            aria-label="Przejdź do Planera"
             className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg inline-flex items-center gap-2 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
           >
             <Calendar size={20} />
-            Przejdź do Plannera
+            Przejdź do Planera
           </button>
         </div>
       </div>

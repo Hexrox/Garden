@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { BookOpen, Search, ChevronRight, ChevronDown, HelpCircle, Lightbulb, CheckCircle, ArrowRight, Sparkles } from 'lucide-react';
+import { BookOpen, Search, ChevronRight, ChevronDown, HelpCircle, Lightbulb, CheckCircle, ArrowRight, Sparkles, Calendar } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 /**
@@ -396,25 +396,40 @@ const Help = () => {
         </div>
 
       {/* Quick Links */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 lg:mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 lg:mb-8">
         <a
           href="#quick-start"
-          className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 hover:shadow-lg transition group"
+          className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 md:p-6 hover:shadow-lg transition group"
         >
           <div className="flex items-center gap-3 mb-2">
             <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
               <CheckCircle className="w-5 h-5 text-blue-600 dark:text-blue-400" />
             </div>
-            <h3 className="font-bold text-gray-900 dark:text-white">Szybki Start</h3>
+            <h3 className="font-bold text-gray-900 dark:text-white">Start</h3>
           </div>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            Pierwsze kroki w aplikacji - 4 proste etapy
+          <p className="text-sm text-gray-600 dark:text-gray-400 hidden md:block">
+            Pierwsze kroki w aplikacji
+          </p>
+        </a>
+
+        <a
+          href="#planner"
+          className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 md:p-6 hover:shadow-lg transition group"
+        >
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center">
+              <Calendar className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+            </div>
+            <h3 className="font-bold text-gray-900 dark:text-white">Planer</h3>
+          </div>
+          <p className="text-sm text-gray-600 dark:text-gray-400 hidden md:block">
+            Centrum planowania ogrodu
           </p>
         </a>
 
         <a
           href="#faq"
-          className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 hover:shadow-lg transition group"
+          className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 md:p-6 hover:shadow-lg transition group"
         >
           <div className="flex items-center gap-3 mb-2">
             <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
@@ -422,14 +437,14 @@ const Help = () => {
             </div>
             <h3 className="font-bold text-gray-900 dark:text-white">FAQ</h3>
           </div>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            Najczęściej zadawane pytania i odpowiedzi
+          <p className="text-sm text-gray-600 dark:text-gray-400 hidden md:block">
+            Najczęstsze pytania
           </p>
         </a>
 
         <a
           href="#porady-ogrodnicze"
-          className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 hover:shadow-lg transition group"
+          className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 md:p-6 hover:shadow-lg transition group"
         >
           <div className="flex items-center gap-3 mb-2">
             <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
@@ -437,8 +452,8 @@ const Help = () => {
             </div>
             <h3 className="font-bold text-gray-900 dark:text-white">Porady</h3>
           </div>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            Praktyczne wskazówki dla ogrodników
+          <p className="text-sm text-gray-600 dark:text-gray-400 hidden md:block">
+            Wskazówki ogrodnicze
           </p>
         </a>
       </div>

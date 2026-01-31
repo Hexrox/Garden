@@ -468,22 +468,22 @@ const PropagationTracking = () => {
               </div>
             )}
 
-            {/* Przycisk do Plannera */}
+            {/* Przycisk do Planera */}
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 text-center">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                Zaplanuj dzielenie w Plannerze
+                Zaplanuj dzielenie w Planerze
               </h3>
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                Użyj Plannera ogrodnika, aby zaplanować dzielenie bylin z przypomnieniami
+                Użyj Planera ogrodnika, aby zaplanować dzielenie bylin z przypomnieniami
               </p>
               <button
                 type="button"
                 onClick={() => navigate('/planner')}
-                aria-label="Przejdź do Plannera"
+                aria-label="Przejdź do Planera"
                 className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg inline-flex items-center gap-2 transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
               >
                 <Calendar size={20} />
-                Przejdź do Plannera
+                Przejdź do Planera
               </button>
             </div>
           </div>

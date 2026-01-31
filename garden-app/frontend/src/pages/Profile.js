@@ -774,7 +774,7 @@ const Profile = () => {
           <ul className="text-sm text-blue-800 dark:text-blue-300 space-y-1">
             <li>• Pomoże dobrać rośliny odporne na mróz w Twojej okolicy</li>
             <li>• System będzie ostrzegał przed przymrozkami i sugerował ochronę</li>
-            <li>• Planner automatycznie dobierze daty sadzenia i wykopywania</li>
+            <li>• Planer automatycznie dobierze daty sadzenia i wykopywania</li>
             <li>• Otrzymasz spersonalizowane rekomendacje sezonowe</li>
           </ul>
         </div>

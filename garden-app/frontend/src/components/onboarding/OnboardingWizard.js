@@ -491,18 +491,20 @@ const OnboardingWizard = ({ isOpen, onComplete, onSkip }) => {
                   Zobacz co potrafi Garden App!
                 </h3>
                 <p className="text-gray-600 dark:text-gray-400">
-                  Aplikacja pełna wiedzy ogrodniczej - wszystko w jednym miejscu
+                  Kompletny asystent ogrodnika - wszystko w jednym miejscu
                 </p>
               </div>
 
               <div className="grid gap-3 max-h-48 sm:max-h-64 md:max-h-none overflow-y-auto">
                 {[
-                  { icon: '📸', title: 'Galeria zdjęć', desc: 'Rób zdjęcia postępów i śledź wzrost roślin!' },
-                  { icon: '🌙', title: 'Kalendarz księżycowy', desc: 'Siej i zbieraj w zgodzie z fazami księżyca!' },
-                  { icon: '🤖', title: 'Automatyczne zadania', desc: 'Nie musisz pamiętać - aplikacja przypomni!' },
-                  { icon: '🌤️', title: 'Prognozy pogody', desc: 'Zobacz pogodę dla Twojego ogrodu!' },
-                  { icon: '🌱', title: 'Companion planting', desc: 'Aplikacja podpowie które rośliny lubią sąsiadować!' },
-                  { icon: '📊', title: 'Statystyki i raporty', desc: 'Śledź plony i postępy w ogrodzie!' }
+                  { icon: '📋', title: 'Planer', desc: 'Planuj przyszłe sadzenia, opryski i pielęgnację z wyprzedzeniem!' },
+                  { icon: '🌸', title: 'Pielęgnacja kwiatów', desc: 'Kwitnienie, dzielenie bylin, przekwitłe, zimowanie' },
+                  { icon: '❄️', title: 'Strefy mrozoodporności', desc: 'Daty przymrozków i zgodność roślin z Twoim klimatem' },
+                  { icon: '🤖', title: 'Automatyczne zadania', desc: 'Aplikacja przypomni o podlewaniu, zbiorach i karencji!' },
+                  { icon: '🌤️', title: 'Prognozy pogody', desc: 'Planer sprawdza pogodę przed opryskem!' },
+                  { icon: '📸', title: 'Galeria zdjęć', desc: 'Dokumentuj postępy i śledź wzrost roślin!' },
+                  { icon: '🌱', title: 'Companion planting', desc: 'Podpowiedzi które rośliny lubią sąsiadować!' },
+                  { icon: '📊', title: 'Statystyki', desc: 'Śledź plony i postępy w całym sezonie!' }
                 ].map((feature, idx) => (
                   <div
                     key={idx}
@@ -526,7 +528,7 @@ const OnboardingWizard = ({ isOpen, onComplete, onSkip }) => {
                   Jeszcze jeden krok! →
                 </p>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Poznaj system zadań i cykliczność
+                  Poznaj system zadań i Planer
                 </p>
               </div>
             </div>
