@@ -5,6 +5,7 @@ import { ThemeProvider } from './context/ThemeContext';
 import { ToastProvider } from './context/ToastContext';
 import Layout from './components/Layout';
 import ErrorBoundary from './components/ErrorBoundary';
+import PageErrorBoundary from './components/PageErrorBoundary';
 import CookieConsent from './components/CookieConsent';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -58,7 +59,7 @@ const ProtectedRoute = ({ children, forceRender }) => {
     return <Navigate to="/login" />;
   }
 
-  return isAuthenticated ? <Layout>{children}</Layout> : <Navigate to="/login" />;
+  return isAuthenticated ? <Layout><PageErrorBoundary>{children}</PageErrorBoundary></Layout> : <Navigate to="/login" />;
 };
 
 // Public Route Component (redirect to dashboard if already logged in)

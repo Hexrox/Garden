@@ -17,9 +17,11 @@ const Layout = ({ children }) => {
   // Fetch pending plants count for admin badge
   useEffect(() => {
     if (user?.role === 'admin' || user?.username === 'admin') {
-      axios.get('/api/admin/plants/stats')
+      const controller = new AbortController();
+      axios.get('/api/admin/plants/stats', { signal: controller.signal })
         .then(res => setPendingPlantsCount(res.data?.pending_count || 0))
-        .catch(() => setPendingPlantsCount(0));
+        .catch(() => {});
+      return () => controller.abort();
     }
   }, [user, location.pathname]);
 
@@ -115,6 +117,16 @@ const Layout = ({ children }) => {
                   }`}
                 >
                   Galeria
+                </Link>
+                <Link
+                  to="/pomoc"
+                  className={`inline-flex items-center px-1 pt-1 text-sm font-medium transition whitespace-nowrap border-b-2 ${
+                    isActive('/pomoc')
+                      ? 'border-green-600 text-green-600 dark:text-green-400'
+                      : 'border-transparent text-gray-900 dark:text-gray-100 hover:text-green-600 dark:hover:text-green-400 hover:border-gray-300'
+                  }`}
+                >
+                  Pomoc
                 </Link>
                 {user?.username === 'admin' && (
                   <Link

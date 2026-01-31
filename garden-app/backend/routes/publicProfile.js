@@ -5,6 +5,35 @@ const db = require('../db');
 const auth = require('../middleware/auth');
 const upload = require('../middleware/upload');
 const fs = require('fs');
+const path = require('path');
+
+// Promisify db methods for async/await
+const dbGet = (sql, params) => {
+  return new Promise((resolve, reject) => {
+    db.get(sql, params, (err, row) => {
+      if (err) reject(err);
+      else resolve(row);
+    });
+  });
+};
+
+const dbAll = (sql, params) => {
+  return new Promise((resolve, reject) => {
+    db.all(sql, params, (err, rows) => {
+      if (err) reject(err);
+      else resolve(rows || []);
+    });
+  });
+};
+
+const dbRun = (sql, params) => {
+  return new Promise((resolve, reject) => {
+    db.run(sql, params, function(err) {
+      if (err) reject(err);
+      else resolve({ lastID: this.lastID, changes: this.changes });
+    });
+  });
+};
 
 // ==========================================
 // PUBLIC ENDPOINTS (no auth required)
@@ -15,7 +44,7 @@ const fs = require('fs');
  * Get public garden profile
  * No authentication required
  */
-router.get('/g/:username', (req, res) => {
+router.get('/g/:username', async (req, res) => {
   const { username } = req.params;
 
   // Validate username format (alphanumeric, underscores, hyphens, 3-30 chars)
@@ -23,32 +52,17 @@ router.get('/g/:username', (req, res) => {
     return res.status(400).json({ error: 'Nieprawidłowy format nazwy użytkownika' });
   }
 
-  // Get user public profile data
-  const userQuery = `
-    SELECT
-      id,
-      username,
-      public_username,
-      public_profile_enabled,
-      public_bio,
-      public_display_name,
-      public_cover_photo_id,
-      public_show_stats,
-      public_show_timeline,
-      public_show_gallery,
-      public_show_badges,
-      social_instagram,
-      profile_photo,
-      created_at
-    FROM users
-    WHERE public_username = ?
-  `;
-
-  db.get(userQuery, [username], (err, user) => {
-    if (err) {
-      console.error('Error fetching public profile:', err);
-      return res.status(500).json({ error: 'Błąd serwera' });
-    }
+  try {
+    // Get user public profile data
+    const user = await dbGet(`
+      SELECT
+        id, username, public_username, public_profile_enabled,
+        public_bio, public_display_name, public_cover_photo_id,
+        public_show_stats, public_show_timeline, public_show_gallery,
+        public_show_badges, social_instagram, profile_photo, created_at
+      FROM users
+      WHERE public_username = ?
+    `, [username]);
 
     if (!user || !user.public_profile_enabled) {
       return res.status(404).json({ error: 'Profil nie znaleziony lub niepubliczny' });
@@ -57,14 +71,8 @@ router.get('/g/:username', (req, res) => {
     // Track profile view (async, don't wait)
     const referrer = req.headers.referer || req.headers.referrer || null;
     const userAgent = req.headers['user-agent'] || null;
-
-    db.run(
-      'INSERT INTO profile_views (username, referrer, user_agent) VALUES (?, ?, ?)',
-      [username, referrer, userAgent],
-      (err) => {
-        if (err) console.error('Error tracking profile view:', err);
-      }
-    );
+    dbRun('INSERT INTO profile_views (username, referrer, user_agent) VALUES (?, ?, ?)',
+      [username, referrer, userAgent]).catch(err => console.error('Error tracking view:', err));
 
     // Build response object
     const profileData = {
@@ -84,382 +92,164 @@ router.get('/g/:username', (req, res) => {
 
     // Get cover photo if exists
     if (user.public_cover_photo_id) {
-      db.get(
+      const coverPhoto = await dbGet(
         'SELECT id, photo_path, caption FROM plant_photos WHERE id = ? AND user_id = ?',
-        [user.public_cover_photo_id, user.id],
-        (err, coverPhoto) => {
-          if (!err && coverPhoto) {
-            profileData.coverPhoto = {
-              id: coverPhoto.id,
-              path: coverPhoto.photo_path,
-              caption: coverPhoto.caption
-            };
-          }
-
-          // Continue building profile
-          buildProfileData();
-        }
+        [user.public_cover_photo_id, user.id]
       );
-    } else {
-      buildProfileData();
+      if (coverPhoto) {
+        profileData.coverPhoto = {
+          id: coverPhoto.id,
+          path: coverPhoto.photo_path,
+          caption: coverPhoto.caption
+        };
+      }
     }
 
-    function buildProfileData() {
-      let completed = 0;
-      const total = 5; // stats, timeline, harvests, gallery, badges
-
-      function checkComplete() {
-        completed++;
-        if (completed === total) {
-          res.json(profileData);
-        }
-      }
-
-      // Get statistics
-      if (user.public_show_stats) {
-        const statsQuery = `
-          SELECT
-            COUNT(DISTINCT p.id) as total_plots,
-            COUNT(DISTINCT b.id) as total_plants,
-            COALESCE(SUM(b.yield_amount), 0) as total_harvest_kg
-          FROM plots p
-          LEFT JOIN beds b ON b.plot_id = p.id
-          WHERE p.user_id = ?
-        `;
-
-        db.get(statsQuery, [user.id], (err, stats) => {
-          if (!err && stats) {
-            profileData.stats = {
-              plots: stats.total_plots || 0,
-              plants: stats.total_plants || 0,
-              harvestKg: parseFloat(stats.total_harvest_kg || 0).toFixed(1)
-            };
-          }
-          checkComplete();
-        });
-      } else {
-        checkComplete();
-      }
-
-      // Get timeline (what's growing now)
-      if (user.public_show_timeline) {
-        const timelineQuery = `
-          SELECT
-            b.id,
-            b.plant_name,
-            b.plant_variety,
-            b.planted_date,
-            b.expected_harvest_date,
-            b.actual_harvest_date,
-            b.image_path,
-            p.name as plot_name,
-            b.row_number,
-            CASE
-              WHEN b.actual_harvest_date IS NOT NULL THEN 'harvested'
-              WHEN b.expected_harvest_date IS NULL THEN 'unknown'
-              WHEN b.expected_harvest_date <= date('now') THEN 'ready'
-              WHEN b.expected_harvest_date <= date('now', '+7 days') THEN 'soon'
-              ELSE 'growing'
-            END as status,
-            CAST(julianday(b.expected_harvest_date) - julianday('now') as INTEGER) as days_until_harvest,
-            CAST(julianday('now') - julianday(b.planted_date) as INTEGER) as days_since_planted,
-            CAST(julianday(b.expected_harvest_date) - julianday(b.planted_date) as INTEGER) as total_days_to_harvest
-          FROM beds b
-          JOIN plots p ON p.id = b.plot_id
-          WHERE p.user_id = ?
-            AND b.actual_harvest_date IS NULL
-          ORDER BY
-            CASE
-              WHEN b.expected_harvest_date IS NULL THEN 1
-              ELSE 0
-            END,
-            b.expected_harvest_date ASC,
-            b.planted_date DESC
-          LIMIT 12
-        `;
-
-        db.all(timelineQuery, [user.id], (err, timeline) => {
-          if (!err && timeline) {
-            profileData.timeline = timeline.map(item => {
-              // Calculate progress percentage
-              let progressPercent = 0;
-              if (item.total_days_to_harvest > 0 && item.days_since_planted >= 0) {
-                progressPercent = Math.min(100, Math.max(0,
-                  (item.days_since_planted / item.total_days_to_harvest) * 100
-                ));
-              }
-
-              return {
-                id: item.id,
-                plantName: item.plant_name,
-                plantVariety: item.plant_variety,
-                plantedDate: item.planted_date,
-                expectedHarvestDate: item.expected_harvest_date,
-                imagePath: item.image_path,
-                plotName: item.plot_name,
-                rowNumber: item.row_number,
-                status: item.status,
-                daysUntilHarvest: item.days_until_harvest,
-                daysSincePlanted: item.days_since_planted,
-                progressPercent: Math.round(progressPercent)
-              };
-            });
-          }
-          checkComplete();
-        });
-      } else {
-        checkComplete();
-      }
-
-      // Get recent harvests (last 60 days)
-      const harvestsQuery = `
+    // Build all profile data in parallel
+    const [stats, timeline, harvests, gallery, badgeData] = await Promise.all([
+      // Stats
+      user.public_show_stats ? dbGet(`
         SELECT
-          b.id,
-          b.plant_name,
-          b.plant_variety,
-          b.actual_harvest_date,
-          b.yield_amount,
-          b.yield_unit,
-          b.harvest_photo,
-          b.harvest_notes,
-          b.image_path,
-          p.name as plot_name,
-          b.row_number
+          COUNT(DISTINCT p.id) as total_plots,
+          COUNT(DISTINCT b.id) as total_plants,
+          COALESCE(SUM(b.yield_amount), 0) as total_harvest_kg
+        FROM plots p
+        LEFT JOIN beds b ON b.plot_id = p.id
+        WHERE p.user_id = ?
+      `, [user.id]) : null,
+
+      // Timeline
+      user.public_show_timeline ? dbAll(`
+        SELECT
+          b.id, b.plant_name, b.plant_variety, b.planted_date,
+          b.expected_harvest_date, b.actual_harvest_date, b.image_path,
+          p.name as plot_name, b.row_number,
+          CASE
+            WHEN b.actual_harvest_date IS NOT NULL THEN 'harvested'
+            WHEN b.expected_harvest_date IS NULL THEN 'unknown'
+            WHEN b.expected_harvest_date <= date('now') THEN 'ready'
+            WHEN b.expected_harvest_date <= date('now', '+7 days') THEN 'soon'
+            ELSE 'growing'
+          END as status,
+          CAST(julianday(b.expected_harvest_date) - julianday('now') as INTEGER) as days_until_harvest,
+          CAST(julianday('now') - julianday(b.planted_date) as INTEGER) as days_since_planted,
+          CAST(julianday(b.expected_harvest_date) - julianday(b.planted_date) as INTEGER) as total_days_to_harvest
         FROM beds b
         JOIN plots p ON p.id = b.plot_id
-        WHERE p.user_id = ?
-          AND b.actual_harvest_date IS NOT NULL
+        WHERE p.user_id = ? AND b.actual_harvest_date IS NULL
+        ORDER BY CASE WHEN b.expected_harvest_date IS NULL THEN 1 ELSE 0 END,
+          b.expected_harvest_date ASC, b.planted_date DESC
+        LIMIT 12
+      `, [user.id]) : null,
+
+      // Harvests
+      dbAll(`
+        SELECT b.id, b.plant_name, b.plant_variety, b.actual_harvest_date,
+          b.yield_amount, b.yield_unit, b.harvest_photo, b.harvest_notes,
+          b.image_path, p.name as plot_name, b.row_number
+        FROM beds b
+        JOIN plots p ON p.id = b.plot_id
+        WHERE p.user_id = ? AND b.actual_harvest_date IS NOT NULL
           AND b.actual_harvest_date >= date('now', '-60 days')
           AND (b.harvest_photo IS NOT NULL OR b.harvest_notes IS NOT NULL)
         ORDER BY b.actual_harvest_date DESC
         LIMIT 6
-      `;
+      `, [user.id]),
 
-      db.all(harvestsQuery, [user.id], (err, harvests) => {
-        if (!err && harvests) {
-          profileData.harvests = harvests.map(item => ({
-            id: item.id,
-            plantName: item.plant_name,
-            plantVariety: item.plant_variety,
-            harvestDate: item.actual_harvest_date,
-            yieldAmount: item.yield_amount,
-            yieldUnit: item.yield_unit,
-            harvestPhoto: item.harvest_photo,
-            harvestNotes: item.harvest_notes,
-            imagePath: item.image_path,
-            plotName: item.plot_name,
-            rowNumber: item.row_number
-          }));
-        }
-        checkComplete();
-      });
+      // Gallery
+      user.public_show_gallery ? dbAll(`
+        SELECT pp.id, pp.photo_path, pp.caption, pp.created_at,
+          pgp.display_order, pp.bed_plant_name as plant_name, pp.plot_name
+        FROM public_gallery_photos pgp
+        JOIN plant_photos pp ON pp.id = pgp.photo_id
+        WHERE pgp.user_id = ?
+        ORDER BY pgp.display_order ASC, pp.created_at DESC
+      `, [user.id]) : null,
 
-      // Get public gallery photos
-      if (user.public_show_gallery) {
-        const galleryQuery = `
-          SELECT
-            pp.id,
-            pp.photo_path,
-            pp.caption,
-            pp.created_at,
-            pgp.display_order,
-            pp.bed_plant_name as plant_name,
-            pp.plot_name
-          FROM public_gallery_photos pgp
-          JOIN plant_photos pp ON pp.id = pgp.photo_id
-          WHERE pgp.user_id = ?
-          ORDER BY pgp.display_order ASC, pp.created_at DESC
-        `;
+      // Badges data
+      user.public_show_badges ? dbGet(`
+        SELECT
+          (SELECT COUNT(DISTINCT id) FROM plots WHERE user_id = ?) as total_plots,
+          (SELECT COUNT(DISTINCT id) FROM beds WHERE plot_id IN (SELECT id FROM plots WHERE user_id = ?)) as total_plants,
+          (SELECT COUNT(*) FROM beds WHERE plot_id IN (SELECT id FROM plots WHERE user_id = ?) AND actual_harvest_date IS NOT NULL) as total_harvests,
+          (SELECT SUM(yield_amount) FROM beds WHERE plot_id IN (SELECT id FROM plots WHERE user_id = ?) AND yield_amount IS NOT NULL) as total_yield,
+          (SELECT COUNT(*) FROM plant_photos WHERE user_id = ?) as total_photos,
+          (SELECT julianday('now') - julianday(created_at) FROM users WHERE id = ?) as days_as_member
+      `, [user.id, user.id, user.id, user.id, user.id, user.id]) : null
+    ]);
 
-        db.all(galleryQuery, [user.id], (err, gallery) => {
-          if (!err && gallery) {
-            profileData.gallery = gallery.map(photo => ({
-              id: photo.id,
-              path: photo.photo_path,
-              caption: photo.caption,
-              plantName: photo.plant_name,
-              plotName: photo.plot_name,
-              createdAt: photo.created_at
-            }));
-          }
-          checkComplete();
-        });
-      } else {
-        checkComplete();
-      }
-
-      // Get badges (achievements based on real data)
-      if (user.public_show_badges) {
-        const badgesQuery = `
-          SELECT
-            (SELECT COUNT(DISTINCT id) FROM plots WHERE user_id = ?) as total_plots,
-            (SELECT COUNT(DISTINCT id) FROM beds WHERE plot_id IN (SELECT id FROM plots WHERE user_id = ?)) as total_plants,
-            (SELECT COUNT(*) FROM beds WHERE plot_id IN (SELECT id FROM plots WHERE user_id = ?) AND actual_harvest_date IS NOT NULL) as total_harvests,
-            (SELECT SUM(yield_amount) FROM beds WHERE plot_id IN (SELECT id FROM plots WHERE user_id = ?) AND yield_amount IS NOT NULL) as total_yield,
-            (SELECT COUNT(*) FROM plant_photos WHERE user_id = ?) as total_photos,
-            (SELECT julianday('now') - julianday(created_at) FROM users WHERE id = ?) as days_as_member
-        `;
-
-        db.get(badgesQuery, [user.id, user.id, user.id, user.id, user.id, user.id], (err, badgeData) => {
-          if (!err && badgeData) {
-            const badges = [];
-
-            // First harvest badge
-            if (badgeData.total_harvests >= 1) {
-              badges.push({
-                id: 'first_harvest',
-                name: 'Pierwszy zbiór',
-                icon: '🎉',
-                description: 'Zebrałeś swoją pierwszą roślinę!',
-                tier: 'bronze'
-              });
-            }
-
-            // Harvest milestones
-            if (badgeData.total_harvests >= 10) {
-              badges.push({
-                id: 'harvest_10',
-                name: 'Doświadczony rolnik',
-                icon: '🌾',
-                description: '10 zebranych roślin',
-                tier: 'silver'
-              });
-            }
-
-            if (badgeData.total_harvests >= 50) {
-              badges.push({
-                id: 'harvest_50',
-                name: 'Mistrz zbioru',
-                icon: '👨‍🌾',
-                description: '50 zebranych roślin',
-                tier: 'gold'
-              });
-            }
-
-            // Planting milestones
-            if (badgeData.total_plants >= 5) {
-              badges.push({
-                id: 'plants_5',
-                name: 'Zielone ręce',
-                icon: '🌱',
-                description: '5 zasadzonych roślin',
-                tier: 'bronze'
-              });
-            }
-
-            if (badgeData.total_plants >= 20) {
-              badges.push({
-                id: 'plants_20',
-                name: 'Ogrodnik',
-                icon: '🪴',
-                description: '20 zasadzonych roślin',
-                tier: 'silver'
-              });
-            }
-
-            if (badgeData.total_plants >= 100) {
-              badges.push({
-                id: 'plants_100',
-                name: 'Król ogrodu',
-                icon: '👑',
-                description: '100+ zasadzonych roślin',
-                tier: 'gold'
-              });
-            }
-
-            // Yield milestones
-            if (badgeData.total_yield >= 10) {
-              badges.push({
-                id: 'yield_10kg',
-                name: 'Plon',
-                icon: '🥬',
-                description: 'Zebrałeś 10kg+ plonów',
-                tier: 'silver'
-              });
-            }
-
-            if (badgeData.total_yield >= 50) {
-              badges.push({
-                id: 'yield_50kg',
-                name: 'Imponujący plon',
-                icon: '🧺',
-                description: 'Zebrałeś 50kg+ plonów',
-                tier: 'gold'
-              });
-            }
-
-            // Photo badges
-            if (badgeData.total_photos >= 10) {
-              badges.push({
-                id: 'photos_10',
-                name: 'Fotograf',
-                icon: '📸',
-                description: '10+ zdjęć w galerii',
-                tier: 'bronze'
-              });
-            }
-
-            if (badgeData.total_photos >= 50) {
-              badges.push({
-                id: 'photos_50',
-                name: 'Mistrz fotografii',
-                icon: '📷',
-                description: '50+ zdjęć w galerii',
-                tier: 'gold'
-              });
-            }
-
-            // Loyalty badges
-            if (badgeData.days_as_member >= 30) {
-              badges.push({
-                id: 'member_30d',
-                name: 'Wierny ogrodnik',
-                icon: '⭐',
-                description: '30+ dni w aplikacji',
-                tier: 'bronze'
-              });
-            }
-
-            if (badgeData.days_as_member >= 180) {
-              badges.push({
-                id: 'member_180d',
-                name: 'Doświadczony użytkownik',
-                icon: '🌟',
-                description: '6+ miesięcy w aplikacji',
-                tier: 'silver'
-              });
-            }
-
-            if (badgeData.days_as_member >= 365) {
-              badges.push({
-                id: 'member_365d',
-                name: 'Roczny weteran',
-                icon: '💎',
-                description: 'Rok w aplikacji!',
-                tier: 'gold'
-              });
-            }
-
-            // Multiple plots badge
-            if (badgeData.total_plots >= 3) {
-              badges.push({
-                id: 'plots_3',
-                name: 'Wielki ogród',
-                icon: '🏡',
-                description: '3+ grządki',
-                tier: 'silver'
-              });
-            }
-
-            profileData.badges = badges;
-          }
-          checkComplete();
-        });
-      } else {
-        checkComplete();
-      }
+    // Process stats
+    if (stats) {
+      profileData.stats = {
+        plots: stats.total_plots || 0,
+        plants: stats.total_plants || 0,
+        harvestKg: parseFloat(stats.total_harvest_kg || 0).toFixed(1)
+      };
     }
-  });
+
+    // Process timeline
+    if (timeline) {
+      profileData.timeline = timeline.map(item => {
+        let progressPercent = 0;
+        if (item.total_days_to_harvest > 0 && item.days_since_planted >= 0) {
+          progressPercent = Math.min(100, Math.max(0,
+            (item.days_since_planted / item.total_days_to_harvest) * 100
+          ));
+        }
+        return {
+          id: item.id, plantName: item.plant_name, plantVariety: item.plant_variety,
+          plantedDate: item.planted_date, expectedHarvestDate: item.expected_harvest_date,
+          imagePath: item.image_path, plotName: item.plot_name, rowNumber: item.row_number,
+          status: item.status, daysUntilHarvest: item.days_until_harvest,
+          daysSincePlanted: item.days_since_planted, progressPercent: Math.round(progressPercent)
+        };
+      });
+    }
+
+    // Process harvests
+    if (harvests) {
+      profileData.harvests = harvests.map(item => ({
+        id: item.id, plantName: item.plant_name, plantVariety: item.plant_variety,
+        harvestDate: item.actual_harvest_date, yieldAmount: item.yield_amount,
+        yieldUnit: item.yield_unit, harvestPhoto: item.harvest_photo,
+        harvestNotes: item.harvest_notes, imagePath: item.image_path,
+        plotName: item.plot_name, rowNumber: item.row_number
+      }));
+    }
+
+    // Process gallery
+    if (gallery) {
+      profileData.gallery = gallery.map(photo => ({
+        id: photo.id, path: photo.photo_path, caption: photo.caption,
+        plantName: photo.plant_name, plotName: photo.plot_name, createdAt: photo.created_at
+      }));
+    }
+
+    // Process badges
+    if (badgeData) {
+      const badges = [];
+      if (badgeData.total_harvests >= 1) badges.push({ id: 'first_harvest', name: 'Pierwszy zbiór', icon: '🎉', description: 'Zebrałeś swoją pierwszą roślinę!', tier: 'bronze' });
+      if (badgeData.total_harvests >= 10) badges.push({ id: 'harvest_10', name: 'Doświadczony rolnik', icon: '🌾', description: '10 zebranych roślin', tier: 'silver' });
+      if (badgeData.total_harvests >= 50) badges.push({ id: 'harvest_50', name: 'Mistrz zbioru', icon: '👨‍🌾', description: '50 zebranych roślin', tier: 'gold' });
+      if (badgeData.total_plants >= 5) badges.push({ id: 'plants_5', name: 'Zielone ręce', icon: '🌱', description: '5 zasadzonych roślin', tier: 'bronze' });
+      if (badgeData.total_plants >= 20) badges.push({ id: 'plants_20', name: 'Ogrodnik', icon: '🪴', description: '20 zasadzonych roślin', tier: 'silver' });
+      if (badgeData.total_plants >= 100) badges.push({ id: 'plants_100', name: 'Król ogrodu', icon: '👑', description: '100+ zasadzonych roślin', tier: 'gold' });
+      if (badgeData.total_yield >= 10) badges.push({ id: 'yield_10kg', name: 'Plon', icon: '🥬', description: 'Zebrałeś 10kg+ plonów', tier: 'silver' });
+      if (badgeData.total_yield >= 50) badges.push({ id: 'yield_50kg', name: 'Imponujący plon', icon: '🧺', description: 'Zebrałeś 50kg+ plonów', tier: 'gold' });
+      if (badgeData.total_photos >= 10) badges.push({ id: 'photos_10', name: 'Fotograf', icon: '📸', description: '10+ zdjęć w galerii', tier: 'bronze' });
+      if (badgeData.total_photos >= 50) badges.push({ id: 'photos_50', name: 'Mistrz fotografii', icon: '📷', description: '50+ zdjęć w galerii', tier: 'gold' });
+      if (badgeData.days_as_member >= 30) badges.push({ id: 'member_30d', name: 'Wierny ogrodnik', icon: '⭐', description: '30+ dni w aplikacji', tier: 'bronze' });
+      if (badgeData.days_as_member >= 180) badges.push({ id: 'member_180d', name: 'Doświadczony użytkownik', icon: '🌟', description: '6+ miesięcy w aplikacji', tier: 'silver' });
+      if (badgeData.days_as_member >= 365) badges.push({ id: 'member_365d', name: 'Roczny weteran', icon: '💎', description: 'Rok w aplikacji!', tier: 'gold' });
+      if (badgeData.total_plots >= 3) badges.push({ id: 'plots_3', name: 'Wielki ogród', icon: '🏡', description: '3+ grządki', tier: 'silver' });
+      profileData.badges = badges;
+    }
+
+    res.json(profileData);
+  } catch (err) {
+    console.error('Error fetching public profile:', err);
+    res.status(500).json({ error: 'Błąd serwera' });
+  }
 });
 
 // ==========================================
@@ -728,29 +518,47 @@ router.post('/profile/public/photos', [
             return res.json({ message: 'Galeria publiczna wyczyszczona', count: 0 });
           }
 
-          const insertQuery = `
-            INSERT INTO public_gallery_photos (user_id, photo_id, display_order)
-            VALUES (?, ?, ?)
-          `;
+          // Batch insert w transakcji
+          db.run('BEGIN TRANSACTION', (beginErr) => {
+            if (beginErr) {
+              console.error('Error starting transaction:', beginErr);
+              return res.status(500).json({ error: 'Błąd serwera' });
+            }
 
-          let completed = 0;
-          let hasError = false;
+            const insertQuery = `
+              INSERT INTO public_gallery_photos (user_id, photo_id, display_order)
+              VALUES (?, ?, ?)
+            `;
 
-          photoIds.forEach((photoId, index) => {
-            db.run(insertQuery, [req.user.id, photoId, index], (err) => {
-              if (err && !hasError) {
-                hasError = true;
-                console.error('Error inserting gallery photo:', err);
-                return res.status(500).json({ error: 'Błąd podczas zapisywania zdjęć' });
-              }
+            let completed = 0;
+            let hasError = false;
 
-              completed++;
-              if (completed === photoIds.length && !hasError) {
-                res.json({
-                  message: 'Galeria publiczna zaktualizowana',
-                  count: photoIds.length
-                });
-              }
+            photoIds.forEach((photoId, index) => {
+              if (hasError) return;
+              db.run(insertQuery, [req.user.id, photoId, index], (err) => {
+                if (err && !hasError) {
+                  hasError = true;
+                  console.error('Error inserting gallery photo:', err);
+                  db.run('ROLLBACK', () => {
+                    res.status(500).json({ error: 'Błąd podczas zapisywania zdjęć' });
+                  });
+                  return;
+                }
+
+                completed++;
+                if (completed === photoIds.length && !hasError) {
+                  db.run('COMMIT', (commitErr) => {
+                    if (commitErr) {
+                      console.error('Error committing transaction:', commitErr);
+                      return res.status(500).json({ error: 'Błąd serwera' });
+                    }
+                    res.json({
+                      message: 'Galeria publiczna zaktualizowana',
+                      count: photoIds.length
+                    });
+                  });
+                }
+              });
             });
           });
         }
@@ -777,92 +585,38 @@ router.post('/profile/public/photos', [
  * Get analytics for public profile (view counts)
  */
 router.get('/profile/public/stats', auth, (req, res) => {
-  // Get user's public username first
-  db.get(
-    'SELECT public_username FROM users WHERE id = ?',
-    [req.user.id],
-    (err, user) => {
-      if (err) {
-        console.error('Error fetching user:', err);
-        return res.status(500).json({ error: 'Błąd serwera' });
-      }
+  const dbGet = (sql, params) => new Promise((resolve, reject) => {
+    db.get(sql, params, (err, row) => err ? reject(err) : resolve(row));
+  });
+  const dbAll = (sql, params) => new Promise((resolve, reject) => {
+    db.all(sql, params, (err, rows) => err ? reject(err) : resolve(rows));
+  });
 
+  dbGet('SELECT public_username FROM users WHERE id = ?', [req.user.id])
+    .then(user => {
       if (!user || !user.public_username) {
-        return res.json({
-          totalViews: 0,
-          viewsLast7Days: 0,
-          viewsLast30Days: 0,
-          topReferrers: []
-        });
+        return res.json({ totalViews: 0, viewsLast7Days: 0, viewsLast30Days: 0, topReferrers: [] });
       }
 
-      // Get total views
-      db.get(
-        'SELECT COUNT(*) as total FROM profile_views WHERE username = ?',
-        [user.public_username],
-        (err, totalResult) => {
-          if (err) {
-            console.error('Error fetching total views:', err);
-            return res.status(500).json({ error: 'Błąd serwera' });
-          }
-
-          // Get views last 7 days
-          db.get(
-            `SELECT COUNT(*) as count
-             FROM profile_views
-             WHERE username = ? AND viewed_at >= datetime('now', '-7 days')`,
-            [user.public_username],
-            (err, last7Days) => {
-              if (err) {
-                console.error('Error fetching 7-day views:', err);
-                return res.status(500).json({ error: 'Błąd serwera' });
-              }
-
-              // Get views last 30 days
-              db.get(
-                `SELECT COUNT(*) as count
-                 FROM profile_views
-                 WHERE username = ? AND viewed_at >= datetime('now', '-30 days')`,
-                [user.public_username],
-                (err, last30Days) => {
-                  if (err) {
-                    console.error('Error fetching 30-day views:', err);
-                    return res.status(500).json({ error: 'Błąd serwera' });
-                  }
-
-                  // Get top referrers
-                  db.all(
-                    `SELECT
-                       referrer,
-                       COUNT(*) as count
-                     FROM profile_views
-                     WHERE username = ? AND referrer IS NOT NULL
-                     GROUP BY referrer
-                     ORDER BY count DESC
-                     LIMIT 10`,
-                    [user.public_username],
-                    (err, referrers) => {
-                      if (err) {
-                        console.error('Error fetching referrers:', err);
-                        return res.status(500).json({ error: 'Błąd serwera' });
-                      }
-
-                      res.json({
-                        totalViews: totalResult.total || 0,
-                        viewsLast7Days: last7Days.count || 0,
-                        viewsLast30Days: last30Days.count || 0,
-                        topReferrers: referrers || []
-                      });
-                    }
-                  );
-                }
-              );
-            }
-          );
-        }
-      );
-    }
-  );
+      const username = user.public_username;
+      return Promise.all([
+        dbGet('SELECT COUNT(*) as total FROM profile_views WHERE username = ?', [username]),
+        dbGet(`SELECT COUNT(*) as count FROM profile_views WHERE username = ? AND viewed_at >= datetime('now', '-7 days')`, [username]),
+        dbGet(`SELECT COUNT(*) as count FROM profile_views WHERE username = ? AND viewed_at >= datetime('now', '-30 days')`, [username]),
+        dbAll(`SELECT referrer, COUNT(*) as count FROM profile_views WHERE username = ? AND referrer IS NOT NULL GROUP BY referrer ORDER BY count DESC LIMIT 10`, [username])
+      ]).then(([totalResult, last7Days, last30Days, referrers]) => {
+        res.json({
+          totalViews: totalResult.total || 0,
+          viewsLast7Days: last7Days.count || 0,
+          viewsLast30Days: last30Days.count || 0,
+          topReferrers: referrers || []
+        });
+      });
+    })
+    .catch(err => {
+      console.error('Error fetching profile stats:', err);
+      res.status(500).json({ error: 'Błąd serwera' });
+    });
 });
 
 /**

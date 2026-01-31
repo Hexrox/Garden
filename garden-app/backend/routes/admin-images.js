@@ -3,13 +3,86 @@ const router = express.Router();
 const auth = require('../middleware/auth');
 const db = require('../db');
 const https = require('https');
-const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const sharp = require('sharp');
+const { URL } = require('url');
 
 // Ścieżki do zdjęć
 const UPLOAD_BASE = path.join(__dirname, '../uploads/plants');
+
+// Whitelist dozwolonych pól do aktualizacji w tabeli plants
+const ALLOWED_PLANT_FIELDS = new Set([
+  'photo_path', 'photo_thumb', 'photo_author', 'photo_source', 'photo_license', 'photo_source_url',
+  'illustration_path', 'illustration_thumb', 'illustration_author', 'illustration_source', 'illustration_license', 'illustration_source_url',
+  'image_candidates'
+]);
+
+// Safe JSON parse helper
+function safeJsonParse(str, defaultValue = []) {
+  if (!str) return defaultValue;
+  try {
+    return JSON.parse(str);
+  } catch (e) {
+    console.error('JSON parse error:', e.message);
+    return defaultValue;
+  }
+}
+
+// SSRF protection - validate URL
+function isValidImageUrl(urlString) {
+  try {
+    const url = new URL(urlString);
+
+    // Only allow HTTPS
+    if (url.protocol !== 'https:') {
+      return false;
+    }
+
+    // Block private IPs, localhost, and internal networks
+    const hostname = url.hostname.toLowerCase();
+    if (
+      hostname === 'localhost' ||
+      hostname === '0.0.0.0' ||
+      hostname === '[::1]' ||
+      hostname === '::1' ||
+      hostname.endsWith('.local') ||
+      hostname.endsWith('.internal') ||
+      /^127\./.test(hostname) ||
+      /^10\./.test(hostname) ||
+      /^192\.168\./.test(hostname) ||
+      /^172\.(1[6-9]|2[0-9]|3[01])\./.test(hostname) ||
+      /^169\.254\./.test(hostname) ||
+      /^fc00:/.test(hostname) ||
+      /^fe80:/.test(hostname)
+    ) {
+      return false;
+    }
+
+    // Only allow trusted domains for images
+    const trustedDomains = [
+      'upload.wikimedia.org',
+      'commons.wikimedia.org',
+      'en.wikipedia.org',
+      'pl.wikipedia.org'
+    ];
+
+    if (!trustedDomains.some(domain => hostname === domain || hostname.endsWith('.' + domain))) {
+      return false;
+    }
+
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// Path traversal protection - validate path is within uploads
+function isPathSafe(filePath, baseDir) {
+  const resolvedPath = path.resolve(filePath);
+  const resolvedBase = path.resolve(baseDir);
+  return resolvedPath.startsWith(resolvedBase + path.sep) || resolvedPath === resolvedBase;
+}
 
 /**
  * Middleware - tylko admin
@@ -89,10 +162,10 @@ router.get('/plants', auth, adminOnly, async (req, res) => {
       });
     });
 
-    // Parsuj candidates JSON
+    // Parsuj candidates JSON (safe)
     const plantsWithParsedCandidates = plants.map(p => ({
       ...p,
-      image_candidates: p.image_candidates ? JSON.parse(p.image_candidates) : []
+      image_candidates: safeJsonParse(p.image_candidates, [])
     }));
 
     res.json({
@@ -157,8 +230,12 @@ router.post('/approve/:plantId', auth, adminOnly, async (req, res) => {
     const fullPath = path.join(fullDir, fullFileName);
     const thumbPath = path.join(thumbDir, thumbFileName);
 
+    // Waliduj URL przed pobraniem (SSRF protection)
+    if (!isValidImageUrl(candidate.url)) {
+      return res.status(400).json({ error: 'Nieprawidłowy lub niezaufany URL obrazu' });
+    }
+
     // Pobierz zdjęcie
-    console.log(`📥 Pobieranie: ${candidate.url}`);
     const imageBuffer = await downloadImage(candidate.url);
 
     // Zapisz pełny rozmiar (max 1200px szerokości)
@@ -195,8 +272,9 @@ router.post('/approve/:plantId', auth, adminOnly, async (req, res) => {
           illustration_source_url: candidate.sourceUrl || candidate.url
         };
 
-    const setClauses = Object.keys(updateFields).map(k => `${k} = ?`).join(', ');
-    const values = [...Object.values(updateFields), plantId];
+    const safeKeys = Object.keys(updateFields).filter(k => ALLOWED_PLANT_FIELDS.has(k));
+    const setClauses = safeKeys.map(k => `${k} = ?`).join(', ');
+    const values = [...safeKeys.map(k => updateFields[k]), plantId];
 
     await new Promise((resolve, reject) => {
       db.run(`UPDATE plants SET ${setClauses} WHERE id = ?`, values, (err) => {
@@ -207,7 +285,7 @@ router.post('/approve/:plantId', auth, adminOnly, async (req, res) => {
 
     // Usuń zatwierdzony kandydat z listy
     if (plant.image_candidates) {
-      const candidates = JSON.parse(plant.image_candidates);
+      const candidates = safeJsonParse(plant.image_candidates, []);
       const remaining = candidates.filter(c => c.url !== candidate.url);
       await new Promise((resolve, reject) => {
         db.run('UPDATE plants SET image_candidates = ? WHERE id = ?',
@@ -229,7 +307,7 @@ router.post('/approve/:plantId', auth, adminOnly, async (req, res) => {
     });
   } catch (error) {
     console.error('Error approving image:', error);
-    res.status(500).json({ error: 'Błąd zatwierdzania zdjęcia: ' + error.message });
+    res.status(500).json({ error: 'Błąd zatwierdzania zdjęcia' });
   }
 });
 
@@ -257,7 +335,7 @@ router.post('/reject/:plantId', auth, adminOnly, async (req, res) => {
       return res.status(404).json({ error: 'Roślina nie znaleziona' });
     }
 
-    const candidates = plant.image_candidates ? JSON.parse(plant.image_candidates) : [];
+    const candidates = safeJsonParse(plant.image_candidates, []);
     const remaining = candidates.filter(c => c.url !== candidateUrl);
 
     await new Promise((resolve, reject) => {
@@ -303,15 +381,20 @@ router.delete('/:plantId/:type', auth, adminOnly, async (req, res) => {
 
     const pathField = type === 'photo' ? 'photo_path' : 'illustration_path';
     const thumbField = type === 'photo' ? 'photo_thumb' : 'illustration_thumb';
+    const uploadsDir = path.join(__dirname, '../uploads');
 
-    // Usuń pliki
+    // Usuń pliki (with path traversal protection)
     if (plant[pathField]) {
-      const fullPath = path.join(__dirname, '../uploads', plant[pathField]);
-      if (fs.existsSync(fullPath)) fs.unlinkSync(fullPath);
+      const fullPath = path.join(uploadsDir, plant[pathField]);
+      if (isPathSafe(fullPath, uploadsDir) && fs.existsSync(fullPath)) {
+        fs.unlinkSync(fullPath);
+      }
     }
     if (plant[thumbField]) {
-      const thumbPath = path.join(__dirname, '../uploads', plant[thumbField]);
-      if (fs.existsSync(thumbPath)) fs.unlinkSync(thumbPath);
+      const thumbPath = path.join(uploadsDir, plant[thumbField]);
+      if (isPathSafe(thumbPath, uploadsDir) && fs.existsSync(thumbPath)) {
+        fs.unlinkSync(thumbPath);
+      }
     }
 
     // Wyczyść w bazie
@@ -365,7 +448,7 @@ router.post('/search/:plantId', auth, adminOnly, async (req, res) => {
     const results = await searchWikimediaImages(searchQuery);
 
     // Zapisz kandydatów
-    const existing = plant.image_candidates ? JSON.parse(plant.image_candidates) : [];
+    const existing = safeJsonParse(plant.image_candidates, []);
     const existingUrls = new Set(existing.map(c => c.url));
     const newCandidates = results.filter(r => !existingUrls.has(r.url));
 
@@ -388,7 +471,7 @@ router.post('/search/:plantId', auth, adminOnly, async (req, res) => {
     });
   } catch (error) {
     console.error('Error searching images:', error);
-    res.status(500).json({ error: 'Błąd wyszukiwania: ' + error.message });
+    res.status(500).json({ error: 'Błąd wyszukiwania' });
   }
 });
 
@@ -398,10 +481,14 @@ router.post('/search/:plantId', auth, adminOnly, async (req, res) => {
 function downloadImage(url) {
   return new Promise((resolve, reject) => {
     const protocol = url.startsWith('https') ? https : http;
+    const MAX_SIZE = 10 * 1024 * 1024; // 10MB limit
 
-    protocol.get(url, { headers: { 'User-Agent': 'GardenApp/1.0' } }, (res) => {
-      // Obsłuż przekierowania
+    const req = protocol.get(url, { headers: { 'User-Agent': 'GardenApp/1.0' }, timeout: 15000 }, (res) => {
+      // Obsłuż przekierowania (z walidacją SSRF)
       if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+        if (!isValidImageUrl(res.headers.location)) {
+          return reject(new Error('Redirect to untrusted URL'));
+        }
         return downloadImage(res.headers.location).then(resolve).catch(reject);
       }
 
@@ -410,10 +497,20 @@ function downloadImage(url) {
       }
 
       const chunks = [];
-      res.on('data', chunk => chunks.push(chunk));
+      let totalSize = 0;
+      res.on('data', chunk => {
+        totalSize += chunk.length;
+        if (totalSize > MAX_SIZE) {
+          res.destroy();
+          return reject(new Error('Image too large'));
+        }
+        chunks.push(chunk);
+      });
       res.on('end', () => resolve(Buffer.concat(chunks)));
       res.on('error', reject);
-    }).on('error', reject);
+    });
+    req.on('error', reject);
+    req.on('timeout', () => { req.destroy(); reject(new Error('Request timeout')); });
   });
 }
 

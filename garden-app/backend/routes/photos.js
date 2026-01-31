@@ -73,68 +73,91 @@ router.post('/beds/:bedId/photos',
       return res.status(500).json({ error: 'Błąd przetwarzania zdjęcia' });
     }
 
-    // Verify user owns this bed and get full bed + plot data
-    db.get(
-      `SELECT b.*, p.name as plot_name, p.user_id
-       FROM beds b
-       JOIN plots p ON b.plot_id = p.id
-       WHERE b.id = ? AND p.user_id = ?`,
-      [req.params.bedId, req.user.id],
-      (err, bed) => {
-        if (err) {
-          return res.status(500).json({ error: 'Błąd serwera' });
-        }
-        if (!bed) {
-          return res.status(404).json({ error: 'Grządka nie znaleziona' });
-        }
+    // Verify user owns this bed and insert photo in transaction
+    db.run('BEGIN TRANSACTION', (beginErr) => {
+      if (beginErr) {
+        deleteAllVersions(thumbnails.original);
+        return res.status(500).json({ error: 'Błąd serwera' });
+      }
 
-        const { caption, taken_date, source_type } = req.body;
-
-        // Insert with denormalized data for gallery performance
-        db.run(
-          `INSERT INTO plant_photos (
-            bed_id, user_id, photo_path, thumb_path, medium_path, caption, taken_date, source_type,
-            bed_row_number, bed_plant_name, bed_plant_variety, plot_name
-          )
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [
-            req.params.bedId,
-            req.user.id,
-            thumbnails.original,
-            thumbnails.thumb,
-            thumbnails.medium,
-            caption,
-            taken_date || new Date().toISOString().split('T')[0],
-            source_type || 'progress',
-            bed.row_number,
-            bed.plant_name,
-            bed.plant_variety,
-            bed.plot_name
-          ],
-          function (err) {
-            if (err) {
-              console.error('Error inserting photo:', err);
-              // Clean up uploaded files on database error
+      db.get(
+        `SELECT b.*, p.name as plot_name, p.user_id
+         FROM beds b
+         JOIN plots p ON b.plot_id = p.id
+         WHERE b.id = ? AND p.user_id = ?`,
+        [req.params.bedId, req.user.id],
+        (err, bed) => {
+          if (err) {
+            return db.run('ROLLBACK', () => {
               deleteAllVersions(thumbnails.original);
-              return res.status(500).json({ error: 'Błąd podczas dodawania zdjęcia' });
-            }
-
-            res.status(201).json({
-              message: 'Zdjęcie dodane pomyślnie',
-              photo: {
-                id: this.lastID,
-                bed_id: req.params.bedId,
-                photo_path: thumbnails.original,
-                thumb_path: thumbnails.thumb,
-                medium_path: thumbnails.medium,
-                caption,
-                taken_date
-              }
+              res.status(500).json({ error: 'Błąd serwera' });
             });
           }
-        );
-      }
-    );
+          if (!bed) {
+            return db.run('ROLLBACK', () => {
+              deleteAllVersions(thumbnails.original);
+              res.status(404).json({ error: 'Grządka nie znaleziona' });
+            });
+          }
+
+          const { caption, taken_date, source_type } = req.body;
+
+          db.run(
+            `INSERT INTO plant_photos (
+              bed_id, user_id, photo_path, thumb_path, medium_path, caption, taken_date, source_type,
+              bed_row_number, bed_plant_name, bed_plant_variety, plot_name
+            )
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+              req.params.bedId,
+              req.user.id,
+              thumbnails.original,
+              thumbnails.thumb,
+              thumbnails.medium,
+              caption,
+              taken_date || new Date().toISOString().split('T')[0],
+              source_type || 'progress',
+              bed.row_number,
+              bed.plant_name,
+              bed.plant_variety,
+              bed.plot_name
+            ],
+            function (insertErr) {
+              if (insertErr) {
+                console.error('Error inserting photo:', insertErr);
+                return db.run('ROLLBACK', () => {
+                  deleteAllVersions(thumbnails.original);
+                  res.status(500).json({ error: 'Błąd podczas dodawania zdjęcia' });
+                });
+              }
+
+              const photoId = this.lastID;
+              db.run('COMMIT', (commitErr) => {
+                if (commitErr) {
+                  return db.run('ROLLBACK', () => {
+                    deleteAllVersions(thumbnails.original);
+                    res.status(500).json({ error: 'Błąd serwera' });
+                  });
+                }
+
+                res.status(201).json({
+                  message: 'Zdjęcie dodane pomyślnie',
+                  photo: {
+                    id: photoId,
+                    bed_id: req.params.bedId,
+                    photo_path: thumbnails.original,
+                    thumb_path: thumbnails.thumb,
+                    medium_path: thumbnails.medium,
+                    caption,
+                    taken_date
+                  }
+                });
+              });
+            }
+          );
+        }
+      );
+    });
   }
 );
 

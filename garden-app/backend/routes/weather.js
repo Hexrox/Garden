@@ -40,7 +40,7 @@ router.get('/current', auth, async (req, res) => {
     });
   } catch (error) {
     console.error('Błąd pobierania pogody:', error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: 'Błąd pobierania danych pogodowych' });
   }
 });
 
@@ -72,7 +72,7 @@ router.get('/forecast', auth, async (req, res) => {
     res.json(forecast);
   } catch (error) {
     console.error('Błąd pobierania prognozy:', error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: 'Błąd pobierania danych pogodowych' });
   }
 });
 
@@ -117,7 +117,7 @@ router.get('/recommendations', auth, async (req, res) => {
     });
   } catch (error) {
     console.error('Błąd pobierania rekomendacji:', error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: 'Błąd pobierania danych pogodowych' });
   }
 });
 

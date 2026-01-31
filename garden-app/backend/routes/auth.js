@@ -103,16 +103,9 @@ router.post('/register',
               }
             );
 
-            // Create token (bez email dla bezpieczeństwa - PII)
-            const token = jwt.sign(
-              { id: userId, username, role: 'user' },
-              process.env.JWT_SECRET,
-              { expiresIn: process.env.JWT_EXPIRES_IN }
-            );
-
             res.status(201).json({
               message: 'Użytkownik utworzony pomyślnie. Sprawdź swoją skrzynkę email aby zweryfikować konto.',
-              token,
+              requiresVerification: true,
               user: { id: userId, username, role: 'user' }
             });
           }
@@ -273,7 +266,7 @@ router.put('/update-profile', auth, updateProfileHandler); // Alias for onboardi
 // Get user profile
 router.get('/profile', auth, (req, res) => {
   db.get(
-    'SELECT id, username, email, hardiness_zone, first_frost_date, last_frost_date, location, onboarding_completed, latitude, longitude, city FROM users WHERE id = ?',
+    'SELECT id, username, email, hardiness_zone, first_frost_date, last_frost_date, location, onboarding_completed, latitude, longitude, city, visited_calendar, welcome_card_dismissed FROM users WHERE id = ?',
     [req.user.id],
     (err, user) => {
       if (err) {
@@ -535,6 +528,11 @@ router.get('/verify-email/:token', (req, res) => {
         return res.status(404).json({ error: 'Token nie znaleziony' });
       }
 
+      // Timing-safe porównanie tokenów
+      if (!compareTokens(user.email_verification_token, token)) {
+        return res.status(400).json({ error: 'Nieprawidłowy token' });
+      }
+
       // Sprawdź expiry
       const expiresAt = new Date(user.email_verification_expires);
       if (expiresAt < new Date()) {
@@ -712,7 +710,7 @@ router.post('/account/restore', async (req, res) => {
 
     // Znajdź w deleted_accounts
     db.get(
-      `SELECT user_id, username, email, permanent_delete_at, restored_at
+      `SELECT user_id, username, email, permanent_delete_at, restored_at, restore_token
        FROM deleted_accounts
        WHERE restore_token = ?`,
       [token],
@@ -723,6 +721,11 @@ router.post('/account/restore', async (req, res) => {
 
         if (!deletedAccount) {
           return res.status(404).json({ error: 'Token nie znaleziony' });
+        }
+
+        // Timing-safe porównanie tokenów
+        if (!compareTokens(deletedAccount.restore_token, token)) {
+          return res.status(400).json({ error: 'Nieprawidłowy token' });
         }
 
         // Sprawdź czy już przywrócone

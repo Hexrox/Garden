@@ -5,6 +5,36 @@ const db = require('../db');
 const auth = require('../middleware/auth');
 const fs = require('fs');
 const path = require('path');
+const multer = require('multer');
+const sharp = require('sharp');
+
+// Configure multer for plant photo uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadDir = path.join(__dirname, '../uploads/plants');
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, 'plant-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({
+  storage,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Dozwolone są tylko pliki JPEG, PNG i WebP'));
+    }
+  }
+});
 
 // Import extended plants from JSON to database (run once per user)
 router.post('/import-defaults', auth, (req, res) => {
@@ -81,17 +111,28 @@ router.post('/import-defaults', auth, (req, res) => {
 
   } catch (error) {
     console.error('Import error:', error);
-    res.status(500).json({ error: 'Błąd podczas importu: ' + error.message });
+    console.error('Import error:', error.message);
+    res.status(500).json({ error: 'Błąd podczas importu' });
   }
 });
 
-// Get all plants for user (custom + defaults)
+// Get all plants for user (approved + own pending/rejected)
 router.get('/', auth, (req, res) => {
+  // Return:
+  // 1. All approved plants (visible to everyone)
+  // 2. Own pending/rejected plants (visible only to contributor)
   db.all(
-    `SELECT * FROM plants WHERE user_id = ? OR user_id IS NULL ORDER BY is_custom DESC, name ASC`,
+    `SELECT p.*, u.username as contributor_username
+     FROM plants p
+     LEFT JOIN users u ON p.contributor_id = u.id
+     WHERE
+       (p.status = 'approved' OR p.status IS NULL)
+       OR (p.contributor_id = ? AND p.status IN ('pending', 'rejected'))
+     ORDER BY p.is_custom DESC, p.name ASC`,
     [req.user.id],
     (err, rows) => {
       if (err) {
+        console.error('Error fetching plants:', err);
         return res.status(500).json({ error: 'Błąd serwera' });
       }
       res.json(rows);
@@ -116,45 +157,12 @@ router.get('/:id', auth, (req, res) => {
   );
 });
 
-// Create custom plant
+// Create custom plant (with moderation - status = pending)
 router.post('/',
   auth,
-  [
-    body('name').trim().notEmpty().escape().withMessage('Nazwa jest wymagana'),
-    body('display_name').optional().trim().escape(),
-    body('latin_name').optional().trim().escape(),
-    body('category').optional().trim().escape(),
-    body('days_to_harvest').optional().isInt({ min: 0 }),
-    body('range_min').optional().isInt({ min: 1 }),
-    body('range_max').optional().isInt({ min: 1 }),
-    body('notes').optional().trim().escape(),
-    body('flower_color').optional().trim().escape(),
-    body('bloom_season').optional().trim().escape(),
-    body('height').optional().trim().escape(),
-    body('sun_requirement').optional().trim().escape(),
-    body('is_perennial').optional().isBoolean(),
-    body('planting_time').optional().trim().escape(),
-    body('storage_requirement').optional().trim().escape(),
-    body('npk_needs').optional().trim().escape(),
-    body('npk_ratio_recommended').optional().trim().escape(),
-    body('fertilization_frequency').optional().trim().escape(),
-    body('organic_fertilizer').optional().trim().escape(),
-    body('mineral_fertilizer').optional().trim().escape(),
-    body('soil_ph').optional().trim().escape(),
-    body('soil_type').optional().trim().escape(),
-    body('water_needs').optional().trim().escape(),
-    body('companion_plants').optional().trim().escape(),
-    body('avoid_plants').optional().trim().escape(),
-    body('pruning_needs').optional().trim().escape(),
-    body('winter_care').optional().trim().escape(),
-    body('propagation_method').optional().trim().escape()
-  ],
+  upload.single('photo'),
   (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-
+    // Parse body - multer changes how we receive data
     const {
       name, display_name, latin_name, category, days_to_harvest, range_min, range_max, notes,
       flower_color, bloom_season, height, sun_requirement, is_perennial,
@@ -163,60 +171,98 @@ router.post('/',
       organic_fertilizer, mineral_fertilizer,
       soil_ph, soil_type, water_needs,
       companion_plants, avoid_plants,
-      pruning_needs, winter_care, propagation_method
+      pruning_needs, winter_care, propagation_method,
+      photo_author, photo_license
     } = req.body;
 
-    db.run(
-      `INSERT INTO plants (
-        user_id, name, display_name, latin_name, category, days_to_harvest, range_min, range_max, notes,
-        flower_color, bloom_season, height, sun_requirement, is_perennial,
-        planting_time, storage_requirement,
-        npk_needs, npk_ratio_recommended, fertilization_frequency,
-        organic_fertilizer, mineral_fertilizer,
-        soil_ph, soil_type, water_needs,
-        companion_plants, avoid_plants,
-        pruning_needs, winter_care, propagation_method,
-        is_custom
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
-      [
-        req.user.id, name.toLowerCase(), display_name || name, latin_name, category,
-        days_to_harvest, range_min, range_max, notes,
-        flower_color, bloom_season, height, sun_requirement, is_perennial ? 1 : 0,
-        planting_time, storage_requirement,
-        npk_needs, npk_ratio_recommended, fertilization_frequency,
-        organic_fertilizer, mineral_fertilizer,
-        soil_ph, soil_type, water_needs,
-        companion_plants, avoid_plants,
-        pruning_needs, winter_care, propagation_method
-      ],
-      function (err) {
-        if (err) {
-          console.error('Error creating plant:', err);
-          return res.status(500).json({ error: 'Błąd podczas tworzenia rośliny' });
-        }
+    // Validate required field
+    if (!display_name && !name) {
+      if (req.file) fs.unlinkSync(req.file.path);
+      return res.status(400).json({ error: 'Nazwa rośliny jest wymagana' });
+    }
 
-        res.status(201).json({
-          message: 'Roślina utworzona pomyślnie',
-          plant: {
-            id: this.lastID,
-            name,
-            display_name: display_name || name,
-            category,
-            days_to_harvest,
-            range_min,
-            range_max,
-            notes,
-            flower_color,
-            bloom_season,
-            height,
-            sun_requirement,
-            is_perennial,
-            planting_time,
-            storage_requirement
-          }
-        });
+    // If photo is uploaded, photo_author is required
+    if (req.file && !photo_author) {
+      fs.unlinkSync(req.file.path);
+      return res.status(400).json({ error: 'Autor zdjęcia jest wymagany gdy dodajesz zdjęcie' });
+    }
+
+    // Process photo if uploaded
+    let photoPath = null;
+    let photoThumbPath = null;
+
+    const saveToDb = async () => {
+      if (req.file) {
+        const filename = path.basename(req.file.path);
+        photoPath = '/uploads/plants/' + filename;
+
+        // Create thumbnail
+        const thumbFilename = 'thumb-' + filename;
+        const thumbPath = path.join(__dirname, '../uploads/plants', thumbFilename);
+
+        try {
+          await sharp(req.file.path)
+            .resize(300, 300, { fit: 'cover' })
+            .jpeg({ quality: 80 })
+            .toFile(thumbPath);
+          photoThumbPath = '/uploads/plants/' + thumbFilename;
+        } catch (err) {
+          console.error('Error creating thumbnail:', err);
+        }
       }
-    );
+
+      const rawName = name || display_name || 'unnamed_plant';
+      const plantName = rawName.toLowerCase().replace(/\s+/g, '_');
+
+      db.run(
+        `INSERT INTO plants (
+          user_id, name, display_name, latin_name, category, days_to_harvest, range_min, range_max, notes,
+          flower_color, bloom_season, height, sun_requirement, is_perennial,
+          planting_time, storage_requirement,
+          npk_needs, npk_ratio_recommended, fertilization_frequency,
+          organic_fertilizer, mineral_fertilizer,
+          soil_ph, soil_type, water_needs,
+          companion_plants, avoid_plants,
+          pruning_needs, winter_care, propagation_method,
+          is_custom, status, contributor_id,
+          photo_path, photo_thumb, photo_author, photo_license
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 'pending', ?, ?, ?, ?, ?)`,
+        [
+          req.user.id, plantName, display_name || name, latin_name, category,
+          days_to_harvest || 0, range_min, range_max, notes,
+          flower_color, bloom_season, height, sun_requirement, is_perennial ? 1 : 0,
+          planting_time, storage_requirement,
+          npk_needs, npk_ratio_recommended, fertilization_frequency,
+          organic_fertilizer, mineral_fertilizer,
+          soil_ph, soil_type, water_needs,
+          companion_plants, avoid_plants,
+          pruning_needs, winter_care, propagation_method,
+          req.user.id,
+          photoPath, photoThumbPath, photo_author, photo_license
+        ],
+        function (err) {
+          if (err) {
+            console.error('Error creating plant:', err);
+            // Clean up uploaded file on error
+            if (req.file) fs.unlinkSync(req.file.path);
+            return res.status(500).json({ error: 'Błąd podczas tworzenia rośliny' });
+          }
+
+          res.status(201).json({
+            message: 'Roślina została wysłana do moderacji. Po zatwierdzeniu przez administratora będzie widoczna dla wszystkich użytkowników.',
+            plant: {
+              id: this.lastID,
+              name: plantName,
+              display_name: display_name || name,
+              category,
+              status: 'pending'
+            }
+          });
+        }
+      );
+    };
+
+    saveToDb();
   }
 );
 
@@ -337,23 +383,37 @@ router.put('/:id',
   }
 );
 
-// Delete plant (only custom plants)
+// Delete plant - BLOCKED for regular users, only admin can delete via /api/admin/plants/:id
 router.delete('/:id', auth, (req, res) => {
-  db.run(
-    `DELETE FROM plants WHERE id = ? AND user_id = ? AND is_custom = 1`,
-    [req.params.id, req.user.id],
-    function (err) {
-      if (err) {
-        return res.status(500).json({ error: 'Błąd podczas usuwania' });
-      }
-
-      if (this.changes === 0) {
-        return res.status(404).json({ error: 'Roślina nie znaleziona lub nie możesz jej usunąć' });
-      }
-
-      res.json({ message: 'Roślina usunięta pomyślnie' });
+  // Check if user is admin
+  db.get('SELECT role FROM users WHERE id = ?', [req.user.id], (err, user) => {
+    if (err) {
+      return res.status(500).json({ error: 'Błąd serwera' });
     }
-  );
+
+    if (!user || user.role !== 'admin') {
+      return res.status(403).json({
+        error: 'Tylko administrator może usuwać rośliny z katalogu. Jeśli chcesz zgłosić błąd w opisie rośliny, skontaktuj się z administratorem.'
+      });
+    }
+
+    // Admin can delete
+    db.run(
+      `DELETE FROM plants WHERE id = ?`,
+      [req.params.id],
+      function (err) {
+        if (err) {
+          return res.status(500).json({ error: 'Błąd podczas usuwania' });
+        }
+
+        if (this.changes === 0) {
+          return res.status(404).json({ error: 'Roślina nie znaleziona' });
+        }
+
+        res.json({ message: 'Roślina usunięta pomyślnie' });
+      }
+    );
+  });
 });
 
 // Get companion plant suggestions for a given plant name

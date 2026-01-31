@@ -8,6 +8,7 @@ const Register = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const { register } = useAuth();
   const navigate = useNavigate();
@@ -52,7 +53,11 @@ const Register = () => {
     const result = await register(username, email, password);
 
     if (result.success) {
-      navigate('/dashboard');
+      if (result.requiresVerification) {
+        setSuccessMessage(result.message || 'Konto utworzone. Sprawdź email aby zweryfikować konto, a następnie się zaloguj.');
+      } else {
+        navigate('/dashboard');
+      }
     } else {
       setError(result.error);
     }
@@ -72,6 +77,14 @@ const Register = () => {
           </p>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+          {successMessage && (
+            <div className="bg-green-50 dark:bg-green-900/30 border border-green-400 dark:border-green-800 text-green-700 dark:text-green-200 px-4 py-3 rounded">
+              {successMessage}
+              <p className="mt-2">
+                <Link to="/login" className="font-medium underline">Przejdź do logowania</Link>
+              </p>
+            </div>
+          )}
           {error && (
             <div className="bg-red-50 dark:bg-red-900/30 border border-red-400 dark:border-red-800 text-red-700 dark:text-red-200 px-4 py-3 rounded">
               {error}

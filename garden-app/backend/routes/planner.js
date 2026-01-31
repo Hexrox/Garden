@@ -538,7 +538,7 @@ router.post('/:id/complete', auth, (req, res) => {
                 message: 'Plan oznaczony jako wykonany, ale nie udało się utworzyć grządki',
                 completed_date: completedDate,
                 next_plan_created: nextPlanCreated,
-                bed_error: err.message
+                bed_error: 'Nie udało się utworzyć grządki'
               });
             }
 

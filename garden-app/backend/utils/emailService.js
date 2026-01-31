@@ -9,6 +9,17 @@ const transporter = nodemailer.createTransport({
   }
 });
 
+// HTML escape to prevent XSS in email templates
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;');
+}
+
 // Email templates
 const emailTemplates = {
   passwordReset: (resetLink) => ({
@@ -49,7 +60,7 @@ const emailTemplates = {
 
         <div style="background: #1f2937; padding: 20px; text-align: center;">
           <p style="color: #9ca3af; margin: 0; font-size: 12px;">
-            © 2025 Garden App. Wszystkie prawa zastrzeżone.
+            © 2026 Garden App. Wszystkie prawa zastrzeżone.
           </p>
         </div>
       </div>
@@ -65,7 +76,7 @@ const emailTemplates = {
         </div>
 
         <div style="padding: 30px; background: #f9fafb;">
-          <h2 style="color: #1f2937;">Witaj ${username}! 👋</h2>
+          <h2 style="color: #1f2937;">Witaj ${escapeHtml(username)}! 👋</h2>
           <p style="color: #4b5563; line-height: 1.6;">
             Dziękujemy za rejestrację w Garden App! Potwierdź swój adres email, aby aktywować konto.
           </p>
@@ -90,7 +101,7 @@ const emailTemplates = {
 
         <div style="background: #1f2937; padding: 20px; text-align: center;">
           <p style="color: #9ca3af; margin: 0; font-size: 12px;">
-            © 2025 Garden App
+            © 2026 Garden App
           </p>
         </div>
       </div>
@@ -108,12 +119,12 @@ const emailTemplates = {
         <div style="padding: 30px; background: #f9fafb;">
           <h2 style="color: #1f2937;">Konto usunięte</h2>
           <p style="color: #4b5563; line-height: 1.6;">
-            Cześć ${username}, Twoje konto Garden App zostało oznaczone do usunięcia.
+            Cześć ${escapeHtml(username)}, Twoje konto Garden App zostało oznaczone do usunięcia.
           </p>
 
           <div style="background: #fef2f2; border-left: 4px solid #ef4444; padding: 15px; margin: 20px 0;">
             <p style="color: #991b1b; margin: 0;">
-              <strong>⚠️ Ważne:</strong> Twoje dane zostaną permanentnie usunięte ${deleteDate}.
+              <strong>⚠️ Ważne:</strong> Twoje dane zostaną permanentnie usunięte ${escapeHtml(deleteDate)}.
             </p>
           </div>
 
@@ -135,7 +146,7 @@ const emailTemplates = {
 
         <div style="background: #1f2937; padding: 20px; text-align: center;">
           <p style="color: #9ca3af; margin: 0; font-size: 12px;">
-            © 2025 Garden App
+            © 2026 Garden App
           </p>
         </div>
       </div>
@@ -153,7 +164,7 @@ const emailTemplates = {
         <div style="padding: 30px; background: #f9fafb;">
           <h2 style="color: #1f2937;">Witamy z powrotem! 🎉</h2>
           <p style="color: #4b5563; line-height: 1.6;">
-            Cześć ${username}, Twoje konto zostało pomyślnie przywrócone!
+            Cześć ${escapeHtml(username)}, Twoje konto zostało pomyślnie przywrócone!
           </p>
 
           <div style="background: #d1fae5; border-left: 4px solid #10b981; padding: 15px; margin: 20px 0;">
@@ -176,7 +187,7 @@ const emailTemplates = {
 
         <div style="background: #1f2937; padding: 20px; text-align: center;">
           <p style="color: #9ca3af; margin: 0; font-size: 12px;">
-            © 2025 Garden App
+            © 2026 Garden App
           </p>
         </div>
       </div>

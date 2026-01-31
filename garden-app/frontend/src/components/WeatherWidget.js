@@ -13,40 +13,29 @@ const WeatherWidget = () => {
   const [showForecast, setShowForecast] = useState(false);
 
   useEffect(() => {
-    fetchWeather();
+    const abortController = new AbortController();
+    fetchWeather(abortController.signal);
+    return () => abortController.abort();
   }, []);
 
-  const fetchWeather = async () => {
+  const fetchWeather = async (signal) => {
     try {
       setLoading(true);
 
       // Fazy księżyca NIE wymagają lokalizacji - pobieraj zawsze
-      const moonRes = await axios.get('/api/calendar/moon/current').catch((err) => {
-        console.error('Error fetching moon phase:', err);
-        return null;
-      });
+      const moonRes = await axios.get('/api/calendar/moon/current', { signal }).catch(() => null);
 
-      if (moonRes && moonRes.data && moonRes.data.moon) {
-        // API returns {date, dateFormatted, moon: {...}, gardening: {...}}
-        // Validate that moon object has required fields
-        if (moonRes.data.moon.phaseName && moonRes.data.moon.illumination !== undefined) {
-          // Restructure to flat format for easier access
-          const moonData = {
-            ...moonRes.data.moon,
-            gardening: moonRes.data.gardening?.favorable || []
-          };
-          setMoonPhase(moonData);
-        } else {
-          console.error('Moon data incomplete:', moonRes.data.moon);
-        }
-      } else {
-        console.error('Invalid moon API response:', moonRes?.data);
+      if (moonRes?.data?.moon?.phaseName && moonRes.data.moon.illumination !== undefined) {
+        setMoonPhase({
+          ...moonRes.data.moon,
+          gardening: moonRes.data.gardening?.favorable || []
+        });
       }
 
       // Pogoda WYMAGA lokalizacji
       const [weatherRes, forecastRes] = await Promise.all([
-        axios.get('/api/weather/recommendations'),
-        axios.get('/api/weather/forecast').catch(() => null)
+        axios.get('/api/weather/recommendations', { signal }),
+        axios.get('/api/weather/forecast', { signal }).catch(() => null)
       ]);
 
       setWeather(weatherRes.data.currentWeather);
@@ -60,6 +49,7 @@ const WeatherWidget = () => {
       setLocationSet(true);
       setError(null);
     } catch (err) {
+      if (err.name === 'CanceledError' || err.name === 'AbortError') return;
       if (err.response?.status === 400) {
         setLocationSet(false);
         setError('Ustaw lokalizację w profilu aby zobaczyć pogodę');
@@ -184,7 +174,7 @@ const WeatherWidget = () => {
       <div className="bg-red-50 dark:bg-red-900/20 rounded-lg border-2 border-red-200 dark:border-red-800 p-4 text-center">
         <p className="text-red-800 dark:text-red-200">{error}</p>
         <button
-          onClick={fetchWeather}
+          onClick={() => fetchWeather()}
           className="mt-2 text-sm text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 underline"
         >
           Spróbuj ponownie
@@ -208,7 +198,7 @@ const WeatherWidget = () => {
             )}
           </div>
           <button
-            onClick={fetchWeather}
+            onClick={() => fetchWeather()}
             className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
           >
             🔄 Odśwież

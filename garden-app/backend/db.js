@@ -386,6 +386,20 @@ db.serialize(() => {
     }
   });
 
+  // Add visited_calendar flag for onboarding checklist
+  db.run(`ALTER TABLE users ADD COLUMN visited_calendar BOOLEAN DEFAULT 0`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding visited_calendar column:', err.message);
+    }
+  });
+
+  // Add welcome_card_dismissed flag for onboarding
+  db.run(`ALTER TABLE users ADD COLUMN welcome_card_dismissed BOOLEAN DEFAULT 0`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding welcome_card_dismissed column:', err.message);
+    }
+  });
+
   // Add role column for RBAC
   db.run(`ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'user'`, (err) => {
     if (err && !err.message.includes('duplicate column')) {
@@ -506,6 +520,7 @@ db.serialize(() => {
   db.run('CREATE INDEX IF NOT EXISTS idx_plants_user_id ON plants(user_id)');
   db.run('CREATE INDEX IF NOT EXISTS idx_plants_name ON plants(name)');
   db.run('CREATE INDEX IF NOT EXISTS idx_plant_photos_bed_id ON plant_photos(bed_id)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_plant_photos_user_id ON plant_photos(user_id)');
   db.run('CREATE INDEX IF NOT EXISTS idx_succession_user_id ON succession_reminders(user_id)');
   db.run('CREATE INDEX IF NOT EXISTS idx_succession_next_date ON succession_reminders(next_planting_date)');
   db.run('CREATE INDEX IF NOT EXISTS idx_weather_history_user_date ON weather_history(user_id, date)');

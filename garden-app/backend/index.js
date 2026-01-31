@@ -202,9 +202,24 @@ const emailVerificationLimiter = rateLimit({
   legacyHeaders: false
 });
 
+// Upload rate limiter - max 50 uploads per hour per IP
+const uploadLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1h
+  max: 50,
+  message: { error: 'Zbyt wiele uploadów. Spróbuj ponownie za godzinę.' },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
 // Apply rate limiting to all /api routes
 app.use('/api', apiLimiter);
 app.use('/api', mutationLimiter);
+
+// Upload rate limiting for file upload endpoints
+app.use('/api/beds/:id/photos', uploadLimiter);
+app.use('/api/gallery/quick', uploadLimiter);
+app.use('/api/plants/suggest', uploadLimiter);
+app.use('/api/profile/photo', uploadLimiter);
 
 // Stricter rate limiting for public profiles (prevent scraping)
 app.use('/api/g', publicLimiter);
@@ -213,6 +228,15 @@ app.use('/api/g', publicLimiter);
 app.use('/api/auth/forgot-password', passwordResetLimiter);
 app.use('/api/auth/reset-password', passwordResetLimiter);
 app.use('/api/auth/resend-verification', emailVerificationLimiter);
+
+// Validate integer ID parameters
+app.param('id', (req, res, next, value) => {
+  const id = parseInt(value, 10);
+  if (isNaN(id) || id <= 0 || String(id) !== value) {
+    return res.status(400).json({ error: 'Nieprawidłowy identyfikator' });
+  }
+  next();
+});
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

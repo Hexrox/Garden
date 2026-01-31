@@ -22,7 +22,8 @@ router.get('/', auth, (req, res) => {
 
   db.all(query, params, (err, rows) => {
     if (err) {
-      return res.status(500).json({ error: err.message });
+      console.error('Tasks error:', err.message);
+        return res.status(500).json({ error: 'Błąd serwera' });
     }
     res.json(rows);
   });
@@ -46,7 +47,8 @@ router.get('/today', auth, (req, res) => {
     [req.user.id, today],
     (err, rows) => {
       if (err) {
-        return res.status(500).json({ error: err.message });
+        console.error('Tasks error:', err.message);
+        return res.status(500).json({ error: 'Błąd serwera' });
       }
       res.json(rows);
     }
@@ -128,12 +130,14 @@ router.post('/', auth, (req, res) => {
     ],
     function (err) {
       if (err) {
-        return res.status(500).json({ error: err.message });
+        console.error('Tasks error:', err.message);
+        return res.status(500).json({ error: 'Błąd serwera' });
       }
 
       db.get('SELECT * FROM tasks WHERE id = ?', [this.lastID], (err, task) => {
         if (err) {
-          return res.status(500).json({ error: err.message });
+          console.error('Tasks error:', err.message);
+        return res.status(500).json({ error: 'Błąd serwera' });
         }
         res.status(201).json(task);
       });
@@ -153,7 +157,8 @@ router.put('/:id', auth, (req, res) => {
     [req.params.id, req.user.id],
     (err, task) => {
       if (err) {
-        return res.status(500).json({ error: err.message });
+        console.error('Tasks error:', err.message);
+        return res.status(500).json({ error: 'Błąd serwera' });
       }
       if (!task) {
         return res.status(404).json({ error: 'Zadanie nie znalezione' });
@@ -196,7 +201,8 @@ router.put('/:id', auth, (req, res) => {
         params,
         function (err) {
           if (err) {
-            return res.status(500).json({ error: err.message });
+            console.error('Tasks error:', err.message);
+        return res.status(500).json({ error: 'Błąd serwera' });
           }
 
           // Jeśli oznaczono zadanie podlewania jako completed, zaktualizuj last_watered_date
@@ -214,9 +220,10 @@ router.put('/:id', auth, (req, res) => {
             );
           }
 
-          db.get('SELECT * FROM tasks WHERE id = ?', [req.params.id], (err, updated) => {
+          db.get('SELECT * FROM tasks WHERE id = ? AND user_id = ?', [req.params.id, req.user.id], (err, updated) => {
             if (err) {
-              return res.status(500).json({ error: err.message });
+              console.error('Tasks error:', err.message);
+        return res.status(500).json({ error: 'Błąd serwera' });
             }
             res.json(updated);
           });
@@ -237,7 +244,8 @@ router.post('/:id/complete', auth, (req, res) => {
     [req.params.id, req.user.id],
     (err, task) => {
       if (err) {
-        return res.status(500).json({ error: err.message });
+        console.error('Tasks error:', err.message);
+        return res.status(500).json({ error: 'Błąd serwera' });
       }
       if (!task) {
         return res.status(404).json({ error: 'Zadanie nie znalezione' });
@@ -251,7 +259,8 @@ router.post('/:id/complete', auth, (req, res) => {
         [new Date().toISOString(), req.params.id],
         function (err) {
           if (err) {
-            return res.status(500).json({ error: err.message });
+            console.error('Tasks error:', err.message);
+        return res.status(500).json({ error: 'Błąd serwera' });
           }
 
           // Jeśli to zadanie podlewania, zaktualizuj last_watered_date w beds
@@ -276,9 +285,10 @@ router.post('/:id/complete', auth, (req, res) => {
 
             if (!parentId) {
               // To nie jest recurring task, zwróć normalne response
-              db.get('SELECT * FROM tasks WHERE id = ?', [req.params.id], (err, updatedTask) => {
+              db.get('SELECT * FROM tasks WHERE id = ? AND user_id = ?', [req.params.id, req.user.id], (err, updatedTask) => {
                 if (err) {
-                  return res.status(500).json({ error: err.message });
+                  console.error('Tasks error:', err.message);
+        return res.status(500).json({ error: 'Błąd serwera' });
                 }
                 res.json(updatedTask);
               });
@@ -286,12 +296,13 @@ router.post('/:id/complete', auth, (req, res) => {
             }
 
             // Pobierz parent task (recurring template)
-            db.get('SELECT * FROM tasks WHERE id = ?', [parentId], (err, parentTask) => {
+            db.get('SELECT * FROM tasks WHERE id = ? AND user_id = ?', [parentId, req.user.id], (err, parentTask) => {
               if (err || !parentTask || !parentTask.is_recurring) {
                 // Brak parent lub nie jest recurring, zwróć normalne response
-                db.get('SELECT * FROM tasks WHERE id = ?', [req.params.id], (err, updatedTask) => {
+                db.get('SELECT * FROM tasks WHERE id = ? AND user_id = ?', [req.params.id, req.user.id], (err, updatedTask) => {
                   if (err) {
-                    return res.status(500).json({ error: err.message });
+                    console.error('Tasks error:', err.message);
+        return res.status(500).json({ error: 'Błąd serwera' });
                   }
                   res.json(updatedTask);
                 });
@@ -303,9 +314,10 @@ router.post('/:id/complete', auth, (req, res) => {
                 const endDate = new Date(parentTask.recurrence_end_date);
                 if (new Date() >= endDate) {
                   console.log('Recurring task ended (past recurrence_end_date)');
-                  db.get('SELECT * FROM tasks WHERE id = ?', [req.params.id], (err, updatedTask) => {
+                  db.get('SELECT * FROM tasks WHERE id = ? AND user_id = ?', [req.params.id, req.user.id], (err, updatedTask) => {
                     if (err) {
-                      return res.status(500).json({ error: err.message });
+                      console.error('Tasks error:', err.message);
+        return res.status(500).json({ error: 'Błąd serwera' });
                     }
                     res.json(updatedTask);
                   });
@@ -352,9 +364,10 @@ router.post('/:id/complete', auth, (req, res) => {
                   );
 
                   // Zwróć ukończone zadanie
-                  db.get('SELECT * FROM tasks WHERE id = ?', [req.params.id], (err, updatedTask) => {
+                  db.get('SELECT * FROM tasks WHERE id = ? AND user_id = ?', [req.params.id, req.user.id], (err, updatedTask) => {
                     if (err) {
-                      return res.status(500).json({ error: err.message });
+                      console.error('Tasks error:', err.message);
+        return res.status(500).json({ error: 'Błąd serwera' });
                     }
                     res.json(updatedTask);
                   });
@@ -381,7 +394,8 @@ router.post('/:id/dismiss', auth, (req, res) => {
     [req.params.id, req.user.id],
     (err, task) => {
       if (err) {
-        return res.status(500).json({ error: err.message });
+        console.error('Tasks error:', err.message);
+        return res.status(500).json({ error: 'Błąd serwera' });
       }
       if (!task) {
         return res.status(404).json({ error: 'Zadanie nie znalezione' });
@@ -396,7 +410,8 @@ router.post('/:id/dismiss', auth, (req, res) => {
         [req.params.id, req.user.id],
         function (err) {
           if (err) {
-            return res.status(500).json({ error: err.message });
+            console.error('Tasks error:', err.message);
+        return res.status(500).json({ error: 'Błąd serwera' });
           }
           res.json({ message: 'Zadanie dismissed - nie pojawi się przez 14 dni' });
         }
@@ -422,7 +437,8 @@ router.post('/:id/snooze', auth, (req, res) => {
     [req.params.id, req.user.id],
     (err, task) => {
       if (err) {
-        return res.status(500).json({ error: err.message });
+        console.error('Tasks error:', err.message);
+        return res.status(500).json({ error: 'Błąd serwera' });
       }
       if (!task) {
         return res.status(404).json({ error: 'Zadanie nie znalezione' });
@@ -440,7 +456,8 @@ router.post('/:id/snooze', auth, (req, res) => {
         [snoozeDate.toISOString(), req.params.id, req.user.id],
         function (err) {
           if (err) {
-            return res.status(500).json({ error: err.message });
+            console.error('Tasks error:', err.message);
+        return res.status(500).json({ error: 'Błąd serwera' });
           }
           res.json({
             message: `Zadanie przesunięte o ${days} dni`,
@@ -462,7 +479,8 @@ router.delete('/:id', auth, (req, res) => {
     [req.params.id, req.user.id],
     function (err) {
       if (err) {
-        return res.status(500).json({ error: err.message });
+        console.error('Tasks error:', err.message);
+        return res.status(500).json({ error: 'Błąd serwera' });
       }
       if (this.changes === 0) {
         return res.status(404).json({ error: 'Zadanie nie znalezione' });
@@ -768,7 +786,8 @@ router.get('/recurring', auth, (req, res) => {
     [req.user.id],
     (err, rows) => {
       if (err) {
-        return res.status(500).json({ error: err.message });
+        console.error('Tasks error:', err.message);
+        return res.status(500).json({ error: 'Błąd serwera' });
       }
       res.json(rows);
     }
@@ -787,7 +806,8 @@ router.put('/:id/recurring', auth, (req, res) => {
     [req.params.id, req.user.id],
     (err, task) => {
       if (err) {
-        return res.status(500).json({ error: err.message });
+        console.error('Tasks error:', err.message);
+        return res.status(500).json({ error: 'Błąd serwera' });
       }
       if (!task) {
         return res.status(404).json({ error: 'Recurring task nie znaleziony' });
@@ -841,12 +861,14 @@ router.put('/:id/recurring', auth, (req, res) => {
         params,
         function (err) {
           if (err) {
-            return res.status(500).json({ error: err.message });
+            console.error('Tasks error:', err.message);
+        return res.status(500).json({ error: 'Błąd serwera' });
           }
 
-          db.get('SELECT * FROM tasks WHERE id = ?', [req.params.id], (err, updated) => {
+          db.get('SELECT * FROM tasks WHERE id = ? AND user_id = ?', [req.params.id, req.user.id], (err, updated) => {
             if (err) {
-              return res.status(500).json({ error: err.message });
+              console.error('Tasks error:', err.message);
+        return res.status(500).json({ error: 'Błąd serwera' });
             }
             res.json(updated);
           });
@@ -866,7 +888,8 @@ router.delete('/:id/recurring', auth, (req, res) => {
     [req.params.id, req.user.id],
     (err, task) => {
       if (err) {
-        return res.status(500).json({ error: err.message });
+        console.error('Tasks error:', err.message);
+        return res.status(500).json({ error: 'Błąd serwera' });
       }
       if (!task) {
         return res.status(404).json({ error: 'Recurring task nie znaleziony' });
@@ -887,7 +910,8 @@ router.delete('/:id/recurring', auth, (req, res) => {
             [req.params.id, req.user.id],
             function (err) {
               if (err) {
-                return res.status(500).json({ error: err.message });
+                console.error('Tasks error:', err.message);
+        return res.status(500).json({ error: 'Błąd serwera' });
               }
               res.json({ message: 'Recurring task i przyszłe instancje usunięte' });
             }

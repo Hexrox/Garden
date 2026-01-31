@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Search, Info, Filter } from 'lucide-react';
 import axios from '../config/axios';
 
@@ -47,26 +47,24 @@ const PlantSelector = ({ value, onChange, plantedDate, onHarvestDateCalculated }
     setSearchTerm(value || '');
   }, [value]);
 
-  // Filtruj rośliny po wyszukiwaniu i kategorii
-  useEffect(() => {
-    if (searchTerm.length >= 2) {
-      let filtered = allPlants.filter(plant =>
-        plant.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (plant.display_name && plant.display_name.toLowerCase().includes(searchTerm.toLowerCase()))
-      );
-
-      // Filtruj po kategorii jeśli wybrana
-      if (selectedCategory !== 'all') {
-        filtered = filtered.filter(plant => plant.category === selectedCategory);
-      }
-
-      setSuggestions(filtered.slice(0, 20)); // Limit do 20 wyników
-      setShowSuggestions(filtered.length > 0);
-    } else {
-      setSuggestions([]);
-      setShowSuggestions(false);
+  // Filtruj rośliny po wyszukiwaniu i kategorii (memoized)
+  const filteredSuggestions = useMemo(() => {
+    if (searchTerm.length < 2) return [];
+    const term = searchTerm.toLowerCase();
+    let filtered = allPlants.filter(plant =>
+      plant.name.toLowerCase().includes(term) ||
+      (plant.display_name && plant.display_name.toLowerCase().includes(term))
+    );
+    if (selectedCategory !== 'all') {
+      filtered = filtered.filter(plant => plant.category === selectedCategory);
     }
+    return filtered.slice(0, 20);
   }, [searchTerm, selectedCategory, allPlants]);
+
+  useEffect(() => {
+    setSuggestions(filteredSuggestions);
+    setShowSuggestions(filteredSuggestions.length > 0);
+  }, [filteredSuggestions]);
 
   const calculateHarvestDate = (plantedDate, daysToHarvest) => {
     if (!plantedDate || !daysToHarvest || daysToHarvest === 0) return null;
@@ -105,7 +103,14 @@ const PlantSelector = ({ value, onChange, plantedDate, onHarvestDateCalculated }
       'flower_annual': 'Kwiaty jednoroczne',
       'flower_bulb': 'Kwiaty cebulowe',
       'fruit_tree': 'Drzewa owocowe',
-      'fruit_bush': 'Krzewy owocowe'
+      'fruit_bush': 'Krzewy owocowe',
+      'grass': 'Trawy ozdobne',
+      'tree_ornamental': 'Drzewa ozdobne',
+      'shrub_ornamental': 'Krzewy ozdobne',
+      'climber': 'Pnącza',
+      'groundcover': 'Rośliny okrywowe',
+      'fern': 'Paprocie',
+      'succulent': 'Sukulenty'
     };
     return translations[categoryCode] || categoryCode;
   };
