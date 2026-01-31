@@ -9,9 +9,7 @@ const fs = require('fs');
  * - original: oryginalne zdjęcie
  */
 const generateThumbnails = async (originalPath, filename) => {
-  const uploadDir = process.env.NODE_ENV === 'production'
-    ? '/var/www/garden-uploads'
-    : path.join(__dirname, '..', 'uploads');
+  const uploadDir = path.join(__dirname, '..', 'uploads');
 
   // Ustalamy katalogi dla różnych rozmiarów
   const thumbDir = path.join(uploadDir, 'thumbs');
@@ -68,9 +66,7 @@ const generateThumbnails = async (originalPath, filename) => {
  * Usuwa wszystkie wersje zdjęcia (original, thumb, medium)
  */
 const deleteAllVersions = (originalPath) => {
-  const uploadDir = process.env.NODE_ENV === 'production'
-    ? '/var/www/garden-uploads'
-    : path.join(__dirname, '..', 'uploads');
+  const uploadDir = path.join(__dirname, '..', 'uploads');
 
   const filename = path.basename(originalPath);
   const baseFilename = path.parse(filename).name;

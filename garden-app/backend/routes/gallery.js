@@ -77,62 +77,42 @@ router.get('/', auth, (req, res) => {
   });
 });
 
-// Get gallery statistics
-router.get('/stats', auth, (req, res) => {
-  const queries = {
-    total: `SELECT COUNT(*) as count FROM plant_photos WHERE user_id = ?`,
+// Get gallery statistics (optimized with parallel queries)
+router.get('/stats', auth, async (req, res) => {
+  const userId = req.user.id;
 
-    byPlant: `
-      SELECT bed_plant_name as plant, COUNT(*) as count
-      FROM plant_photos
-      WHERE user_id = ? AND bed_plant_name IS NOT NULL
-      GROUP BY bed_plant_name
-      ORDER BY count DESC
-      LIMIT 10
-    `,
-
-    byPlot: `
-      SELECT plot_name as plot, COUNT(*) as count
-      FROM plant_photos
-      WHERE user_id = ? AND plot_name IS NOT NULL
-      GROUP BY plot_name
-      ORDER BY count DESC
-    `,
-
-    deletedCount: `
-      SELECT COUNT(*) as count
-      FROM plant_photos
-      WHERE user_id = ? AND bed_id IS NULL
-    `
-  };
-
-  const stats = {};
-
-  // Total
-  db.get(queries.total, [req.user.id], (err, row) => {
-    if (err) return res.status(500).json({ error: 'Błąd serwera' });
-    stats.total = row.count;
-
-    // By plant
-    db.all(queries.byPlant, [req.user.id], (err, rows) => {
-      if (err) return res.status(500).json({ error: 'Błąd serwera' });
-      stats.byPlant = rows;
-
-      // By plot
-      db.all(queries.byPlot, [req.user.id], (err, rows) => {
-        if (err) return res.status(500).json({ error: 'Błąd serwera' });
-        stats.byPlot = rows;
-
-        // Deleted count
-        db.get(queries.deletedCount, [req.user.id], (err, row) => {
-          if (err) return res.status(500).json({ error: 'Błąd serwera' });
-          stats.deletedCount = row.count;
-
-          res.json(stats);
-        });
-      });
-    });
+  const dbGet = (sql, params) => new Promise((resolve, reject) => {
+    db.get(sql, params, (err, row) => err ? reject(err) : resolve(row));
   });
+
+  const dbAll = (sql, params) => new Promise((resolve, reject) => {
+    db.all(sql, params, (err, rows) => err ? reject(err) : resolve(rows));
+  });
+
+  try {
+    const [totalRow, byPlant, byPlot, deletedRow] = await Promise.all([
+      dbGet('SELECT COUNT(*) as count FROM plant_photos WHERE user_id = ?', [userId]),
+      dbAll(`SELECT bed_plant_name as plant, COUNT(*) as count
+             FROM plant_photos
+             WHERE user_id = ? AND bed_plant_name IS NOT NULL
+             GROUP BY bed_plant_name ORDER BY count DESC LIMIT 10`, [userId]),
+      dbAll(`SELECT plot_name as plot, COUNT(*) as count
+             FROM plant_photos
+             WHERE user_id = ? AND plot_name IS NOT NULL
+             GROUP BY plot_name ORDER BY count DESC`, [userId]),
+      dbGet('SELECT COUNT(*) as count FROM plant_photos WHERE user_id = ? AND bed_id IS NULL', [userId])
+    ]);
+
+    res.json({
+      total: totalRow.count,
+      byPlant,
+      byPlot,
+      deletedCount: deletedRow.count
+    });
+  } catch (err) {
+    console.error('Stats error:', err);
+    res.status(500).json({ error: 'Błąd serwera' });
+  }
 });
 
 // Update photo metadata (caption, bed, plot, tag, date)
@@ -385,7 +365,7 @@ router.post('/quick', auth, upload.single('photo'), [
             res.status(201).json({
               message: 'Zdjęcie dodane!',
               photoId: this.lastID,
-              photoPath: photoPath
+              photoPath: thumbnails.original
             });
           }
         );
@@ -422,7 +402,7 @@ router.post('/quick', auth, upload.single('photo'), [
             res.status(201).json({
               message: 'Zdjęcie dodane!',
               photoId: this.lastID,
-              photoPath: photoPath
+              photoPath: thumbnails.original
             });
           }
         );

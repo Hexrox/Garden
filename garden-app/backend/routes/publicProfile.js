@@ -688,9 +688,7 @@ router.post('/profile/photo', [auth, upload.single('photo')], (req, res) => {
       // Security: Use basename to prevent path traversal
       const safeFilename = path.basename(oldPhotoPath);
 
-      const uploadDir = process.env.NODE_ENV === 'production'
-        ? '/var/www/garden-uploads'
-        : path.join(__dirname, '..', 'uploads');
+      const uploadDir = path.join(__dirname, '..', 'uploads');
 
       const fullPath = path.join(uploadDir, safeFilename);
 
@@ -748,9 +746,7 @@ router.delete('/profile/photo', auth, (req, res) => {
     // Security: Use basename to prevent path traversal
     const safeFilename = path.basename(photoPath);
 
-    const uploadDir = process.env.NODE_ENV === 'production'
-      ? '/var/www/garden-uploads'
-      : path.join(__dirname, '..', 'uploads');
+    const uploadDir = path.join(__dirname, '..', 'uploads');
 
     const fullPath = path.join(uploadDir, safeFilename);
 

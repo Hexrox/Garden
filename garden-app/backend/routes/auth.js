@@ -302,6 +302,21 @@ router.put('/complete-onboarding', require('../middleware/auth'), (req, res) => 
   );
 });
 
+// Dismiss welcome card
+router.put('/dismiss-welcome', require('../middleware/auth'), (req, res) => {
+  db.run(
+    'UPDATE users SET welcome_card_dismissed = 1 WHERE id = ?',
+    [req.user.id],
+    function(err) {
+      if (err) {
+        console.error('Error dismissing welcome card:', err);
+        return res.status(500).json({ error: 'Błąd serwera' });
+      }
+      res.json({ message: 'OK' });
+    }
+  );
+});
+
 // ==========================================
 // PASSWORD RESET
 // ==========================================

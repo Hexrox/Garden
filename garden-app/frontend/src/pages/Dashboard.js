@@ -70,6 +70,8 @@ const Dashboard = () => {
         }
       }
 
+      const welcomeDismissed = profileRes.data.welcome_card_dismissed === 1;
+
       if (!completed && !hasData) {
         // New user without data - show onboarding
         setShowOnboarding(true);
@@ -82,13 +84,10 @@ const Dashboard = () => {
         } catch {
           // Ignore error silently
         }
-        // Show welcome card for existing users
-        const dismissed = localStorage.getItem('welcomeCardDismissed');
-        setShowWelcomeCard(!dismissed);
+        setShowWelcomeCard(!welcomeDismissed);
       } else {
         // Onboarding completed - show welcome card if not dismissed
-        const dismissed = localStorage.getItem('welcomeCardDismissed');
-        setShowWelcomeCard(!dismissed);
+        setShowWelcomeCard(!welcomeDismissed);
       }
     } catch (error) {
       console.error('Error checking onboarding status:', error);
@@ -123,9 +122,13 @@ const Dashboard = () => {
     setShowWelcomeCard(true);
   };
 
-  const handleWelcomeCardDismiss = () => {
-    localStorage.setItem('welcomeCardDismissed', 'true');
+  const handleWelcomeCardDismiss = async () => {
     setShowWelcomeCard(false);
+    try {
+      await axios.put('/api/auth/dismiss-welcome');
+    } catch {
+      // Ignore
+    }
   };
 
   const handleShowTour = () => {

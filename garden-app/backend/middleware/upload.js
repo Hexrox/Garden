@@ -4,11 +4,8 @@ const fs = require('fs');
 const crypto = require('crypto');
 
 // Create uploads directory if it doesn't exist
-// Production: use /var/www/garden-uploads (served by nginx)
-// Development: use local uploads directory
-const uploadDir = process.env.NODE_ENV === 'production'
-  ? '/var/www/garden-uploads'
-  : path.join(__dirname, '..', 'uploads');
+// Always use /app/uploads - mounted as volume in Docker
+const uploadDir = path.join(__dirname, '..', 'uploads');
 
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });

@@ -19,9 +19,9 @@ const BASIC_ACTION_TYPES = [
 // Typy akcji - pielęgnacja kwiatów
 const FLOWER_CARE_ACTION_TYPES = [
   { type: 'dig_up', label: 'Wykopać', icon: '⛏️', requiresPlant: true },
-  { type: 'protect', label: 'Zabezpieczyć', icon: '❄️', requiresPlant: true },
+  { type: 'protect', label: 'Okryć', icon: '❄️', requiresPlant: true },
   { type: 'propagate', label: 'Podzielić', icon: '🌿', requiresPlant: true },
-  { type: 'deadhead', label: 'Usunąć przekwitłe', icon: '🥀', requiresPlant: false }
+  { type: 'deadhead', label: 'Przekwitłe', icon: '🥀', requiresPlant: false }
 ];
 
 // Wszystkie typy akcji
@@ -163,15 +163,15 @@ const PlanForm = ({ isOpen, onClose, onSuccess, editPlan, plots, prefillData }) 
 
   return (
     <div
-      className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-end sm:items-center justify-center sm:p-4"
       onClick={onClose}
     >
       <div
-        className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto"
+        className="bg-white dark:bg-gray-800 rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-lg max-h-[95vh] sm:max-h-[85vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Nagłówek */}
-        <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between">
+        <div className="sticky top-0 z-10 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between shadow-sm">
           <h2 className="text-xl font-bold text-gray-900 dark:text-white">
             {editPlan ? 'Edytuj plan' : 'Nowy plan'}
           </h2>
@@ -190,20 +190,20 @@ const PlanForm = ({ isOpen, onClose, onSuccess, editPlan, plots, prefillData }) 
               Typ akcji
             </label>
             {/* Podstawowe akcje */}
-            <div className="grid grid-cols-4 gap-2 mb-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2 gap-3 mb-3">
               {BASIC_ACTION_TYPES.map(action => (
                 <button
                   key={action.type}
                   type="button"
                   onClick={() => handleChange('action_type', action.type)}
-                  className={`flex flex-col items-center p-3 rounded-xl border-2 transition-all ${
+                  className={`flex flex-col items-center py-4 px-2 sm:p-3 rounded-xl border-2 transition-all min-h-[80px] sm:min-h-0 ${
                     formData.action_type === action.type
                       ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
                       : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
                   }`}
                 >
-                  <span className="text-2xl mb-1">{action.icon}</span>
-                  <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                  <span className="text-3xl sm:text-2xl mb-1">{action.icon}</span>
+                  <span className="text-sm sm:text-xs font-medium text-gray-700 dark:text-gray-300">
                     {action.label}
                   </span>
                 </button>
@@ -211,20 +211,20 @@ const PlanForm = ({ isOpen, onClose, onSuccess, editPlan, plots, prefillData }) 
             </div>
             {/* Pielęgnacja kwiatów */}
             <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Pielęgnacja kwiatów:</p>
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2 gap-3">
               {FLOWER_CARE_ACTION_TYPES.map(action => (
                 <button
                   key={action.type}
                   type="button"
                   onClick={() => handleChange('action_type', action.type)}
-                  className={`flex flex-col items-center p-3 rounded-xl border-2 transition-all ${
+                  className={`flex flex-col items-center py-4 px-2 sm:p-3 rounded-xl border-2 transition-all min-h-[80px] sm:min-h-0 ${
                     formData.action_type === action.type
                       ? 'border-pink-500 bg-pink-50 dark:bg-pink-900/20'
                       : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
                   }`}
                 >
-                  <span className="text-2xl mb-1">{action.icon}</span>
-                  <span className="text-xs font-medium text-gray-700 dark:text-gray-300 text-center leading-tight">
+                  <span className="text-3xl sm:text-2xl mb-1">{action.icon}</span>
+                  <span className="text-sm sm:text-xs font-medium text-gray-700 dark:text-gray-300 text-center leading-tight">
                     {action.label}
                   </span>
                 </button>
@@ -423,7 +423,7 @@ const PlanForm = ({ isOpen, onClose, onSuccess, editPlan, plots, prefillData }) 
           </div>
 
           {/* Przyciski */}
-          <div className="flex gap-3 pt-4">
+          <div className="flex gap-3 pt-4 pb-4">
             <button
               type="button"
               onClick={onClose}
