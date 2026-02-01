@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { ToastProvider } from './context/ToastContext';
 import Layout from './components/Layout';
+import AdminLayout from './components/AdminLayout';
 import ErrorBoundary from './components/ErrorBoundary';
 import PageErrorBoundary from './components/PageErrorBoundary';
 import CookieConsent from './components/CookieConsent';
@@ -46,7 +47,7 @@ import GlobalSearch from './components/GlobalSearch';
 
 // Protected Route Component
 const ProtectedRoute = ({ children, forceRender }) => {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading, user } = useAuth();
 
   // If loading stuck for too long, force render was triggered from AppRoutes
   if (loading && !forceRender) {
@@ -59,12 +60,20 @@ const ProtectedRoute = ({ children, forceRender }) => {
     return <Navigate to="/login" />;
   }
 
-  return isAuthenticated ? <Layout><PageErrorBoundary>{children}</PageErrorBoundary></Layout> : <Navigate to="/login" />;
+  if (!isAuthenticated) {
+    return <Navigate to="/login" />;
+  }
+
+  // Użyj AdminLayout dla konta admin
+  const isAdmin = user?.role === 'admin' || user?.username === 'admin';
+  const LayoutComponent = isAdmin ? AdminLayout : Layout;
+
+  return <LayoutComponent><PageErrorBoundary>{children}</PageErrorBoundary></LayoutComponent>;
 };
 
 // Public Route Component (redirect to dashboard if already logged in)
 const PublicRoute = ({ children, forceRender }) => {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading, user } = useAuth();
 
   // If loading stuck for too long, force render was triggered from AppRoutes
   if (loading && !forceRender) {
@@ -77,7 +86,25 @@ const PublicRoute = ({ children, forceRender }) => {
     return children;
   }
 
-  return !isAuthenticated ? children : <Navigate to="/dashboard" />;
+  if (!isAuthenticated) {
+    return children;
+  }
+
+  // Admin trafia na /admin, reszta na /dashboard
+  const isAdmin = user?.role === 'admin' || user?.username === 'admin';
+  return <Navigate to={isAdmin ? '/admin' : '/dashboard'} />;
+};
+
+// Default redirect component
+const DefaultRedirect = () => {
+  const { isAuthenticated, user } = useAuth();
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  const isAdmin = user?.role === 'admin' || user?.username === 'admin';
+  return <Navigate to={isAdmin ? '/admin' : '/dashboard'} replace />;
 };
 
 function AppRoutes() {
@@ -370,8 +397,8 @@ function AppRoutes() {
         <Route path="/pomoc" element={<Help />} />
         <Route path="/g/:username" element={<PublicProfile />} />
 
-        {/* Default redirect */}
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        {/* Default redirect - admin trafia na /admin, reszta na /dashboard */}
+        <Route path="/" element={<DefaultRedirect />} />
 
         {/* 404 - Must be last */}
         <Route path="*" element={<NotFound />} />

@@ -53,7 +53,8 @@ const PlantSelector = ({ value, onChange, plantedDate, onHarvestDateCalculated }
     const term = searchTerm.toLowerCase();
     let filtered = allPlants.filter(plant =>
       plant.name.toLowerCase().includes(term) ||
-      (plant.display_name && plant.display_name.toLowerCase().includes(term))
+      (plant.display_name && plant.display_name.toLowerCase().includes(term)) ||
+      (plant.latin_name && plant.latin_name.toLowerCase().includes(term))
     );
     if (selectedCategory !== 'all') {
       filtered = filtered.filter(plant => plant.category === selectedCategory);

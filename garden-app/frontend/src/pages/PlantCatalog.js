@@ -213,7 +213,7 @@ const PlantCatalog = () => {
                         {category}
                       </h3>
                       <p className="text-sm text-gray-500 dark:text-gray-400">
-                        {categoryPlants.length} {categoryPlants.length === 1 ? 'roślina' : 'roślin'}
+                        {categoryPlants.length} {categoryPlants.length === 1 ? 'roślina' : (categoryPlants.length >= 2 && categoryPlants.length <= 4) ? 'rośliny' : 'roślin'}
                       </p>
                     </div>
                   </div>
@@ -225,10 +225,10 @@ const PlantCatalog = () => {
                 </button>
 
                 {/* Category Content */}
-                {expandedCategories.includes(category) && (
+                {(expandedCategories.includes(category) || searchTerm.length > 0) && (
                   <div className="border-t border-gray-200 dark:border-gray-700">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
-                      {categoryPlants.map((plant) => (
+                      {[...categoryPlants].sort((a, b) => (a.display_name || a.name).localeCompare(b.display_name || b.name, 'pl')).map((plant) => (
                         <PlantCard
                           key={plant.id}
                           plant={plant}
@@ -309,7 +309,14 @@ const PlantCard = ({ plant, onClick }) => {
         </div>
       )}
 
-      <div className="flex items-start justify-between mb-2 min-w-0">
+      <div className="flex items-start gap-3 mb-2 min-w-0">
+        {plant.photo_thumb && (
+          <img
+            src={(process.env.REACT_APP_API_URL || '') + plant.photo_thumb}
+            alt=""
+            className="w-12 h-12 rounded-lg object-cover flex-shrink-0"
+          />
+        )}
         <div className="flex-1 min-w-0">
           <h4 className="font-semibold text-gray-900 dark:text-white text-sm leading-snug break-words">
             {plant.display_name || plant.name}

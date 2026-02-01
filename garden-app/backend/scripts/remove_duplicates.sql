@@ -1,0 +1,30 @@
+-- Usuwanie duplikatów roślin
+-- Zostawiamy wpisy z niższym ID (zwykle pełniejsze dane)
+
+-- Potrójne duplikaty - zostawiamy pierwszy
+DELETE FROM plants WHERE id IN (788, 951);  -- Szpinak 'Matador' (zostawiamy 685)
+DELETE FROM plants WHERE id IN (703, 785);  -- Sałata lodowa 'Great Lakes' (zostawiamy 491)
+
+-- Podwójne duplikaty - zostawiamy niższy ID
+DELETE FROM plants WHERE id = 947;  -- Szczypiorek 'Staro' (zostawiamy 721)
+DELETE FROM plants WHERE id = 986;  -- Szałwia lekarska (zostawiamy 932)
+DELETE FROM plants WHERE id = 773;  -- Seler korzeniowy 'Diamant' (zostawiamy 709)
+DELETE FROM plants WHERE id = 821;  -- Rzepa 'Golden Ball' (zostawiamy 713)
+DELETE FROM plants WHERE id = 772;  -- Pasternak 'Halblange' (zostawiamy 712)
+DELETE FROM plants WHERE id = 692;  -- Papryka 'Jalapeno' (zostawiamy 352)
+DELETE FROM plants WHERE id = 921;  -- Orzech włoski 'Broadview' (zostawiamy 376)
+DELETE FROM plants WHERE id = 927;  -- Nektarynka 'Fantasia' (zostawiamy 373)
+DELETE FROM plants WHERE id = 507;  -- Nachyłek 'Moonbeam' (zostawiamy 462)
+DELETE FROM plants WHERE id = 939;  -- Mięta pieprzowa (zostawiamy 426)
+DELETE FROM plants WHERE id = 983;  -- Miskant chiński 'Gracillimus' (zostawiamy 492)
+DELETE FROM plants WHERE id = 868;  -- Malina 'Polka' (zostawiamy 420)
+DELETE FROM plants WHERE id = 519;  -- Krwawnik 'Moonshine' (zostawiamy 457)
+DELETE FROM plants WHERE id = 852;  -- Koper włoski 'Florence' (zostawiamy 726)
+DELETE FROM plants WHERE id = 803;  -- Karczoch 'Green Globe' (zostawiamy 729)
+DELETE FROM plants WHERE id = 501;  -- Jeżówka 'Magnus' (zostawiamy 442)
+DELETE FROM plants WHERE id = 955;  -- Estragon francuski (zostawiamy 757)
+DELETE FROM plants WHERE id = 786;  -- Endywia 'Escariol' (zostawiamy 731)
+DELETE FROM plants WHERE id = 798;  -- Dynia piżmowa 'Butternut' (zostawiamy 688)
+DELETE FROM plants WHERE id = 799;  -- Dynia olbrzymia 'Atlantic Giant' (zostawiamy 689)
+DELETE FROM plants WHERE id = 802;  -- Chrzan pospolity (zostawiamy 740)
+DELETE FROM plants WHERE id = 938;  -- Bazylia cytrynowa (zostawiamy 763)
