@@ -153,6 +153,38 @@ const emailTemplates = {
     `
   }),
 
+  newRegistration: (username, email) => ({
+    subject: `Garden App - Nowa rejestracja: ${escapeHtml(username)}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background: linear-gradient(135deg, #16a34a 0%, #059669 100%); padding: 30px; text-align: center;">
+          <h1 style="color: white; margin: 0;">🌱 Garden App</h1>
+        </div>
+
+        <div style="padding: 30px; background: #f9fafb;">
+          <h2 style="color: #1f2937;">Nowa rejestracja</h2>
+          <p style="color: #4b5563; line-height: 1.6;">
+            Nowy użytkownik zarejestrował się w Garden App:
+          </p>
+
+          <div style="background: #dbeafe; border-left: 4px solid #3b82f6; padding: 15px; margin: 20px 0;">
+            <p style="color: #1e40af; margin: 0;">
+              <strong>Nazwa:</strong> ${escapeHtml(username)}<br>
+              <strong>Email:</strong> ${escapeHtml(email)}<br>
+              <strong>Data:</strong> ${new Date().toLocaleString('pl-PL', { timeZone: 'Europe/Warsaw' })}
+            </p>
+          </div>
+        </div>
+
+        <div style="background: #1f2937; padding: 20px; text-align: center;">
+          <p style="color: #9ca3af; margin: 0; font-size: 12px;">
+            © 2026 Garden App
+          </p>
+        </div>
+      </div>
+    `
+  }),
+
   accountRestored: (username) => ({
     subject: 'Garden App - Konto przywrócone!',
     html: `
@@ -225,5 +257,8 @@ module.exports = {
     sendEmail(email, emailTemplates.accountDeleted(restoreLink, username, deleteDate)),
 
   sendAccountRestoredEmail: (email, username) =>
-    sendEmail(email, emailTemplates.accountRestored(username))
+    sendEmail(email, emailTemplates.accountRestored(username)),
+
+  sendNewRegistrationNotification: (username, email) =>
+    sendEmail('hexan@tlen.pl', emailTemplates.newRegistration(username, email))
 };

@@ -15,7 +15,8 @@ const {
   sendPasswordResetEmail,
   sendEmailVerification,
   sendAccountDeletedEmail,
-  sendAccountRestoredEmail
+  sendAccountRestoredEmail,
+  sendNewRegistrationNotification
 } = require('../utils/emailService');
 
 // Rate limiter for login and register (prevent brute force)
@@ -101,6 +102,11 @@ router.post('/register',
                   console.error('⚠️  ACTION REQUIRED: User', username, '(ID:', userId, ') created but verification email failed');
                 }
               }
+            );
+
+            // Fire-and-forget: powiadom admina o nowej rejestracji
+            sendNewRegistrationNotification(username, email).catch(err =>
+              console.error('❌ Failed to send registration notification:', err)
             );
 
             res.status(201).json({
