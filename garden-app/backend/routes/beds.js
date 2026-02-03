@@ -470,6 +470,96 @@ router.put('/beds/:id/harvest', [auth, upload.single('harvest_photo')], (req, re
   );
 });
 
+// Batch create beds - plant same species in multiple plots/rows
+router.post('/beds/batch', auth, async (req, res) => {
+  const { plant_name, plant_variety, planted_date, note, plantings } = req.body;
+
+  if (!plantings || !Array.isArray(plantings) || plantings.length === 0) {
+    return res.status(400).json({ error: 'Brak danych o sadzeniu' });
+  }
+
+  if (!plant_name) {
+    return res.status(400).json({ error: 'Nazwa rośliny jest wymagana' });
+  }
+
+  // Sanitize inputs
+  const sanitizedPlantName = sanitizeInput(plant_name);
+  const sanitizedVariety = sanitizeInput(plant_variety);
+  const sanitizedNote = sanitizeInput(note);
+
+  const results = [];
+  const errors = [];
+
+  for (const planting of plantings) {
+    const { plot_id, row_number } = planting;
+
+    if (!plot_id || !row_number) {
+      errors.push({ plot_id, row_number, error: 'Brak plot_id lub row_number' });
+      continue;
+    }
+
+    try {
+      // Verify user owns this plot
+      const plot = await new Promise((resolve, reject) => {
+        db.get('SELECT * FROM plots WHERE id = ? AND user_id = ?', [plot_id, req.user.id], (err, row) => {
+          if (err) reject(err);
+          else resolve(row);
+        });
+      });
+
+      if (!plot) {
+        errors.push({ plot_id, row_number, error: 'Poletko nie znalezione lub brak dostępu' });
+        continue;
+      }
+
+      // Check if row exists
+      const existingBed = await new Promise((resolve, reject) => {
+        db.get('SELECT id FROM beds WHERE plot_id = ? AND row_number = ?', [plot_id, row_number], (err, row) => {
+          if (err) reject(err);
+          else resolve(row);
+        });
+      });
+
+      if (existingBed) {
+        errors.push({ plot_id, row_number, error: `Rząd ${row_number} jest już zajęty` });
+        continue;
+      }
+
+      // Calculate expected harvest date
+      let expectedHarvestDate = null;
+      if (sanitizedPlantName && planted_date) {
+        const prediction = calculateHarvestDate(sanitizedPlantName, planted_date);
+        if (prediction) {
+          expectedHarvestDate = prediction.expectedDate;
+        }
+      }
+
+      // Insert bed
+      const insertResult = await new Promise((resolve, reject) => {
+        db.run(
+          `INSERT INTO beds (plot_id, row_number, plant_name, plant_variety, planted_date, note, expected_harvest_date)
+           VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          [plot_id, row_number, sanitizedPlantName, sanitizedVariety, planted_date, sanitizedNote, expectedHarvestDate],
+          function(err) {
+            if (err) reject(err);
+            else resolve({ id: this.lastID, plot_id, row_number });
+          }
+        );
+      });
+
+      results.push(insertResult);
+    } catch (err) {
+      errors.push({ plot_id, row_number, error: err.message || 'Błąd bazy danych' });
+    }
+  }
+
+  res.json({
+    message: `Posadzono ${results.length} z ${plantings.length} grządek`,
+    created: results,
+    errors: errors.length > 0 ? errors : undefined
+  });
+});
+
 // Delete bed
 router.delete('/beds/:id', auth, (req, res) => {
   db.run(

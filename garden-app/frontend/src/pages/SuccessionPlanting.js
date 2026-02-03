@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import axios from '../config/axios';
+import { Calendar, List, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const SuccessionPlanting = () => {
   const [reminders, setReminders] = useState([]);
@@ -14,6 +15,8 @@ const SuccessionPlanting = () => {
     bed_id: ''
   });
   const [beds, setBeds] = useState([]);
+  const [viewMode, setViewMode] = useState('table'); // 'table' or 'timeline'
+  const [timelineMonth, setTimelineMonth] = useState(new Date());
 
   useEffect(() => {
     fetchReminders();
@@ -93,8 +96,13 @@ const SuccessionPlanting = () => {
     setShowForm(true);
   };
 
+  const [deleteConfirm, setDeleteConfirm] = useState({ open: false, id: null });
+
   const handleDelete = async (id) => {
-    if (!window.confirm('Czy na pewno usunąć to przypomnienie?')) return;
+    setDeleteConfirm({ open: true, id });
+  };
+
+  const executeDelete = async (id) => {
     try {
       await axios.delete(`/api/succession/${id}`);
       setMessage({ type: 'success', text: 'Przypomnienie usunięte!' });
@@ -268,6 +276,34 @@ const SuccessionPlanting = () => {
         </div>
       )}
 
+      {/* View Mode Toggle */}
+      {reminders.length > 0 && (
+        <div className="flex gap-2 justify-end">
+          <button
+            onClick={() => setViewMode('table')}
+            className={`px-3 py-2 rounded-lg flex items-center gap-2 text-sm font-medium transition-colors ${
+              viewMode === 'table'
+                ? 'bg-green-600 text-white'
+                : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
+            }`}
+          >
+            <List className="w-4 h-4" />
+            Lista
+          </button>
+          <button
+            onClick={() => setViewMode('timeline')}
+            className={`px-3 py-2 rounded-lg flex items-center gap-2 text-sm font-medium transition-colors ${
+              viewMode === 'timeline'
+                ? 'bg-green-600 text-white'
+                : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
+            }`}
+          >
+            <Calendar className="w-4 h-4" />
+            Kalendarz
+          </button>
+        </div>
+      )}
+
       {reminders.length === 0 ? (
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-12 text-center transition-colors">
           <p className="text-4xl mb-4">🌱</p>
@@ -285,6 +321,13 @@ const SuccessionPlanting = () => {
             + Dodaj pierwsze przypomnienie
           </button>
         </div>
+      ) : viewMode === 'timeline' ? (
+        <SuccessionTimeline
+          reminders={reminders}
+          currentMonth={timelineMonth}
+          onMonthChange={setTimelineMonth}
+          onMarkPlanted={handleMarkPlanted}
+        />
       ) : (
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden transition-colors">
           <div className="overflow-x-auto">
@@ -384,6 +427,207 @@ const SuccessionPlanting = () => {
           </div>
         </div>
       )}
+      {/* Modal potwierdzenia usunięcia */}
+      {deleteConfirm.open && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={() => setDeleteConfirm({ open: false, id: null })}>
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-sm w-full shadow-xl" onClick={e => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Usuń przypomnienie</h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">Czy na pewno usunąć to przypomnienie?</p>
+            <div className="flex gap-3 justify-end">
+              <button onClick={() => setDeleteConfirm({ open: false, id: null })} className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">Anuluj</button>
+              <button onClick={() => { executeDelete(deleteConfirm.id); setDeleteConfirm({ open: false, id: null }); }} className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors">Usuń</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Timeline/Gantt visualization component
+const SuccessionTimeline = ({ reminders, currentMonth, onMonthChange, onMarkPlanted }) => {
+  // Generate dates for the current month view (6 weeks to show full month with overlap)
+  const getDaysInView = useMemo(() => {
+    const startOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
+    const endOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
+
+    // Start from Monday of the week containing the 1st
+    const startDay = new Date(startOfMonth);
+    startDay.setDate(startDay.getDate() - ((startDay.getDay() + 6) % 7));
+
+    // End on Sunday of the week containing the last day
+    const endDay = new Date(endOfMonth);
+    endDay.setDate(endDay.getDate() + (7 - endDay.getDay()) % 7);
+
+    const days = [];
+    const current = new Date(startDay);
+    while (current <= endDay) {
+      days.push(new Date(current));
+      current.setDate(current.getDate() + 1);
+    }
+    return days;
+  }, [currentMonth]);
+
+  // Generate planting events for each reminder
+  const getPlantingEvents = useMemo(() => {
+    const events = [];
+    const viewStart = getDaysInView[0];
+    const viewEnd = getDaysInView[getDaysInView.length - 1];
+
+    reminders.forEach(reminder => {
+      if (!reminder.is_active) return;
+
+      // Start from last planted date and generate future dates
+      let plantingDate = new Date(reminder.last_planted_date);
+
+      // Go forward in intervals
+      while (plantingDate <= viewEnd) {
+        if (plantingDate >= viewStart) {
+          events.push({
+            id: reminder.id,
+            plant_name: reminder.plant_name,
+            date: new Date(plantingDate),
+            interval_days: reminder.interval_days,
+            isPast: plantingDate < new Date(new Date().setHours(0,0,0,0))
+          });
+        }
+        plantingDate = new Date(plantingDate);
+        plantingDate.setDate(plantingDate.getDate() + parseInt(reminder.interval_days));
+      }
+    });
+
+    return events;
+  }, [reminders, getDaysInView]);
+
+  // Group events by date
+  const eventsByDate = useMemo(() => {
+    const map = new Map();
+    getPlantingEvents.forEach(event => {
+      const dateKey = event.date.toISOString().split('T')[0];
+      if (!map.has(dateKey)) {
+        map.set(dateKey, []);
+      }
+      map.get(dateKey).push(event);
+    });
+    return map;
+  }, [getPlantingEvents]);
+
+  const monthNames = ['Styczeń', 'Luty', 'Marzec', 'Kwiecień', 'Maj', 'Czerwiec',
+    'Lipiec', 'Sierpień', 'Wrzesień', 'Październik', 'Listopad', 'Grudzień'];
+
+  const dayNames = ['Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'So', 'Nd'];
+
+  const prevMonth = () => {
+    onMonthChange(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1));
+  };
+
+  const nextMonth = () => {
+    onMonthChange(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1));
+  };
+
+  const today = new Date().toISOString().split('T')[0];
+
+  // Color palette for plants
+  const plantColors = useMemo(() => {
+    const colors = [
+      'bg-green-500', 'bg-blue-500', 'bg-purple-500', 'bg-amber-500',
+      'bg-pink-500', 'bg-teal-500', 'bg-indigo-500', 'bg-orange-500'
+    ];
+    const map = new Map();
+    reminders.forEach((r, i) => {
+      map.set(r.plant_name, colors[i % colors.length]);
+    });
+    return map;
+  }, [reminders]);
+
+  return (
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden transition-colors">
+      {/* Header with navigation */}
+      <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+        <button
+          onClick={prevMonth}
+          className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+        >
+          <ChevronLeft className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+        </button>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+          {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
+        </h3>
+        <button
+          onClick={nextMonth}
+          className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+        >
+          <ChevronRight className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+        </button>
+      </div>
+
+      {/* Legend */}
+      <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700 flex flex-wrap gap-2">
+        {reminders.filter(r => r.is_active).map(r => (
+          <div key={r.id} className="flex items-center gap-1.5 text-xs">
+            <div className={`w-3 h-3 rounded ${plantColors.get(r.plant_name)}`} />
+            <span className="text-gray-700 dark:text-gray-300">{r.plant_name}</span>
+            <span className="text-gray-400">({r.interval_days}d)</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Day headers */}
+      <div className="grid grid-cols-7 border-b border-gray-200 dark:border-gray-700">
+        {dayNames.map(day => (
+          <div key={day} className="p-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-900">
+            {day}
+          </div>
+        ))}
+      </div>
+
+      {/* Calendar grid */}
+      <div className="grid grid-cols-7">
+        {getDaysInView.map((day, index) => {
+          const dateKey = day.toISOString().split('T')[0];
+          const dayEvents = eventsByDate.get(dateKey) || [];
+          const isCurrentMonth = day.getMonth() === currentMonth.getMonth();
+          const isToday = dateKey === today;
+
+          return (
+            <div
+              key={index}
+              className={`min-h-[80px] p-1 border-r border-b border-gray-100 dark:border-gray-700 ${
+                !isCurrentMonth ? 'bg-gray-50 dark:bg-gray-900/50' : ''
+              } ${isToday ? 'bg-green-50 dark:bg-green-900/20' : ''}`}
+            >
+              <div className={`text-xs font-medium mb-1 ${
+                isToday
+                  ? 'text-green-700 dark:text-green-400'
+                  : isCurrentMonth
+                  ? 'text-gray-700 dark:text-gray-300'
+                  : 'text-gray-400 dark:text-gray-600'
+              }`}>
+                {day.getDate()}
+              </div>
+              <div className="space-y-0.5">
+                {dayEvents.map((event, i) => (
+                  <div
+                    key={`${event.id}-${i}`}
+                    className={`text-xs px-1.5 py-0.5 rounded ${plantColors.get(event.plant_name)} text-white truncate cursor-pointer hover:opacity-80 transition-opacity ${
+                      event.isPast ? 'opacity-50' : ''
+                    }`}
+                    title={`${event.plant_name} - co ${event.interval_days} dni`}
+                    onClick={() => !event.isPast && onMarkPlanted(event.id)}
+                  >
+                    {event.plant_name}
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Help text */}
+      <div className="p-3 bg-gray-50 dark:bg-gray-900 text-xs text-gray-500 dark:text-gray-400 text-center">
+        Kliknij na sadzenie aby oznaczyć jako wykonane
+      </div>
     </div>
   );
 };

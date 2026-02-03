@@ -1270,6 +1270,72 @@ db.serialize(() => {
   db.run('CREATE INDEX IF NOT EXISTS idx_planned_actions_type ON planned_actions(action_type)');
   db.run('CREATE INDEX IF NOT EXISTS idx_planned_actions_parent ON planned_actions(parent_plan_id)');
 
+  // ==========================================
+  // USER FAVORITE PLANTS
+  // ==========================================
+
+  // User favorite plants table
+  db.run(`CREATE TABLE IF NOT EXISTS user_favorite_plants (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    plant_id INTEGER NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY(plant_id) REFERENCES plants(id) ON DELETE CASCADE,
+    UNIQUE(user_id, plant_id)
+  )`);
+
+  // Indexes for favorites
+  db.run('CREATE INDEX IF NOT EXISTS idx_user_favorite_plants_user_id ON user_favorite_plants(user_id)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_user_favorite_plants_plant_id ON user_favorite_plants(plant_id)');
+
+  // ==========================================
+  // GARDEN PLANS (Planning Mode)
+  // ==========================================
+
+  // Garden plans - draft plans for plots (not yet planted)
+  db.run(`CREATE TABLE IF NOT EXISTS garden_plans (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    plot_id INTEGER,
+    name TEXT NOT NULL,
+    description TEXT,
+    year INTEGER DEFAULT (strftime('%Y', 'now')),
+    status TEXT DEFAULT 'draft' CHECK(status IN ('draft', 'active', 'archived')),
+    width_cm INTEGER,
+    length_cm INTEGER,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY(plot_id) REFERENCES plots(id) ON DELETE SET NULL
+  )`);
+
+  // Garden plan items - plants within a plan
+  db.run(`CREATE TABLE IF NOT EXISTS garden_plan_items (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    plan_id INTEGER NOT NULL,
+    plant_id INTEGER,
+    plant_name TEXT NOT NULL,
+    quantity INTEGER DEFAULT 1,
+    position_x INTEGER,
+    position_y INTEGER,
+    width_cm INTEGER,
+    height_cm INTEGER,
+    row_number INTEGER,
+    notes TEXT,
+    planned_date DATE,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(plan_id) REFERENCES garden_plans(id) ON DELETE CASCADE,
+    FOREIGN KEY(plant_id) REFERENCES plants(id) ON DELETE SET NULL
+  )`);
+
+  // Indexes for garden plans
+  db.run('CREATE INDEX IF NOT EXISTS idx_garden_plans_user_id ON garden_plans(user_id)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_garden_plans_plot_id ON garden_plans(plot_id)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_garden_plans_status ON garden_plans(status)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_garden_plan_items_plan_id ON garden_plan_items(plan_id)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_garden_plan_items_plant_id ON garden_plan_items(plant_id)');
+
   console.log('✅ Database tables and indexes created successfully');
 });
 

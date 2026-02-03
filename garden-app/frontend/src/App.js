@@ -31,6 +31,7 @@ import Profile from './pages/Profile';
 import PlantCatalog from './pages/PlantCatalog';
 import SuccessionPlanting from './pages/SuccessionPlanting';
 import Planner from './pages/Planner';
+import GardenPlanner from './pages/GardenPlanner';
 import Tasks from './pages/Tasks';
 import Calendar from './pages/Calendar';
 import Analytics from './pages/Analytics';
@@ -316,6 +317,14 @@ function AppRoutes() {
           element={
             <ProtectedRoute forceRender={forceRender}>
               <Planner />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/garden-planner"
+          element={
+            <ProtectedRoute forceRender={forceRender}>
+              <GardenPlanner />
             </ProtectedRoute>
           }
         />

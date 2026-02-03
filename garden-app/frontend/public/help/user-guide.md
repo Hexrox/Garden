@@ -12,9 +12,10 @@
 4. [Pielęgnacja kwiatów i bylin](#pielegnacja-kwiatow)
 5. [Strefy mrozoodporności](#strefy-mrozoodpornosci)
 6. [Automatyzacje i zadania](#automatyzacje)
-7. [FAQ - Najczęstsze pytania](#faq)
-8. [Zaawansowane funkcje](#zaawansowane-funkcje)
-9. [Porady ogrodnicze](#porady-ogrodnicze)
+7. [Szybkie wyszukiwanie (Ctrl+K)](#global-search)
+8. [FAQ - Najczęstsze pytania](#faq)
+9. [Zaawansowane funkcje](#zaawansowane-funkcje)
+10. [Porady ogrodnicze](#porady-ogrodnicze)
    - Sezonowy harmonogram
    - Złote zasady podlewania
    - Najczęstsze błędy
@@ -413,6 +414,45 @@ Do 17 czerwca: Badge ⚠️ przy grządce
 
 ---
 
+## Szybkie wyszukiwanie (Global Search) {#global-search}
+
+### Skrót klawiszowy: Ctrl+K (lub Cmd+K na Mac)
+
+**Global Search** to potężne narzędzie do szybkiego wyszukiwania w całej aplikacji.
+
+### Jak używać?
+
+1. Naciśnij **Ctrl+K** (Windows/Linux) lub **Cmd+K** (Mac) z dowolnego miejsca w aplikacji
+2. Wpisz szukaną frazę
+3. Wybierz wynik za pomocą strzałek ↑↓ i Enter
+
+### Co możesz znaleźć?
+
+| Kategoria | Przykłady |
+|-----------|-----------|
+| **Rośliny** | "pomidor", "róża", "bazylia" |
+| **Poletka** | "balkon", "szklarnia" |
+| **Grządki** | "rząd 1", "pomidory malinowe" |
+| **Strony** | "planer", "zadania", "galeria" |
+| **Akcje** | "dodaj grządkę", "nowy oprysk" |
+
+### Porady
+
+- Wpisuj pierwsze litery - wyszukiwanie działa w czasie rzeczywistym
+- Wyniki są pogrupowane według kategorii
+- Kliknięcie wyniku przenosi bezpośrednio do strony lub elementu
+- **Escape** zamyka wyszukiwarkę
+
+### Inne skróty klawiszowe
+
+| Skrót | Akcja |
+|-------|-------|
+| Ctrl+K | Otwórz Global Search |
+| Escape | Zamknij okno/modal |
+| Enter | Potwierdź wybór |
+
+---
+
 ## FAQ - Najczęstsze pytania {#faq}
 
 ### Planer
@@ -774,5 +814,5 @@ Siej co 2-3 tygodnie: sałata, rzodkiewka, szpinak → zbiory przez całe lato!
 
 ---
 
-*Ostatnia aktualizacja: 27.01.2026*
-*Wersja: 2.3.0 - Rozszerzone porady ogrodnicze, Planer, Pielęgnacja kwiatów*
+*Ostatnia aktualizacja: 03.02.2026*
+*Wersja: 2.4.0 - Zaawansowane filtry katalogu, ulubione rośliny, Global Search*

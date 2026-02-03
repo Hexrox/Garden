@@ -40,6 +40,7 @@ const adminImagesRoutes = require('./routes/admin-images');
 const adminPlantsRoutes = require('./routes/admin-plants');
 const photoReviewsRoutes = require('./routes/photo-reviews');
 const plannerRoutes = require('./routes/planner');
+const gardenPlansRoutes = require('./routes/garden-plans');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -275,6 +276,7 @@ app.use('/api/plant-problems', plantProblemsRoutes);
 app.use('/api/care', careRoutes);
 app.use('/api/fertilizers', fertilizersRoutes);
 app.use('/api/planner', plannerRoutes);
+app.use('/api/garden-plans', gardenPlansRoutes);
 
 // 404 handler
 app.use((req, res) => {

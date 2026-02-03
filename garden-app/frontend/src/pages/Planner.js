@@ -11,7 +11,8 @@ import {
   X,
   Clock,
   RefreshCw,
-  Loader2
+  Loader2,
+  Download
 } from 'lucide-react';
 import axios from '../config/axios';
 import { useToast } from '../context/ToastContext';
@@ -43,6 +44,7 @@ const Planner = () => {
   // Modal
   const [showForm, setShowForm] = useState(false);
   const [editingPlan, setEditingPlan] = useState(null);
+  const [confirmModal, setConfirmModal] = useState({ open: false, type: null, planId: null });
 
   // Filtry
   const [filters, setFilters] = useState({
@@ -154,26 +156,29 @@ const Planner = () => {
   };
 
   const handleCancel = async (planId) => {
-    if (!window.confirm('Czy na pewno chcesz anulować ten plan?')) return;
-    try {
-      await axios.post(`/api/planner/${planId}/cancel`);
-      showToast('Plan anulowany', 'success');
-      loadData();
-    } catch (error) {
-      console.error('Błąd:', error);
-      showToast('Błąd anulowania planu', 'error');
-    }
+    setConfirmModal({ open: true, type: 'cancel', planId });
   };
 
   const handleDelete = async (planId) => {
-    if (!window.confirm('Czy na pewno chcesz usunąć ten plan?')) return;
+    setConfirmModal({ open: true, type: 'delete', planId });
+  };
+
+  const executeConfirmedAction = async () => {
+    const { type, planId } = confirmModal;
+    setConfirmModal({ open: false, type: null, planId: null });
+
     try {
-      await axios.delete(`/api/planner/${planId}`);
-      showToast('Plan usunięty', 'success');
+      if (type === 'cancel') {
+        await axios.post(`/api/planner/${planId}/cancel`);
+        showToast('Plan anulowany', 'success');
+      } else if (type === 'delete') {
+        await axios.delete(`/api/planner/${planId}`);
+        showToast('Plan usunięty', 'success');
+      }
       loadData();
     } catch (error) {
       console.error('Błąd:', error);
-      showToast('Błąd usuwania planu', 'error');
+      showToast(type === 'cancel' ? 'Błąd anulowania planu' : 'Błąd usuwania planu', 'error');
     }
   };
 
@@ -230,6 +235,16 @@ const Planner = () => {
             <Filter size={18} />
             Filtry
             {showFilters ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+          </button>
+          <button
+            onClick={() => {
+              window.location.href = '/api/export/ical';
+            }}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            title="Eksportuj plany do kalendarza (iCal)"
+          >
+            <Download size={18} />
+            <span className="hidden sm:inline">iCal</span>
           </button>
           <button
             onClick={() => setShowForm(true)}
@@ -361,7 +376,7 @@ const Planner = () => {
 
       {/* Sekcja nadchodzących planów */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-750">
+        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
               <Clock className="w-5 h-5 text-orange-500" />
@@ -408,7 +423,7 @@ const Planner = () => {
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
           <button
             onClick={() => setShowCompleted(!showCompleted)}
-            className="w-full px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-750 flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            className="w-full px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50 flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
           >
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
               <Check className="w-5 h-5 text-green-500" />
@@ -457,6 +472,49 @@ const Planner = () => {
           editPlan={editingPlan}
           plots={plots}
         />
+      )}
+
+      {/* Confirmation Modal */}
+      {confirmModal.open && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-sm w-full p-6">
+            <div className="text-center">
+              <div className={`w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 ${
+                confirmModal.type === 'delete'
+                  ? 'bg-red-100 dark:bg-red-900/30'
+                  : 'bg-orange-100 dark:bg-orange-900/30'
+              }`}>
+                <span className="text-2xl">{confirmModal.type === 'delete' ? '🗑️' : '❌'}</span>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                {confirmModal.type === 'delete' ? 'Usuń plan?' : 'Anuluj plan?'}
+              </h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+                {confirmModal.type === 'delete'
+                  ? 'Ta operacja jest nieodwracalna.'
+                  : 'Plan zostanie oznaczony jako anulowany.'}
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setConfirmModal({ open: false, type: null, planId: null })}
+                  className="flex-1 px-4 py-3 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition font-medium"
+                >
+                  Anuluj
+                </button>
+                <button
+                  onClick={executeConfirmedAction}
+                  className={`flex-1 px-4 py-3 text-white rounded-lg transition font-medium ${
+                    confirmModal.type === 'delete'
+                      ? 'bg-red-600 hover:bg-red-700'
+                      : 'bg-orange-600 hover:bg-orange-700'
+                  }`}
+                >
+                  {confirmModal.type === 'delete' ? 'Usuń' : 'Anuluj plan'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

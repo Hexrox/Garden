@@ -4,11 +4,9 @@ import {
   X,
   Calendar,
   CheckSquare,
-  Database,
   Download,
   Repeat,
   Droplets,
-  LayoutGrid,
   TrendingUp,
   Image,
   Camera,
@@ -16,165 +14,200 @@ import {
   Flower2,
   Snowflake,
   Scissors,
-  Sparkles,
-  ClipboardList
+  Leaf,
+  ClipboardList,
+  Sprout,
+  Grid3X3
 } from 'lucide-react';
 
 /**
  * Komponent MenuModal
  *
  * Eleganckie menu modalne zapewniające dostęp do wszystkich funkcji aplikacji
- * Układ siatki, zoptymalizowany na urządzenia mobilne, przejrzyste kategorie
+ * Układ siatki z sekcjami, zoptymalizowany na urządzenia mobilne i tablety
  */
 const MenuModal = ({ isOpen, onClose, onQuickPhotoClick }) => {
   if (!isOpen) return null;
 
-  const menuItems = [
+  // Kategorie menu z unikalnymi kolorami
+  const menuSections = [
     {
-      id: 'quick-photo',
-      action: onQuickPhotoClick,
-      icon: Camera,
-      label: 'Dodaj zdjęcie',
-      description: 'Szybkie foto',
-      color: 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400',
-      badge: 'SZYBKI'
+      title: 'Szybkie akcje',
+      color: 'green',
+      items: [
+        {
+          id: 'quick-photo',
+          action: onQuickPhotoClick,
+          icon: Camera,
+          label: 'Dodaj zdjęcie',
+          description: 'Zrób szybkie foto'
+        }
+      ]
     },
     {
-      id: 'calendar',
-      path: '/calendar',
-      icon: Calendar,
-      label: 'Kalendarz',
-      description: 'Ogrodnika',
-      color: 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400',
-      badge: 'NOWY'
+      title: 'Planowanie',
+      color: 'orange',
+      items: [
+        {
+          id: 'planner',
+          path: '/planner',
+          icon: ClipboardList,
+          label: 'Planer',
+          description: 'Zaplanuj prace'
+        },
+        {
+          id: 'garden-planner',
+          path: '/garden-planner',
+          icon: Grid3X3,
+          label: 'Zaplanuj ogródek',
+          description: 'Projektuj układ roślin'
+        },
+        {
+          id: 'tasks',
+          path: '/tasks',
+          icon: CheckSquare,
+          label: 'Zadania',
+          description: 'Lista do wykonania'
+        },
+        {
+          id: 'calendar',
+          path: '/calendar',
+          icon: Calendar,
+          label: 'Kalendarz',
+          description: 'Kalendarz ogrodnika'
+        }
+      ]
     },
     {
-      id: 'analytics',
-      path: '/analytics',
-      icon: TrendingUp,
-      label: 'Statystyki',
-      description: 'Ogrodu',
-      color: 'bg-pink-100 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400',
-      badge: 'NOWY'
+      title: 'Mój ogród',
+      color: 'indigo',
+      items: [
+        {
+          id: 'gallery',
+          path: '/gallery',
+          icon: Image,
+          label: 'Galeria',
+          description: 'Twoje zdjęcia'
+        },
+        {
+          id: 'analytics',
+          path: '/analytics',
+          icon: TrendingUp,
+          label: 'Statystyki',
+          description: 'Podsumowanie ogrodu'
+        }
+      ]
     },
     {
-      id: 'gallery',
-      path: '/gallery',
-      icon: Image,
-      label: 'Galeria',
-      description: 'Zdjęcia',
-      color: 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400',
-      badge: 'NOWY'
+      title: 'Pielęgnacja roślin',
+      color: 'pink',
+      items: [
+        {
+          id: 'plants',
+          path: '/plants',
+          icon: Leaf,
+          label: 'Baza roślin',
+          description: '800+ gatunków'
+        },
+        {
+          id: 'bloom-timeline',
+          path: '/bloom-timeline',
+          icon: Flower2,
+          label: 'Kwitnienie',
+          description: 'Oś czasu kwiatów'
+        },
+        {
+          id: 'deadheading',
+          path: '/deadheading',
+          icon: Scissors,
+          label: 'Przekwitłe',
+          description: 'Usuwanie kwiatów'
+        },
+        {
+          id: 'propagation',
+          path: '/propagation',
+          icon: Sprout,
+          label: 'Rozmnażanie',
+          description: 'Dzielenie bylin'
+        },
+        {
+          id: 'winter-protection',
+          path: '/winter-protection',
+          icon: Snowflake,
+          label: 'Zimowanie',
+          description: 'Ochrona na zimę'
+        }
+      ]
     },
     {
-      id: 'planner',
-      path: '/planner',
-      icon: ClipboardList,
-      label: 'Planner',
-      description: 'Planowanie',
-      color: 'bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400',
-      badge: 'NOWY'
+      title: 'Uprawa',
+      color: 'cyan',
+      items: [
+        {
+          id: 'sprays',
+          path: '/sprays',
+          icon: Droplets,
+          label: 'Opryski',
+          description: 'Historia oprysków'
+        },
+        {
+          id: 'succession',
+          path: '/succession',
+          icon: Repeat,
+          label: 'Siew sukcesywny',
+          description: 'Ciągłość zbiorów'
+        }
+      ]
     },
     {
-      id: 'tasks',
-      path: '/tasks',
-      icon: CheckSquare,
-      label: 'Zadania',
-      description: 'Do wykonania',
-      color: 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
-    },
-    {
-      id: 'sprays',
-      path: '/sprays',
-      icon: Droplets,
-      label: 'Opryski',
-      description: 'Historia',
-      color: 'bg-cyan-100 dark:bg-cyan-900/30 text-cyan-600 dark:text-cyan-400'
-    },
-    {
-      id: 'succession',
-      path: '/succession',
-      icon: Repeat,
-      label: 'Sadzenie',
-      description: 'Sukcesywne',
-      color: 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400'
-    },
-    {
-      id: 'plants',
-      path: '/plants',
-      icon: Database,
-      label: 'Baza roślin',
-      description: 'Zarządzanie',
-      color: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400'
-    },
-    {
-      id: 'export',
-      path: '/export',
-      icon: Download,
-      label: 'Eksport',
-      description: 'Danych',
-      color: 'bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400'
-    },
-    {
-      id: 'help',
-      path: '/pomoc',
-      icon: BookOpen,
-      label: 'Pomoc',
-      description: 'Poradnik',
-      color: 'bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400',
-      badge: 'NOWY'
-    },
-    {
-      id: 'bloom-timeline',
-      path: '/bloom-timeline',
-      icon: Flower2,
-      label: 'Kwitnienie',
-      description: 'Kalendarz',
-      color: 'bg-pink-100 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400'
-    },
-    {
-      id: 'winter-protection',
-      path: '/winter-protection',
-      icon: Snowflake,
-      label: 'Zabezpieczanie',
-      description: 'Na zimę',
-      color: 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
-    },
-    {
-      id: 'propagation',
-      path: '/propagation',
-      icon: Scissors,
-      label: 'Dzielenie',
-      description: 'Bylin',
-      color: 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400'
-    },
-    {
-      id: 'deadheading',
-      path: '/deadheading',
-      icon: Sparkles,
-      label: 'Przekwitłe',
-      description: 'Usuwanie',
-      color: 'bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400'
+      title: 'Narzędzia',
+      color: 'gray',
+      items: [
+        {
+          id: 'export',
+          path: '/export',
+          icon: Download,
+          label: 'Eksport',
+          description: 'Pobierz dane'
+        },
+        {
+          id: 'help',
+          path: '/pomoc',
+          icon: BookOpen,
+          label: 'Pomoc',
+          description: 'Poradnik użytkownika'
+        }
+      ]
     }
   ];
 
+  // Mapowanie kolorów sekcji
+  const colorClasses = {
+    green: 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400',
+    orange: 'bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400',
+    indigo: 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400',
+    pink: 'bg-pink-100 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400',
+    cyan: 'bg-cyan-100 dark:bg-cyan-900/30 text-cyan-600 dark:text-cyan-400',
+    gray: 'bg-gray-100 dark:bg-gray-700/50 text-gray-600 dark:text-gray-400'
+  };
+
   return (
     <div
-      className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in"
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-end sm:items-center justify-center sm:p-4 animate-fade-in"
       onClick={onClose}
     >
       <div
-        className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl rounded-2xl shadow-2xl max-w-lg w-full max-h-[80vh] overflow-y-auto border border-white/20 dark:border-gray-700/50 animate-fade-in-up"
+        className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-lg max-h-[90vh] sm:max-h-[85vh] overflow-y-auto border border-white/20 dark:border-gray-700/50 animate-fade-in-up"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="sticky top-0 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border-b border-gray-200/50 dark:border-gray-700/50 px-6 py-4 flex items-center justify-between">
           <div>
             <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-              Wszystkie funkcje
+              Menu
             </h2>
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              Wybierz funkcję z menu
+              Wszystkie funkcje aplikacji
             </p>
           </div>
           <button
@@ -187,67 +220,57 @@ const MenuModal = ({ isOpen, onClose, onQuickPhotoClick }) => {
           </button>
         </div>
 
-        {/* Menu Grid */}
-        <div className="p-6">
-          <div className="grid grid-cols-2 gap-4">
-            {menuItems.map((item) => {
-              const Icon = item.icon;
-              const Component = item.path ? Link : 'button';
-              const props = item.path
-                ? { to: item.path, onClick: onClose, 'aria-label': `${item.label} - ${item.description}` }
-                : {
-                    onClick: (e) => {
-                      e.stopPropagation(); // CRITICAL: Stop event from bubbling to background
-                      item.action();
-                    },
-                    type: 'button',
-                    'aria-label': `${item.label} - ${item.description}`
-                  };
+        {/* Menu Sections */}
+        <div className="p-4 sm:p-6 space-y-6">
+          {menuSections.map((section) => (
+            <div key={section.title}>
+              {/* Section Header */}
+              <h3 className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3 px-1">
+                {section.title}
+              </h3>
 
-              return (
-                <Component
-                  key={item.id}
-                  {...props}
-                  className="group relative bg-gray-50 dark:bg-gray-900/50 rounded-xl p-4 hover:shadow-md transition-all duration-200 hover:-translate-y-1 text-left w-full focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
-                >
-                  {/* Badge */}
-                  {item.badge && (
-                    <div className="absolute -top-2 -right-2 px-2 py-0.5 bg-gradient-to-r from-green-500 to-emerald-500 text-white text-xs font-bold rounded-full shadow-lg">
-                      {item.badge}
-                    </div>
-                  )}
+              {/* Section Items */}
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {section.items.map((item) => {
+                  const Icon = item.icon;
+                  const Component = item.path ? Link : 'button';
+                  const props = item.path
+                    ? { to: item.path, onClick: onClose, 'aria-label': `${item.label} - ${item.description}` }
+                    : {
+                        onClick: (e) => {
+                          e.stopPropagation();
+                          item.action();
+                        },
+                        type: 'button',
+                        'aria-label': `${item.label} - ${item.description}`
+                      };
 
-                  {/* Icon */}
-                  <div className={`w-14 h-14 rounded-xl ${item.color} flex items-center justify-center mb-3 group-hover:scale-110 transition-transform`}>
-                    <Icon size={28} />
-                  </div>
+                  return (
+                    <Component
+                      key={item.id}
+                      {...props}
+                      className="group bg-gray-50 dark:bg-gray-900/50 rounded-xl p-3 sm:p-4 hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 text-left w-full focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                    >
+                      {/* Icon */}
+                      <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl ${colorClasses[section.color]} flex items-center justify-center mb-2 sm:mb-3 group-hover:scale-105 transition-transform`}>
+                        <Icon size={24} className="sm:w-7 sm:h-7" />
+                      </div>
 
-                  {/* Label */}
-                  <div>
-                    <h3 className="font-semibold text-gray-900 dark:text-white mb-0.5">
-                      {item.label}
-                    </h3>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      {item.description}
-                    </p>
-                  </div>
-                </Component>
-              );
-            })}
-          </div>
-
-          {/* Quick Stats */}
-          <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-500 dark:text-gray-400">
-                Odkrywaj więcej funkcji
-              </span>
-              <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
-                <LayoutGrid size={16} />
-                <span className="font-medium">15 modułów</span>
+                      {/* Label */}
+                      <div>
+                        <h4 className="font-semibold text-gray-900 dark:text-white text-sm sm:text-base mb-0.5 leading-tight">
+                          {item.label}
+                        </h4>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 leading-tight line-clamp-2">
+                          {item.description}
+                        </p>
+                      </div>
+                    </Component>
+                  );
+                })}
               </div>
             </div>
-          </div>
+          ))}
         </div>
       </div>
     </div>

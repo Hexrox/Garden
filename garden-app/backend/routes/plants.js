@@ -140,6 +140,23 @@ router.get('/', auth, (req, res) => {
   );
 });
 
+// ==== FAVORITES (must be before /:id route) ====
+
+// Get user's favorite plants
+router.get('/favorites', auth, (req, res) => {
+  db.all(
+    `SELECT plant_id, created_at FROM user_favorite_plants WHERE user_id = ?`,
+    [req.user.id],
+    (err, rows) => {
+      if (err) {
+        console.error('Error fetching favorites:', err);
+        return res.status(500).json({ error: 'Błąd serwera' });
+      }
+      res.json(rows || []);
+    }
+  );
+});
+
 // Get single plant
 router.get('/:id', auth, (req, res) => {
   db.get(
@@ -446,6 +463,51 @@ router.get('/companions/:plantName', auth, (req, res) => {
         good: goodCompanions.map(c => ({ name: c.companion_name, reason: c.reason })),
         bad: badCompanions.map(c => ({ name: c.companion_name, reason: c.reason }))
       });
+    }
+  );
+});
+
+// Add plant to favorites
+router.post('/:id/favorite', auth, (req, res) => {
+  const plantId = req.params.id;
+
+  // Check if plant exists
+  db.get('SELECT id FROM plants WHERE id = ?', [plantId], (err, plant) => {
+    if (err) {
+      return res.status(500).json({ error: 'Błąd serwera' });
+    }
+    if (!plant) {
+      return res.status(404).json({ error: 'Roślina nie znaleziona' });
+    }
+
+    // Add to favorites
+    db.run(
+      `INSERT OR IGNORE INTO user_favorite_plants (user_id, plant_id) VALUES (?, ?)`,
+      [req.user.id, plantId],
+      function(err) {
+        if (err) {
+          console.error('Error adding favorite:', err);
+          return res.status(500).json({ error: 'Błąd serwera' });
+        }
+        res.json({ message: 'Dodano do ulubionych', plant_id: plantId });
+      }
+    );
+  });
+});
+
+// Remove plant from favorites
+router.delete('/:id/favorite', auth, (req, res) => {
+  const plantId = req.params.id;
+
+  db.run(
+    `DELETE FROM user_favorite_plants WHERE user_id = ? AND plant_id = ?`,
+    [req.user.id, plantId],
+    function(err) {
+      if (err) {
+        console.error('Error removing favorite:', err);
+        return res.status(500).json({ error: 'Błąd serwera' });
+      }
+      res.json({ message: 'Usunięto z ulubionych', plant_id: plantId });
     }
   );
 });
