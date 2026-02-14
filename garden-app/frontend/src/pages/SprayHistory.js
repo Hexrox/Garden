@@ -78,7 +78,26 @@ const SprayHistory = () => {
     setPlots([]);
   };
 
-  if (loading) return <div className="text-center py-12 text-gray-500 dark:text-gray-400">Ładowanie...</div>;
+  if (loading) {
+    return (
+      <div className="space-y-6 animate-pulse">
+        <div className="flex justify-between items-center">
+          <div className="h-9 w-56 bg-gray-200 dark:bg-gray-700 rounded"></div>
+          <div className="flex gap-2">
+            <div className="h-10 w-32 bg-gray-200 dark:bg-gray-700 rounded"></div>
+            <div className="h-10 w-24 bg-gray-200 dark:bg-gray-700 rounded"></div>
+          </div>
+        </div>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 space-y-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="flex gap-4 items-center">
+              <div className="h-16 flex-1 bg-gray-200 dark:bg-gray-700 rounded"></div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -210,7 +229,7 @@ const SprayHistory = () => {
                 </thead>
                 <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                   {sprays.map((spray) => (
-                    <tr key={spray.id} className="hover:bg-gray-50 dark:hover:bg-gray-750">
+                    <tr key={spray.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
                         {spray.plot_name} - R{spray.row_number}
                       </td>

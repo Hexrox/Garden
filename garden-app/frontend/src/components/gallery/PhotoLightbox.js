@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, ChevronLeft, ChevronRight, Trash2, Edit2, Download, Edit } from 'lucide-react';
 import EditPhotoModal from '../modals/EditPhotoModal';
+import { getImageUrl } from '../../config/axios';
 
 const PhotoLightbox = ({ photo, photos, onClose, onNavigate, onDelete, onUpdateCaption, onPhotoUpdated }) => {
   const [isEditingCaption, setIsEditingCaption] = useState(false);
@@ -62,7 +63,7 @@ const PhotoLightbox = ({ photo, photos, onClose, onNavigate, onDelete, onUpdateC
   const handleDownload = () => {
     const link = document.createElement('a');
     // Always download original for full quality
-    link.href = `${process.env.REACT_APP_API_URL || ''}/${photo.photo_path}`;
+    link.href = getImageUrl(photo.photo_path);
     link.download = `garden-${photo.id}.jpg`;
     link.click();
   };
@@ -118,7 +119,7 @@ const PhotoLightbox = ({ photo, photos, onClose, onNavigate, onDelete, onUpdateC
           onTouchEnd={onTouchEnd}
         >
           <img
-            src={`${process.env.REACT_APP_API_URL || ''}/${photo.medium_path || photo.photo_path}`}
+            src={getImageUrl(photo.medium_path || photo.photo_path)}
             alt={photo.caption || photo.bed_plant_name || 'Zdjęcie'}
             className="max-w-full max-h-[50vh] lg:max-h-[80vh] object-contain rounded-lg"
           />
@@ -264,11 +265,7 @@ const PhotoLightbox = ({ photo, photos, onClose, onNavigate, onDelete, onUpdateC
             </button>
 
             <button
-              onClick={() => {
-                if (window.confirm('Czy na pewno chcesz usunąć to zdjęcie?')) {
-                  onDelete(photo.id);
-                }
-              }}
+              onClick={() => onDelete(photo.id)}
               className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
             >
               <Trash2 size={18} />

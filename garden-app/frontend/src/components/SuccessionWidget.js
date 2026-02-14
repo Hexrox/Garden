@@ -116,7 +116,7 @@ const SuccessionWidget = () => {
           {reminders.slice(0, 5).map((reminder) => {
             const statusColor = getStatusColor(reminder.next_planting_date);
             return (
-              <div key={reminder.id} className="px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors">
+              <div key={reminder.id} className="px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <h3 className="text-sm font-medium text-gray-900 dark:text-white">

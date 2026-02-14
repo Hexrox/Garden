@@ -1,5 +1,6 @@
 import React from 'react';
 import { AlertCircle, Check } from 'lucide-react';
+import { getImageUrl } from '../../config/axios';
 
 const GalleryGrid = ({ photos, onPhotoClick, selectedPhotos = [], onSelectPhoto, selectionMode = false }) => {
   const formatDate = (dateString) => {
@@ -31,9 +32,7 @@ const GalleryGrid = ({ photos, onPhotoClick, selectedPhotos = [], onSelectPhoto,
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
       {photos.map((photo) => {
         // Use thumbnail for grid, fallback to original if not available
-        const thumbUrl = photo.thumb_path
-          ? `${process.env.REACT_APP_API_URL || ''}/${photo.thumb_path}`
-          : `${process.env.REACT_APP_API_URL || ''}/${photo.photo_path}`;
+        const thumbUrl = getImageUrl(photo.thumb_path || photo.photo_path);
         const selected = isSelected(photo.id);
         return (
         <div

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Camera, Image, Search, Check, X, RefreshCw, ChevronLeft, ChevronRight, Info, Trash2, ExternalLink } from 'lucide-react';
-import axios from '../config/axios';
+import axios, { getImageUrl } from '../config/axios';
 
 /**
  * Panel Admina - Zarządzanie Zdjęciami Roślin
@@ -21,6 +21,7 @@ const AdminImages = () => {
   const [selectedPlant, setSelectedPlant] = useState(null);
   const [actionLoading, setActionLoading] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [deleteConfirm, setDeleteConfirm] = useState({ open: false, plant: null, type: null });
 
   const fetchPlants = useCallback(async () => {
     try {
@@ -60,7 +61,7 @@ const AdminImages = () => {
         setSelectedPlant(refreshedPlant);
       }
     } catch (error) {
-      alert('Błąd zatwierdzania: ' + (error.response?.data?.error || error.message));
+      console.error('Błąd zatwierdzania:', error.response?.data?.error || error.message);
     } finally {
       setActionLoading(null);
     }
@@ -80,15 +81,17 @@ const AdminImages = () => {
         }));
       }
     } catch (error) {
-      alert('Błąd odrzucania: ' + (error.response?.data?.error || error.message));
+      console.error('Błąd odrzucania:', error.response?.data?.error || error.message);
     } finally {
       setActionLoading(null);
     }
   };
 
   const handleDelete = async (plant, type) => {
-    if (!window.confirm(`Usunąć ${type === 'photo' ? 'zdjęcie' : 'ilustrację'}?`)) return;
+    setDeleteConfirm({ open: true, plant, type });
+  };
 
+  const executeDelete = async (plant, type) => {
     try {
       setActionLoading(`delete-${plant.id}-${type}`);
       await axios.delete(`/api/admin/images/${plant.id}/${type}`);
@@ -101,7 +104,7 @@ const AdminImages = () => {
         }));
       }
     } catch (error) {
-      alert('Błąd usuwania: ' + (error.response?.data?.error || error.message));
+      console.error('Błąd usuwania:', error.response?.data?.error || error.message);
     } finally {
       setActionLoading(null);
     }
@@ -112,7 +115,7 @@ const AdminImages = () => {
       setActionLoading(`search-${plant.id}`);
       const query = searchQuery || plant.latin_name;
       const response = await axios.post(`/api/admin/images/search/${plant.id}`, { query });
-      alert(`Znaleziono ${response.data.found} wyników, nowych: ${response.data.newCandidates}`);
+      console.log(`Znaleziono ${response.data.found} wyników, nowych: ${response.data.newCandidates}`);
       fetchPlants();
       if (selectedPlant?.id === plant.id) {
         setSelectedPlant(prev => ({
@@ -121,7 +124,7 @@ const AdminImages = () => {
         }));
       }
     } catch (error) {
-      alert('Błąd wyszukiwania: ' + (error.response?.data?.error || error.message));
+      console.error('Błąd wyszukiwania:', error.response?.data?.error || error.message);
     } finally {
       setActionLoading(null);
       setSearchQuery('');
@@ -134,9 +137,16 @@ const AdminImages = () => {
       'flower_perennial': 'Byliny',
       'flower_bulb': 'Cebulowe',
       'flower_annual': 'Jednoroczne',
-      'fruit_tree': 'Drzewa',
-      'fruit_bush': 'Krzewy',
-      'herb': 'Zioła'
+      'fruit_tree': 'Drzewa owocowe',
+      'fruit_bush': 'Krzewy owocowe',
+      'herb': 'Zioła',
+      'grass': 'Trawy ozdobne',
+      'tree_ornamental': 'Drzewa ozdobne',
+      'shrub_ornamental': 'Krzewy ozdobne',
+      'climber': 'Pnącza',
+      'groundcover': 'Okrywowe',
+      'fern': 'Paprocie',
+      'succulent': 'Sukulenty'
     };
     return translations[cat] || cat;
   };
@@ -273,6 +283,20 @@ const AdminImages = () => {
             actionLoading={actionLoading}
           />
         )}
+
+        {/* Delete Confirmation Modal */}
+        {deleteConfirm.open && (
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={() => setDeleteConfirm({ open: false, plant: null, type: null })}>
+            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-sm w-full shadow-xl" onClick={e => e.stopPropagation()}>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Usuń {deleteConfirm.type === 'photo' ? 'zdjęcie' : 'ilustrację'}</h3>
+              <p className="text-gray-600 dark:text-gray-400 mb-6">Czy na pewno chcesz usunąć {deleteConfirm.type === 'photo' ? 'zdjęcie' : 'ilustrację'}?</p>
+              <div className="flex gap-3 justify-end">
+                <button onClick={() => setDeleteConfirm({ open: false, plant: null, type: null })} className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">Anuluj</button>
+                <button onClick={() => { executeDelete(deleteConfirm.plant, deleteConfirm.type); setDeleteConfirm({ open: false, plant: null, type: null }); }} className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors">Usuń</button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -321,7 +345,7 @@ const PlantCard = ({ plant, onSelect, translateCategory }) => {
         <div className="w-20 h-20 bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden flex-shrink-0">
           {plant.photo_thumb ? (
             <img
-              src={`/uploads/${plant.photo_thumb}`}
+              src={getImageUrl(plant.photo_thumb)}
               alt={plant.display_name}
               className="w-full h-full object-cover"
             />
@@ -664,7 +688,7 @@ const ApprovedImageCard = ({ plant, type, onDelete, actionLoading }) => {
       <div className="flex gap-4">
         <div className="w-32 h-32 bg-gray-200 dark:bg-gray-700 rounded-lg overflow-hidden flex-shrink-0">
           <img
-            src={`/uploads/${thumb || path}`}
+            src={getImageUrl(thumb || path)}
             alt={plant.display_name}
             className="w-full h-full object-cover"
           />

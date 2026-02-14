@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Save } from 'lucide-react';
-import axios from '../../config/axios';
+import axios, { getImageUrl } from '../../config/axios';
 
 const PHOTO_TAGS = [
   { emoji: '🥕', label: 'Warzywa', value: 'warzywa' },
@@ -140,7 +140,7 @@ const EditPhotoModal = ({ photo, isOpen, onClose, onSuccess }) => {
           {/* Preview */}
           <div className="aspect-video bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden">
             <img
-              src={`${process.env.REACT_APP_API_URL || ''}/${photo.medium_path || photo.photo_path}`}
+              src={getImageUrl(photo.medium_path || photo.photo_path)}
               alt={photo.caption || 'Zdjęcie'}
               className="w-full h-full object-contain"
             />

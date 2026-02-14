@@ -120,7 +120,7 @@ const UpcomingPlans = () => {
             return (
               <div
                 key={plan.id}
-                className={`px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors ${
+                className={`px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors ${
                   isOverdue ? 'bg-red-50 dark:bg-red-900/10' : ''
                 }`}
               >
@@ -179,7 +179,7 @@ const UpcomingPlans = () => {
 
       {/* Footer z podsumowaniem */}
       {plans.length > 0 && (
-        <div className="px-6 py-3 bg-gray-50 dark:bg-gray-750 border-t border-gray-100 dark:border-gray-700">
+        <div className="px-6 py-3 bg-gray-50 dark:bg-gray-700/50 border-t border-gray-100 dark:border-gray-700">
           <div className="flex items-center justify-between text-sm">
             <span className="text-gray-500 dark:text-gray-400">
               {plans.filter(p => p.days_until <= 3).length} w najbliższych 3 dniach

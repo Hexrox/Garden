@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import {
   Users,
   LayoutGrid,
@@ -10,7 +10,9 @@ import {
   MapPin,
   ArrowLeft,
   Trash2,
-  X
+  X,
+  Leaf,
+  Image
 } from 'lucide-react';
 import axios from '../config/axios';
 import { useAuth } from '../context/AuthContext';
@@ -32,14 +34,19 @@ const AdminPanel = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [plantStats, setPlantStats] = useState(null);
 
   const fetchAdminStats = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await axios.get('/api/admin/stats');
-      setStats(response.data.stats);
-      setUsers(response.data.users);
-      setRecentActivity(response.data.recentActivity);
+      const [adminResponse, plantsResponse] = await Promise.all([
+        axios.get('/api/admin/stats'),
+        axios.get('/api/admin/plants/stats').catch(() => ({ data: null }))
+      ]);
+      setStats(adminResponse.data.stats);
+      setUsers(adminResponse.data.users);
+      setRecentActivity(adminResponse.data.recentActivity);
+      setPlantStats(plantsResponse.data);
       setError(null);
     } catch (err) {
       console.error('Error fetching admin stats:', err);
@@ -84,7 +91,7 @@ const AdminPanel = () => {
       setUserToDelete(null);
     } catch (err) {
       console.error('Error deleting user:', err);
-      alert(err.response?.data?.error || 'Błąd podczas usuwania użytkownika');
+      console.error('Błąd podczas usuwania użytkownika:', err.response?.data?.error || err.message);
     } finally {
       setDeleting(false);
     }
@@ -154,6 +161,91 @@ const AdminPanel = () => {
           value={stats?.total_sprays || 0}
           color="bg-cyan-100 dark:bg-cyan-900/30 text-cyan-600 dark:text-cyan-400"
         />
+      </div>
+
+      {/* Moderation Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Plants Moderation */}
+        <Link
+          to="/admin/plants"
+          className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow border-l-4 border-yellow-500"
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 bg-yellow-100 dark:bg-yellow-900/30 rounded-xl flex items-center justify-center">
+                <Leaf className="w-7 h-7 text-yellow-600 dark:text-yellow-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  Moderacja Roślin
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Zarządzaj roślinami dodanymi przez użytkowników
+                </p>
+              </div>
+            </div>
+            {plantStats?.pending_count > 0 && (
+              <div className="flex items-center gap-2">
+                <span className="px-3 py-1 bg-yellow-500 text-white text-sm font-bold rounded-full animate-pulse">
+                  {plantStats.pending_count}
+                </span>
+                <span className="text-sm text-yellow-600 dark:text-yellow-400">
+                  oczekuje
+                </span>
+              </div>
+            )}
+          </div>
+          {plantStats && (
+            <div className="mt-4 flex gap-4 text-sm">
+              <span className="text-green-600 dark:text-green-400">
+                {plantStats.approved_count} zatwierdzonych
+              </span>
+              <span className="text-red-600 dark:text-red-400">
+                {plantStats.rejected_count} odrzuconych
+              </span>
+            </div>
+          )}
+        </Link>
+
+        {/* Images Management */}
+        <Link
+          to="/admin/images"
+          className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow border-l-4 border-purple-500"
+        >
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 bg-purple-100 dark:bg-purple-900/30 rounded-xl flex items-center justify-center">
+              <Image className="w-7 h-7 text-purple-600 dark:text-purple-400" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                Zdjęcia Roślin
+              </h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Zarządzaj zdjęciami i ilustracjami w katalogu
+              </p>
+            </div>
+          </div>
+        </Link>
+
+        {/* Photo Review */}
+        <Link
+          to="/admin/photo-review"
+          className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow border-l-4 border-teal-500"
+        >
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 bg-teal-100 dark:bg-teal-900/30 rounded-xl flex items-center justify-center">
+              <Image className="w-7 h-7 text-teal-600 dark:text-teal-400" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                Weryfikacja Zdjęć
+              </h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Sprawdź poprawność automatycznie pobranych zdjęć
+              </p>
+            </div>
+          </div>
+        </Link>
       </div>
 
       {/* Users Table */}

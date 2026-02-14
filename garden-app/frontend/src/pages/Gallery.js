@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Image as ImageIcon, Filter, Upload, X, CheckSquare, Trash2 } from 'lucide-react';
 import axios from '../config/axios';
 import GalleryGrid from '../components/gallery/GalleryGrid';
@@ -20,6 +20,9 @@ const Gallery = () => {
   const [selectedPhotos, setSelectedPhotos] = useState([]);
   const [dragActive, setDragActive] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [rateLimited, setRateLimited] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState({ open: false, type: null, photoId: null });
+  const [toastMessage, setToastMessage] = useState(null);
   const [filters, setFilters] = useState({
     plant: '',
     plot: '',
@@ -30,9 +33,31 @@ const Gallery = () => {
   });
 
   const PHOTOS_PER_PAGE = 20;
+  const abortControllerRef = useRef(null);
+  const scrollTimeoutRef = useRef(null);
+  const pageRef = useRef(0);
+  const hasMoreRef = useRef(true);
+  const filtersRef = useRef(filters);
 
-  const loadGallery = useCallback(async (pageNum = page, reset = false) => {
-    if (!hasMore && !reset) return;
+  // Keep refs in sync with state
+  useEffect(() => {
+    pageRef.current = page;
+  }, [page]);
+
+  useEffect(() => {
+    hasMoreRef.current = hasMore;
+  }, [hasMore]);
+
+  useEffect(() => {
+    filtersRef.current = filters;
+  }, [filters]);
+
+  const loadGallery = useCallback(async (pageNum = null, reset = false, signal = null) => {
+    const currentPage = pageNum !== null ? pageNum : pageRef.current;
+    const currentFilters = filtersRef.current;
+
+    if (!hasMoreRef.current && !reset) return;
+    if (rateLimited) return;
 
     try {
       if (reset) {
@@ -43,16 +68,16 @@ const Gallery = () => {
 
       const params = new URLSearchParams();
       params.append('limit', PHOTOS_PER_PAGE);
-      params.append('offset', pageNum * PHOTOS_PER_PAGE);
+      params.append('offset', currentPage * PHOTOS_PER_PAGE);
 
-      if (filters.plant) params.append('plant', filters.plant);
-      if (filters.plot) params.append('plot', filters.plot);
-      if (filters.year) params.append('year', filters.year);
-      if (filters.source_type) params.append('source_type', filters.source_type);
-      if (filters.tag) params.append('tag', filters.tag);
-      if (filters.show_deleted) params.append('show_deleted', 'true');
+      if (currentFilters.plant) params.append('plant', currentFilters.plant);
+      if (currentFilters.plot) params.append('plot', currentFilters.plot);
+      if (currentFilters.year) params.append('year', currentFilters.year);
+      if (currentFilters.source_type) params.append('source_type', currentFilters.source_type);
+      if (currentFilters.tag) params.append('tag', currentFilters.tag);
+      if (currentFilters.show_deleted) params.append('show_deleted', 'true');
 
-      const response = await axios.get(`/api/gallery?${params.toString()}`);
+      const response = await axios.get(`/api/gallery?${params.toString()}`, { signal });
       const newPhotos = response.data;
 
       if (reset) {
@@ -62,78 +87,145 @@ const Gallery = () => {
       }
 
       // If we got less than PHOTOS_PER_PAGE, there's no more
-      setHasMore(newPhotos.length === PHOTOS_PER_PAGE);
-      setPage(pageNum + 1);
+      const hasMoreData = newPhotos.length === PHOTOS_PER_PAGE;
+      setHasMore(hasMoreData);
+      hasMoreRef.current = hasMoreData;
+      setPage(currentPage + 1);
+      pageRef.current = currentPage + 1;
     } catch (error) {
+      if (error.name === 'CanceledError' || error.name === 'AbortError') {
+        return; // Request was cancelled, ignore
+      }
+      if (error.response?.status === 429) {
+        console.warn('Rate limited, waiting before retry...');
+        setRateLimited(true);
+        setTimeout(() => setRateLimited(false), 10000); // Wait 10s before allowing new requests
+        return;
+      }
       console.error('Error loading gallery:', error);
     } finally {
       setLoading(false);
       setLoadingMore(false);
     }
-  }, [page, hasMore, filters]);
+  }, [rateLimited]);
 
+  const loadStats = useCallback(async (signal = null) => {
+    if (rateLimited) return;
+
+    try {
+      const response = await axios.get('/api/gallery/stats', { signal });
+      setStats(response.data);
+    } catch (error) {
+      if (error.name === 'CanceledError' || error.name === 'AbortError') {
+        return; // Request was cancelled, ignore
+      }
+      if (error.response?.status === 429) {
+        console.warn('Stats rate limited');
+        setRateLimited(true);
+        setTimeout(() => setRateLimited(false), 10000);
+        return;
+      }
+      console.error('Error loading stats:', error);
+    }
+  }, [rateLimited]);
+
+  // Initial load and filter changes
   useEffect(() => {
-    // Reset to page 0 when filters change
+    // Cancel previous requests
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    abortControllerRef.current = new AbortController();
+    const signal = abortControllerRef.current.signal;
+
+    // Reset state
     setPage(0);
+    pageRef.current = 0;
     setPhotos([]);
     setHasMore(true);
-    loadGallery(0, true);
-    loadStats();
-  }, [filters, loadGallery]);
+    hasMoreRef.current = true;
+
+    loadGallery(0, true, signal);
+    loadStats(signal);
+
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, [filters, loadGallery, loadStats]);
 
   // Listen for new photos added via QuickPhoto modal
   useEffect(() => {
     const handlePhotoAdded = () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+      abortControllerRef.current = new AbortController();
+      const signal = abortControllerRef.current.signal;
+
       setPage(0);
+      pageRef.current = 0;
       setPhotos([]);
       setHasMore(true);
-      loadGallery(0, true);
-      loadStats();
+      hasMoreRef.current = true;
+      loadGallery(0, true, signal);
+      loadStats(signal);
     };
 
     window.addEventListener('photoAdded', handlePhotoAdded);
     return () => window.removeEventListener('photoAdded', handlePhotoAdded);
-  }, [loadGallery]);
+  }, [loadGallery, loadStats]);
 
-  // Infinite scroll detection
+  // Infinite scroll detection with debounce
   useEffect(() => {
     const handleScroll = () => {
-      // Check if user scrolled near bottom (within 200px)
-      const scrolledToBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 200;
-
-      if (scrolledToBottom && hasMore && !loading && !loadingMore) {
-        loadGallery();
+      // Debounce scroll events
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
       }
+
+      scrollTimeoutRef.current = setTimeout(() => {
+        // Check if user scrolled near bottom (within 200px)
+        const scrolledToBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 200;
+
+        if (scrolledToBottom && hasMoreRef.current && !loading && !loadingMore && !rateLimited) {
+          loadGallery();
+        }
+      }, 150); // 150ms debounce
     };
 
     window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [hasMore, loading, loadingMore, page, loadGallery]);
-
-  const loadStats = async () => {
-    try {
-      const response = await axios.get('/api/gallery/stats');
-      setStats(response.data);
-    } catch (error) {
-      console.error('Error loading stats:', error);
-    }
-  };
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+    };
+  }, [loading, loadingMore, rateLimited, loadGallery]);
 
   const handlePhotoClick = (photo) => {
     setSelectedPhoto(photo);
   };
 
-  const handleDeletePhoto = async (photoId) => {
-    if (!window.confirm('Czy na pewno chcesz usunąć to zdjęcie?')) return;
+  // Simple toast helper for Gallery (uses local state)
+  const showGalleryToast = (message) => {
+    setToastMessage(message);
+    setTimeout(() => setToastMessage(null), 3000);
+  };
 
+  const handleDeletePhoto = async (photoId) => {
     try {
       await axios.delete(`/api/gallery/${photoId}`);
       setPhotos(photos.filter(p => p.id !== photoId));
       setSelectedPhoto(null);
-      loadStats(); // Refresh stats
+      loadStats();
+      showGalleryToast('Zdjęcie usunięte');
     } catch (error) {
-      alert('Błąd podczas usuwania zdjęcia');
+      showGalleryToast('Błąd podczas usuwania zdjęcia');
       console.error(error);
+    } finally {
+      setDeleteConfirm({ open: false, type: null, photoId: null });
     }
   };
 
@@ -145,7 +237,7 @@ const Gallery = () => {
         setSelectedPhoto({ ...selectedPhoto, caption });
       }
     } catch (error) {
-      alert('Błąd podczas aktualizacji opisu');
+      showGalleryToast('Błąd podczas aktualizacji opisu');
       console.error(error);
     }
   };
@@ -186,12 +278,11 @@ const Gallery = () => {
 
   const handleBulkDelete = async () => {
     if (selectedPhotos.length === 0) return;
+    setDeleteConfirm({ open: true, type: 'bulk', photoId: null });
+  };
 
-    const count = selectedPhotos.length;
-    if (!window.confirm(`Czy na pewno chcesz usunąć ${count} ${count === 1 ? 'zdjęcie' : count < 5 ? 'zdjęcia' : 'zdjęć'}?`)) {
-      return;
-    }
-
+  const executeBulkDelete = async () => {
+    setDeleteConfirm({ open: false, type: null, photoId: null });
     try {
       await axios.delete('/api/gallery/bulk', {
         data: { photoIds: selectedPhotos }
@@ -201,8 +292,9 @@ const Gallery = () => {
       setSelectedPhotos([]);
       setSelectionMode(false);
       loadStats();
+      showGalleryToast('Zdjęcia usunięte');
     } catch (error) {
-      alert('Błąd podczas usuwania zdjęć');
+      showGalleryToast('Błąd podczas usuwania zdjęć');
       console.error(error);
     }
   };
@@ -239,7 +331,7 @@ const Gallery = () => {
     );
 
     if (files.length === 0) {
-      alert('Przeciągnij tylko pliki zdjęć (JPG, PNG, etc.)');
+      showGalleryToast('Przeciągnij tylko pliki zdjęć (JPG, PNG, etc.)');
       return;
     }
 
@@ -274,17 +366,19 @@ const Gallery = () => {
       if (successCount > 0) {
         // Refresh gallery
         setPage(0);
+        pageRef.current = 0;
         setPhotos([]);
         setHasMore(true);
+        hasMoreRef.current = true;
         loadGallery(0, true);
         loadStats();
       }
 
       if (errorCount > 0) {
-        alert(`Wysłano ${successCount} zdjęć, ${errorCount} nie udało się przesłać`);
+        showGalleryToast(`Wysłano ${successCount} zdjęć, ${errorCount} nie udało się przesłać`);
       }
     } catch (error) {
-      alert('Błąd podczas wysyłania zdjęć');
+      showGalleryToast('Błąd podczas wysyłania zdjęć');
       console.error(error);
     } finally {
       setUploading(false);
@@ -331,6 +425,15 @@ const Gallery = () => {
               Wysyłanie zdjęć...
             </p>
           </div>
+        </div>
+      )}
+
+      {/* Rate Limit Warning */}
+      {rateLimited && (
+        <div className="fixed bottom-4 right-4 z-50 bg-yellow-100 dark:bg-yellow-900/50 border border-yellow-400 dark:border-yellow-600 rounded-lg p-4 shadow-lg max-w-sm">
+          <p className="text-sm text-yellow-800 dark:text-yellow-200">
+            ⏳ Zbyt wiele zapytań. Czekam przed ponownym załadowaniem...
+          </p>
         </div>
       )}
       {/* Header */}
@@ -623,7 +726,7 @@ const Gallery = () => {
               : (currentIndex - 1 + photos.length) % photos.length;
             setSelectedPhoto(photos[newIndex]);
           }}
-          onDelete={handleDeletePhoto}
+          onDelete={(id) => setDeleteConfirm({ open: true, type: 'single', photoId: id })}
           onUpdateCaption={handleUpdateCaption}
           onPhotoUpdated={() => {
             loadGallery();
@@ -642,6 +745,49 @@ const Gallery = () => {
           loadStats();
         }}
       />
+      {/* Delete Confirmation Modal */}
+      {deleteConfirm.open && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={() => setDeleteConfirm({ open: false, type: null, photoId: null })}>
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-sm w-full shadow-xl" onClick={e => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+              {deleteConfirm.type === 'bulk' ? 'Usuń zaznaczone zdjęcia' : 'Usuń zdjęcie'}
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
+              {deleteConfirm.type === 'bulk'
+                ? `Czy na pewno chcesz usunąć ${selectedPhotos.length} zaznaczonych zdjęć?`
+                : 'Czy na pewno chcesz usunąć to zdjęcie?'}
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setDeleteConfirm({ open: false, type: null, photoId: null })}
+                className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+              >
+                Anuluj
+              </button>
+              <button
+                onClick={() => {
+                  if (deleteConfirm.type === 'bulk') {
+                    executeBulkDelete();
+                  } else {
+                    handleDeletePhoto(deleteConfirm.photoId);
+                  }
+                  setDeleteConfirm({ open: false, type: null, photoId: null });
+                }}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+              >
+                Usuń
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast notification */}
+      {toastMessage && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 py-3 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-lg shadow-lg text-sm font-medium animate-fade-in">
+          {toastMessage}
+        </div>
+      )}
     </div>
   );
 };

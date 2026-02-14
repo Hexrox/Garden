@@ -42,6 +42,38 @@ router.get('/', auth, (req, res) => {
   });
 });
 
+// Get upcoming garden plans for dashboard
+router.get('/upcoming/all', auth, (req, res) => {
+  const limit = parseInt(req.query.limit) || 5;
+
+  db.all(
+    `SELECT gp.id, gp.name, gp.status, gp.planned_planting_date,
+            p.name as plot_name,
+            (SELECT COUNT(*) FROM garden_plan_items WHERE plan_id = gp.id) as items_count,
+            CASE
+              WHEN gp.planned_planting_date IS NOT NULL
+              THEN CAST(julianday(gp.planned_planting_date) - julianday('now') AS INTEGER)
+              ELSE NULL
+            END as days_until
+     FROM garden_plans gp
+     LEFT JOIN plots p ON gp.plot_id = p.id
+     WHERE gp.user_id = ? AND gp.status IN ('draft', 'active')
+     ORDER BY
+       CASE WHEN gp.planned_planting_date IS NOT NULL THEN 0 ELSE 1 END,
+       gp.planned_planting_date ASC,
+       gp.updated_at DESC
+     LIMIT ?`,
+    [req.user.id, limit],
+    (err, rows) => {
+      if (err) {
+        console.error('Error fetching upcoming plans:', err);
+        return res.status(500).json({ error: 'Błąd serwera' });
+      }
+      res.json(rows);
+    }
+  );
+});
+
 // Get single plan with items
 router.get('/:id', auth, (req, res) => {
   const { id } = req.params;
@@ -159,20 +191,41 @@ router.put('/:id', auth, (req, res) => {
 router.delete('/:id', auth, (req, res) => {
   const { id } = req.params;
 
-  db.run(
-    'DELETE FROM garden_plans WHERE id = ? AND user_id = ?',
-    [id, req.user.id],
-    function(err) {
-      if (err) {
-        console.error('Error deleting plan:', err);
-        return res.status(500).json({ error: 'Błąd usuwania' });
-      }
-      if (this.changes === 0) {
-        return res.status(404).json({ error: 'Plan nie znaleziony' });
-      }
-      res.json({ message: 'Plan usunięty' });
+  // Verify ownership first
+  db.get('SELECT id FROM garden_plans WHERE id = ? AND user_id = ?', [id, req.user.id], (err, plan) => {
+    if (err) {
+      console.error('Error verifying plan:', err);
+      return res.status(500).json({ error: 'Błąd serwera' });
     }
-  );
+    if (!plan) {
+      return res.status(404).json({ error: 'Plan nie znaleziony' });
+    }
+
+    // Najpierw usuń powiązane zadania
+    db.run('DELETE FROM tasks WHERE garden_plan_id = ? AND user_id = ?', [id, req.user.id], function(err) {
+      if (err) {
+        console.error('Error deleting plan tasks:', err);
+        return res.status(500).json({ error: 'Błąd usuwania zadań planu' });
+      }
+
+      // Potem usuń elementy planu
+      db.run('DELETE FROM garden_plan_items WHERE plan_id = ?', [id], function(err) {
+        if (err) {
+          console.error('Error deleting plan items:', err);
+          return res.status(500).json({ error: 'Błąd usuwania elementów planu' });
+        }
+
+        // Na końcu usuń sam plan
+        db.run('DELETE FROM garden_plans WHERE id = ?', [id], function(err) {
+          if (err) {
+            console.error('Error deleting plan:', err);
+            return res.status(500).json({ error: 'Błąd usuwania planu' });
+          }
+          res.json({ message: 'Plan usunięty' });
+        });
+      });
+    });
+  });
 });
 
 // ==========================================
@@ -185,7 +238,7 @@ router.post('/:id/items', auth, (req, res) => {
   const { plant_id, plant_name, quantity, position_x, position_y, width_cm, height_cm, row_number, notes, planned_date } = req.body;
 
   // Verify plan ownership
-  db.get('SELECT id FROM garden_plans WHERE id = ? AND user_id = ?', [id, req.user.id], (err, plan) => {
+  db.get('SELECT * FROM garden_plans WHERE id = ? AND user_id = ?', [id, req.user.id], (err, plan) => {
     if (err) {
       return res.status(500).json({ error: 'Błąd serwera' });
     }
@@ -193,25 +246,67 @@ router.post('/:id/items', auth, (req, res) => {
       return res.status(404).json({ error: 'Plan nie znaleziony' });
     }
 
-    db.run(
-      `INSERT INTO garden_plan_items (plan_id, plant_id, plant_name, quantity, position_x, position_y, width_cm, height_cm, row_number, notes, planned_date)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [id, plant_id || null, plant_name, quantity || 1, position_x, position_y, width_cm, height_cm, row_number, notes, planned_date],
-      function(err) {
-        if (err) {
-          console.error('Error adding item:', err);
-          return res.status(500).json({ error: 'Błąd dodawania rośliny' });
-        }
-
-        // Update plan's updated_at
-        db.run('UPDATE garden_plans SET updated_at = CURRENT_TIMESTAMP WHERE id = ?', [id]);
-
-        res.status(201).json({
-          id: this.lastID,
-          message: 'Roślina dodana do planu'
+    // Sprawdź czy roślina już jest w planie
+    const checkDuplicate = (callback) => {
+      if (plant_id) {
+        db.get('SELECT id FROM garden_plan_items WHERE plan_id = ? AND plant_id = ?', [id, plant_id], (err, row) => {
+          if (err) {
+            return res.status(500).json({ error: 'Błąd serwera' });
+          }
+          if (row) {
+            return res.status(409).json({ error: 'Ta roślina jest już w planie' });
+          }
+          callback();
         });
+      } else {
+        callback();
       }
-    );
+    };
+
+    checkDuplicate(() => {
+      db.run(
+        `INSERT INTO garden_plan_items (plan_id, plant_id, plant_name, quantity, position_x, position_y, width_cm, height_cm, row_number, notes, planned_date)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [id, plant_id || null, plant_name, quantity || 1, position_x, position_y, width_cm, height_cm, row_number, notes, planned_date],
+        function(err) {
+          if (err) {
+            console.error('Error adding item:', err);
+            return res.status(500).json({ error: 'Błąd dodawania rośliny' });
+          }
+
+          const newItemId = this.lastID;
+
+          // Update plan's updated_at
+          db.run('UPDATE garden_plans SET updated_at = CURRENT_TIMESTAMP WHERE id = ?', [id]);
+
+          // If tasks already created, auto-create task for new plant
+          if (plan.tasks_created_at) {
+            const plantingDate = plan.planned_planting_date || new Date().toISOString().split('T')[0];
+            db.run(
+              `INSERT INTO tasks (user_id, task_type, description, due_date, priority, garden_plan_id, garden_plan_item_id)
+               VALUES (?, 'custom', ?, ?, 2, ?, ?)`,
+              [
+                req.user.id,
+                `Posadzić: ${plant_name} (${quantity || 1} szt.) - z planu: ${plan.name}`,
+                plantingDate,
+                id,
+                newItemId
+              ],
+              function(taskErr) {
+                if (!taskErr) {
+                  db.run('UPDATE garden_plan_items SET task_id = ? WHERE id = ?', [this.lastID, newItemId]);
+                }
+              }
+            );
+          }
+
+          res.status(201).json({
+            id: newItemId,
+            message: 'Roślina dodana do planu'
+          });
+        }
+      );
+    });
   });
 });
 
@@ -221,7 +316,7 @@ router.put('/:planId/items/:itemId', auth, (req, res) => {
   const { quantity, position_x, position_y, width_cm, height_cm, row_number, notes, planned_date } = req.body;
 
   // Verify ownership
-  db.get('SELECT id FROM garden_plans WHERE id = ? AND user_id = ?', [planId, req.user.id], (err, plan) => {
+  db.get('SELECT * FROM garden_plans WHERE id = ? AND user_id = ?', [planId, req.user.id], (err, plan) => {
     if (err) {
       return res.status(500).json({ error: 'Błąd serwera' });
     }
@@ -259,6 +354,22 @@ router.put('/:planId/items/:itemId', auth, (req, res) => {
         // Update plan's updated_at
         db.run('UPDATE garden_plans SET updated_at = CURRENT_TIMESTAMP WHERE id = ?', [planId]);
 
+        // If tasks already created, sync task description with new quantity
+        if (plan.tasks_created_at && quantity !== undefined) {
+          db.get('SELECT * FROM garden_plan_items WHERE id = ? AND plan_id = ?', [itemId, planId], (err, item) => {
+            if (!err && item && item.task_id) {
+              db.run(
+                `UPDATE tasks SET description = ? WHERE id = ? AND user_id = ?`,
+                [
+                  `Posadzić: ${item.plant_name} (${quantity} szt.) - z planu: ${plan.name}`,
+                  item.task_id,
+                  req.user.id
+                ]
+              );
+            }
+          });
+        }
+
         res.json({ message: 'Element zaktualizowany' });
       }
     );
@@ -270,12 +381,21 @@ router.delete('/:planId/items/:itemId', auth, (req, res) => {
   const { planId, itemId } = req.params;
 
   // Verify ownership
-  db.get('SELECT id FROM garden_plans WHERE id = ? AND user_id = ?', [planId, req.user.id], (err, plan) => {
+  db.get('SELECT * FROM garden_plans WHERE id = ? AND user_id = ?', [planId, req.user.id], (err, plan) => {
     if (err) {
       return res.status(500).json({ error: 'Błąd serwera' });
     }
     if (!plan) {
       return res.status(404).json({ error: 'Plan nie znaleziony' });
+    }
+
+    // If tasks exist, delete linked task first
+    if (plan.tasks_created_at) {
+      db.get('SELECT task_id FROM garden_plan_items WHERE id = ? AND plan_id = ?', [itemId, planId], (err, item) => {
+        if (!err && item && item.task_id) {
+          db.run('DELETE FROM tasks WHERE id = ? AND user_id = ?', [item.task_id, req.user.id]);
+        }
+      });
     }
 
     db.run(
@@ -303,6 +423,7 @@ router.delete('/:planId/items/:itemId', auth, (req, res) => {
 // Convert plan to tasks in planner
 router.post('/:id/convert-to-tasks', auth, (req, res) => {
   const { id } = req.params;
+  const { planned_date, selected_items } = req.body; // selected_items is optional array of item IDs
 
   // Get plan and items
   db.get(
@@ -316,51 +437,84 @@ router.post('/:id/convert-to-tasks', auth, (req, res) => {
         return res.status(404).json({ error: 'Plan nie znaleziony' });
       }
 
+      // Check if tasks already created
+      if (plan.tasks_created_at) {
+        return res.status(400).json({
+          error: 'Zadania dla tego planu już zostały utworzone',
+          tasks_created_at: plan.tasks_created_at
+        });
+      }
+
       db.all(
         'SELECT * FROM garden_plan_items WHERE plan_id = ?',
         [id],
-        (err, items) => {
+        (err, allItems) => {
           if (err) {
             return res.status(500).json({ error: 'Błąd serwera' });
           }
 
-          if (items.length === 0) {
+          if (allItems.length === 0) {
             return res.status(400).json({ error: 'Plan nie zawiera roślin' });
           }
 
-          // Create planned_actions for each item
+          // Filter items if selected_items provided
+          const items = selected_items && selected_items.length > 0
+            ? allItems.filter(item => selected_items.includes(item.id))
+            : allItems;
+
+          if (items.length === 0) {
+            return res.status(400).json({ error: 'Nie wybrano żadnych roślin' });
+          }
+
+          const plantingDate = planned_date || new Date().toISOString().split('T')[0];
+
+          // Create tasks for each item with linkage
           const insertPromises = items.map(item => {
             return new Promise((resolve, reject) => {
               db.run(
-                `INSERT INTO planned_actions (user_id, plant_id, plot_id, action_type, title, planned_date, notes)
-                 VALUES (?, ?, ?, 'plant', ?, ?, ?)`,
+                `INSERT INTO tasks (user_id, task_type, description, due_date, priority, garden_plan_id, garden_plan_item_id)
+                 VALUES (?, 'custom', ?, ?, 2, ?, ?)`,
                 [
                   req.user.id,
-                  item.plant_id,
-                  plan.plot_id,
-                  `Posadzić: ${item.plant_name}`,
-                  item.planned_date || new Date().toISOString().split('T')[0],
-                  `Z planu: ${plan.name}. ${item.notes || ''}`
+                  `Posadzić: ${item.plant_name} (${item.quantity || 1} szt.) - z planu: ${plan.name}`,
+                  plantingDate,
+                  id,
+                  item.id
                 ],
                 function(err) {
-                  if (err) reject(err);
-                  else resolve(this.lastID);
+                  if (err) {
+                    reject(err);
+                  } else {
+                    const taskId = this.lastID;
+                    // Update the plan item with task_id
+                    db.run(
+                      'UPDATE garden_plan_items SET task_id = ? WHERE id = ?',
+                      [taskId, item.id]
+                    );
+                    resolve({ taskId, itemId: item.id, plantName: item.plant_name });
+                  }
                 }
               );
             });
           });
 
           Promise.all(insertPromises)
-            .then(taskIds => {
-              // Update plan status to active
+            .then(results => {
+              // Update plan with tasks_created_at and planned_planting_date
               db.run(
-                'UPDATE garden_plans SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-                ['active', id]
+                `UPDATE garden_plans
+                 SET status = 'active',
+                     tasks_created_at = CURRENT_TIMESTAMP,
+                     planned_planting_date = ?,
+                     updated_at = CURRENT_TIMESTAMP
+                 WHERE id = ?`,
+                [plantingDate, id]
               );
 
               res.json({
-                message: `Utworzono ${taskIds.length} zadań w planerze`,
-                task_ids: taskIds
+                message: `Utworzono ${results.length} zadań w planerze na ${plantingDate}`,
+                tasks: results,
+                planned_date: plantingDate
               });
             })
             .catch(err => {
@@ -371,6 +525,48 @@ router.post('/:id/convert-to-tasks', auth, (req, res) => {
       );
     }
   );
+});
+
+// Delete tasks for a plan (allows re-creating them)
+router.delete('/:id/tasks', auth, (req, res) => {
+  const { id } = req.params;
+
+  // Verify ownership
+  db.get('SELECT id FROM garden_plans WHERE id = ? AND user_id = ?', [id, req.user.id], (err, plan) => {
+    if (err) return res.status(500).json({ error: 'Błąd serwera' });
+    if (!plan) return res.status(404).json({ error: 'Plan nie znaleziony' });
+
+    // Delete linked tasks
+    db.run(
+      'DELETE FROM tasks WHERE garden_plan_id = ? AND user_id = ?',
+      [id, req.user.id],
+      function(err) {
+        if (err) {
+          console.error('Error deleting tasks:', err);
+          return res.status(500).json({ error: 'Błąd usuwania zadań' });
+        }
+
+        // Clear task_ids from plan items
+        db.run('UPDATE garden_plan_items SET task_id = NULL WHERE plan_id = ?', [id]);
+
+        // Reset plan status
+        db.run(
+          `UPDATE garden_plans
+           SET tasks_created_at = NULL,
+               planned_planting_date = NULL,
+               status = 'draft',
+               updated_at = CURRENT_TIMESTAMP
+           WHERE id = ?`,
+          [id]
+        );
+
+        res.json({
+          message: `Usunięto ${this.changes} zadań`,
+          deleted_count: this.changes
+        });
+      }
+    );
+  });
 });
 
 // Execute plan - actually plant everything
@@ -418,7 +614,7 @@ router.post('/:id/execute', auth, (req, res) => {
                   item.row_number || 1,
                   item.plant_name,
                   new Date().toISOString().split('T')[0],
-                  item.notes || `Z planu: ${plan.name}`
+                  item.notes || `Z planu: ${plan.name} (${item.quantity || 1} szt.)`
                 ],
                 function(err) {
                   if (err) reject(err);
@@ -510,6 +706,38 @@ router.get('/:id/companion-analysis', auth, (req, res) => {
         benefits: benefits,
         has_conflicts: conflicts.length > 0
       });
+    }
+  );
+});
+
+// Get garden plans for calendar view
+router.get('/calendar/:year/:month', auth, (req, res) => {
+  const { year, month } = req.params;
+  const y = parseInt(year);
+  const m = parseInt(month);
+  const startDate = `${y}-${String(m).padStart(2, '0')}-01`;
+  const nextMonth = m === 12 ? 1 : m + 1;
+  const nextYear = m === 12 ? y + 1 : y;
+  const endDate = `${nextYear}-${String(nextMonth).padStart(2, '0')}-01`;
+
+  db.all(
+    `SELECT gp.id, gp.name, gp.status, gp.planned_planting_date,
+            p.name as plot_name,
+            (SELECT COUNT(*) FROM garden_plan_items WHERE plan_id = gp.id) as items_count
+     FROM garden_plans gp
+     LEFT JOIN plots p ON gp.plot_id = p.id
+     WHERE gp.user_id = ?
+       AND gp.planned_planting_date >= ?
+       AND gp.planned_planting_date < ?
+       AND gp.status IN ('draft', 'active')
+     ORDER BY gp.planned_planting_date ASC`,
+    [req.user.id, startDate, endDate],
+    (err, rows) => {
+      if (err) {
+        console.error('Error fetching calendar plans:', err);
+        return res.status(500).json({ error: 'Błąd serwera' });
+      }
+      res.json(rows);
     }
   );
 });

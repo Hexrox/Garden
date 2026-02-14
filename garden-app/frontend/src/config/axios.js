@@ -43,5 +43,37 @@ axios.interceptors.response.use(
   }
 );
 
+/**
+ * Buduje poprawny URL do zdjęcia z bazy danych.
+ * Obsługuje różne formaty ścieżek:
+ *   "uploads/tomato.jpg"       -> "/uploads/tomato.jpg"
+ *   "/uploads/tomato.jpg"      -> "/uploads/tomato.jpg"
+ *   "thumbs/tomato_thumb.jpg"  -> "/uploads/thumbs/tomato_thumb.jpg"
+ *   null/undefined             -> null
+ */
+const getImageUrl = (path) => {
+  if (!path) return null;
+
+  // Już jest pełnym URL-em
+  if (path.startsWith('http://') || path.startsWith('https://')) {
+    return path;
+  }
+
+  // Znormalizuj ścieżkę
+  let normalized = path;
+
+  // Dodaj leading slash jeśli brak
+  if (!normalized.startsWith('/')) {
+    normalized = '/' + normalized;
+  }
+
+  // Upewnij się, że zaczyna się od /uploads/
+  if (!normalized.startsWith('/uploads/')) {
+    normalized = '/uploads' + normalized;
+  }
+
+  return `${API_URL}${normalized}`;
+};
+
 export default axios;
-export { API_URL };
+export { API_URL, getImageUrl };

@@ -24,13 +24,14 @@ const Calendar = () => {
       const month = currentDate.getMonth() + 1;
 
       // Fetch all event types for the month including moon phases and planner
-      const [tasks, reminders, succession, sprays, moon, planner] = await Promise.all([
+      const [tasks, reminders, succession, sprays, moon, planner, gardenPlans] = await Promise.all([
         axios.get(`/api/tasks`).catch(() => ({ data: [] })),
         axios.get(`/api/reminders`).catch(() => ({ data: [] })),
         axios.get(`/api/succession`).catch(() => ({ data: [] })),
         axios.get(`/api/sprays/history`).catch(() => ({ data: [] })),
         axios.get(`/api/calendar/moon/month/${year}/${month}`).catch(() => ({ data: [] })),
-        axios.get(`/api/planner/calendar/${year}/${month}`).catch(() => ({ data: [] }))
+        axios.get(`/api/planner/calendar/${year}/${month}`).catch(() => ({ data: [] })),
+        axios.get(`/api/garden-plans/calendar/${year}/${month}`).catch(() => ({ data: [] }))
       ]);
 
       // Store moon phases separately
@@ -73,6 +74,14 @@ const Calendar = () => {
           color: 'bg-orange-500',
           status: p.status,
           planId: p.id
+        })),
+        ...gardenPlans.data.map(gp => ({
+          date: gp.planned_planting_date,
+          type: 'garden-plan',
+          title: `🌱 Plan: ${gp.name} (${gp.items_count} roślin)`,
+          color: 'bg-teal-500',
+          status: gp.status,
+          plotName: gp.plot_name
         }))
       ];
 
@@ -177,7 +186,7 @@ const Calendar = () => {
 
         {/* Legend */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-full bg-blue-500"></div>
               <span className="text-sm text-gray-700 dark:text-gray-300">Zadania</span>
@@ -193,6 +202,10 @@ const Calendar = () => {
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-full bg-red-500"></div>
               <span className="text-sm text-gray-700 dark:text-gray-300">Opryski</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-teal-500"></div>
+              <span className="text-sm text-gray-700 dark:text-gray-300">Plany nasadzeń</span>
             </div>
           </div>
         </div>
@@ -430,6 +443,7 @@ const Calendar = () => {
                           {event.type === 'reminder' && 'Przypomnienie'}
                           {event.type === 'succession' && 'Sadzenie sukcesywne'}
                           {event.type === 'spray' && 'Oprysk'}
+                          {event.type === 'garden-plan' && 'Plan nasadzeń'}
                         </p>
                       </div>
                       {event.completed && (

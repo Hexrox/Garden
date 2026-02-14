@@ -275,7 +275,7 @@ const PlanCard = ({
 
           {/* Formularz przesunięcia */}
           {showReschedule && (
-            <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-750 rounded-xl border border-gray-200 dark:border-gray-600">
+            <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl border border-gray-200 dark:border-gray-600">
               <h4 className="font-medium text-gray-900 dark:text-white mb-3">
                 Przesuń na nowy termin
               </h4>

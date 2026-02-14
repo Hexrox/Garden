@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
+import { getImageUrl } from '../config/axios';
 import { Sprout, Calendar, Image as ImageIcon, Share2, Home, X, Instagram, Award } from 'lucide-react';
 
 const PublicProfile = () => {
@@ -161,7 +162,7 @@ const PublicProfile = () => {
         {profile.coverPhoto ? (
           <>
             <img
-              src={`${process.env.REACT_APP_API_URL || ''}/${profile.coverPhoto.path}`}
+              src={getImageUrl(profile.coverPhoto.path)}
               alt="Cover"
               className="absolute inset-0 w-full h-full object-cover"
             />
@@ -183,7 +184,7 @@ const PublicProfile = () => {
                 <div className="flex-shrink-0">
                   {profile.profilePhoto ? (
                     <img
-                      src={`${process.env.REACT_APP_API_URL || ''}/${profile.profilePhoto}`}
+                      src={getImageUrl(profile.profilePhoto)}
                       alt={username}
                       className="w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-white/30 shadow-xl object-cover"
                     />
@@ -326,7 +327,7 @@ const PublicProfile = () => {
                   {harvest.harvestPhoto && (
                     <div className="relative h-48">
                       <img
-                        src={`${process.env.REACT_APP_API_URL || ''}/${harvest.harvestPhoto}`}
+                        src={getImageUrl(harvest.harvestPhoto)}
                         alt={`Zbiór ${harvest.plantName}`}
                         loading="lazy"
                         className="w-full h-full object-cover"
@@ -399,7 +400,7 @@ const PublicProfile = () => {
                   className="relative aspect-square overflow-hidden rounded-lg hover:opacity-90 active:opacity-75 transition group touch-manipulation"
                 >
                   <img
-                    src={`${process.env.REACT_APP_API_URL || ''}/${photo.path}`}
+                    src={getImageUrl(photo.path)}
                     alt={photo.caption || photo.plantName}
                     loading="lazy"
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
@@ -435,7 +436,7 @@ const PublicProfile = () => {
                     <div className="flex-shrink-0 w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32">
                       {item.imagePath ? (
                         <img
-                          src={`${process.env.REACT_APP_API_URL || ''}/${item.imagePath}`}
+                          src={getImageUrl(item.imagePath)}
                           alt={`${item.plantName} ${item.plantVariety || ''}`}
                           loading="lazy"
                           className="w-full h-full object-cover"
@@ -557,7 +558,7 @@ const PublicProfile = () => {
           </button>
           <div className="max-w-5xl w-full">
             <img
-              src={`${process.env.REACT_APP_API_URL || ''}/${selectedPhoto.path}`}
+              src={getImageUrl(selectedPhoto.path)}
               alt={selectedPhoto.caption || selectedPhoto.plantName}
               className="w-full h-auto max-h-[80vh] md:max-h-[85vh] object-contain rounded-lg"
               onClick={(e) => e.stopPropagation()}

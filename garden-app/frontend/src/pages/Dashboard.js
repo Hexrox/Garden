@@ -1,15 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Sprout, Droplets, Bell, Plus, BarChart3, Save, Calendar } from 'lucide-react';
+import { Sprout, Droplets, Bell, Calendar, Snowflake, Sun, Leaf, Thermometer } from 'lucide-react';
 import axios from '../config/axios';
 import { useAuth } from '../context/AuthContext';
 import WeatherWidget from '../components/WeatherWidget';
 import TaskList from '../components/TaskList';
-import UpcomingHarvests from '../components/UpcomingHarvests';
-import UpcomingPlans from '../components/UpcomingPlans';
 import SuccessionWidget from '../components/SuccessionWidget';
-import BloomCalendar from '../components/BloomCalendar';
-import SeasonWidget from '../components/SeasonWidget';
 import OnboardingWizard from '../components/onboarding/OnboardingWizard';
 import WelcomeCard from '../components/onboarding/WelcomeCard';
 import EmailVerificationBanner from '../components/EmailVerificationBanner';
@@ -24,6 +20,9 @@ const Dashboard = () => {
   const [reminders, setReminders] = useState([]);
   const [activeSprays, setActiveSprays] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Season info for hero header
+  const [seasonInfo, setSeasonInfo] = useState(null);
 
   // Onboarding states
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -48,8 +47,11 @@ const Dashboard = () => {
       const hasData = plotsRes.data.length > 0;
       setOnboardingCompleted(completed);
 
-      // Auto-geocode city if user has city but no coordinates
+      // Calculate season info for hero header
       const profile = profileRes.data;
+      calculateSeasonInfo(profile);
+
+      // Auto-geocode city if user has city but no coordinates
       if (profile.city && (!profile.latitude || !profile.longitude)) {
         try {
           const geocodeResponse = await fetch(
@@ -181,10 +183,101 @@ const Dashboard = () => {
     }
   };
 
+  // Calculate season info from profile frost dates
+  const calculateSeasonInfo = (profile) => {
+    if (!profile?.last_frost_date && !profile?.first_frost_date) {
+      setSeasonInfo({ type: 'no-data' });
+      return;
+    }
+
+    const today = new Date();
+    const currentYear = today.getFullYear();
+
+    const parseDate = (dateStr) => {
+      if (!dateStr) return null;
+      if (dateStr.length === 5) {
+        return new Date(`${currentYear}-${dateStr}`);
+      }
+      return new Date(dateStr);
+    };
+
+    const lastFrostDate = parseDate(profile.last_frost_date);
+    const firstFrostDate = parseDate(profile.first_frost_date);
+
+    let adjustedLastFrost = lastFrostDate;
+    let adjustedFirstFrost = firstFrostDate;
+
+    if (lastFrostDate) {
+      adjustedLastFrost = new Date(currentYear, lastFrostDate.getMonth(), lastFrostDate.getDate());
+    }
+    if (firstFrostDate) {
+      adjustedFirstFrost = new Date(currentYear, firstFrostDate.getMonth(), firstFrostDate.getDate());
+    }
+
+    const daysUntilLastFrost = adjustedLastFrost ? Math.ceil((adjustedLastFrost - today) / (1000 * 60 * 60 * 24)) : null;
+    const daysUntilFirstFrost = adjustedFirstFrost ? Math.ceil((adjustedFirstFrost - today) / (1000 * 60 * 60 * 24)) : null;
+
+    // Determine phase
+    if (!adjustedLastFrost || !adjustedFirstFrost) {
+      setSeasonInfo({ type: 'unknown' });
+      return;
+    }
+
+    if (today < adjustedLastFrost) {
+      // Pre-season
+      setSeasonInfo({
+        type: 'pre-season',
+        daysUntil: daysUntilLastFrost,
+        plantingDate: adjustedLastFrost.toLocaleDateString('pl-PL', { day: 'numeric', month: 'short' }),
+        zone: profile.hardiness_zone
+      });
+    } else if (today > adjustedFirstFrost) {
+      // Post-season
+      setSeasonInfo({
+        type: 'post-season',
+        zone: profile.hardiness_zone
+      });
+    } else {
+      // Growing season
+      const growingDays = Math.ceil((today - adjustedLastFrost) / (1000 * 60 * 60 * 24));
+      const totalSeason = Math.ceil((adjustedFirstFrost - adjustedLastFrost) / (1000 * 60 * 60 * 24));
+      const progress = Math.min(100, Math.round((growingDays / totalSeason) * 100));
+      setSeasonInfo({
+        type: 'growing',
+        day: growingDays,
+        progress,
+        daysUntilFrost: daysUntilFirstFrost,
+        zone: profile.hardiness_zone
+      });
+    }
+  };
+
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="text-gray-500 dark:text-gray-400">Ładowanie...</div>
+      <div className="space-y-4 md:space-y-6 animate-pulse">
+        {/* Hero skeleton */}
+        <div className="h-40 bg-gradient-to-br from-green-200 to-emerald-100 dark:from-green-900/50 dark:to-emerald-800/30 rounded-2xl"></div>
+
+        {/* Widgets skeleton */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+          <div className="h-48 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
+          <div className="h-48 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
+        </div>
+
+        {/* Stats skeleton */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm">
+              <div className="flex items-center">
+                <div className="w-14 h-14 bg-gray-200 dark:bg-gray-700 rounded-xl"></div>
+                <div className="ml-4 flex-1">
+                  <div className="h-4 w-20 bg-gray-200 dark:bg-gray-700 rounded mb-2"></div>
+                  <div className="h-8 w-12 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
@@ -202,29 +295,78 @@ const Dashboard = () => {
           />
         )}
 
-      {/* Hero Header with Gradient */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-green-600 via-green-500 to-emerald-400 dark:from-green-800 dark:via-green-700 dark:to-emerald-600 rounded-2xl p-6 md:p-8 shadow-lg">
+      {/* Hero Header with Gradient + Season Info */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-green-600 via-green-500 to-emerald-400 dark:from-green-800 dark:via-green-700 dark:to-emerald-600 rounded-2xl p-4 sm:p-6 md:p-8 shadow-lg">
         {/* Decorative elements */}
         <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl"></div>
         <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full translate-y-1/2 -translate-x-1/2 blur-2xl"></div>
 
-        <div className="relative flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <p className="text-green-100 text-sm font-medium mb-1">
-              {new Date().getHours() < 12 ? 'Dzień dobry' : new Date().getHours() < 18 ? 'Cześć' : 'Dobry wieczór'},
-            </p>
-            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-white">
-              {user?.username}!
-            </h1>
-            <p className="text-green-100 mt-2 text-sm md:text-base">
-              Przegląd Twojego ogrodu na dziś
-            </p>
+        <div className="relative flex justify-between items-start gap-3">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-baseline gap-2 flex-wrap">
+              <p className="text-green-100 text-sm font-medium">
+                {new Date().getHours() < 12 ? 'Dzień dobry' : new Date().getHours() < 18 ? 'Cześć' : 'Dobry wieczór'},
+              </p>
+              <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-white truncate">
+                {user?.username}!
+              </h1>
+            </div>
+            {/* Season info integrated into hero */}
+            {seasonInfo && seasonInfo.type === 'pre-season' && (
+              <div className="flex items-center flex-wrap gap-x-3 gap-y-1 mt-2 sm:mt-3 text-green-100">
+                <span className="flex items-center gap-1.5 text-sm font-medium">
+                  <Snowflake size={14} className="text-blue-200 flex-shrink-0" />
+                  {seasonInfo.daysUntil} dni do sezonu
+                </span>
+                <span className="text-xs opacity-80">• Sadzenie od {seasonInfo.plantingDate}</span>
+                {seasonInfo.zone && (
+                  <span className="px-2 py-0.5 bg-white/20 rounded text-xs">{seasonInfo.zone}</span>
+                )}
+              </div>
+            )}
+            {seasonInfo && seasonInfo.type === 'growing' && (
+              <div className="flex items-center flex-wrap gap-x-3 gap-y-1 mt-2 sm:mt-3 text-green-100">
+                <span className="flex items-center gap-1.5 text-sm font-medium">
+                  <Sun size={14} className="text-yellow-200 flex-shrink-0" />
+                  Sezon: dzień {seasonInfo.day}
+                </span>
+                <div className="flex items-center gap-2">
+                  <div className="w-16 h-1.5 bg-white/30 rounded-full overflow-hidden">
+                    <div className="h-full bg-white/80 rounded-full" style={{ width: `${seasonInfo.progress}%` }} />
+                  </div>
+                  <span className="text-xs opacity-80">{seasonInfo.daysUntilFrost} dni do jesieni</span>
+                </div>
+                {seasonInfo.zone && (
+                  <span className="px-2 py-0.5 bg-white/20 rounded text-xs">{seasonInfo.zone}</span>
+                )}
+              </div>
+            )}
+            {seasonInfo && seasonInfo.type === 'post-season' && (
+              <div className="flex items-center flex-wrap gap-x-3 gap-y-1 mt-2 sm:mt-3 text-green-100">
+                <span className="flex items-center gap-1.5 text-sm font-medium">
+                  <Leaf size={14} className="text-amber-200 flex-shrink-0" />
+                  Sezon zakończony
+                </span>
+                <Link to="/winter-protection" className="text-xs underline opacity-80 hover:opacity-100">
+                  Ochrona zimowa →
+                </Link>
+              </div>
+            )}
+            {seasonInfo && seasonInfo.type === 'no-data' && (
+              <Link
+                to="/profile"
+                className="flex items-center gap-2 mt-2 sm:mt-3 text-green-100 hover:text-white transition-colors"
+              >
+                <Thermometer size={14} />
+                <span className="text-xs">Ustaw strefę klimatyczną w profilu →</span>
+              </Link>
+            )}
           </div>
           <Link
             to="/calendar"
-            className="flex items-center gap-2 px-5 py-2.5 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white rounded-xl shadow-lg transition-all duration-200 font-medium border border-white/20"
+            className="flex-shrink-0 flex items-center gap-2 px-3 py-2 sm:px-5 sm:py-2.5 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white rounded-xl shadow-lg transition-all duration-200 font-medium border border-white/20"
           >
-            <Calendar size={20} />
+            <Calendar size={18} />
             <span className="hidden sm:inline">Kalendarz</span>
           </Link>
         </div>
@@ -238,21 +380,11 @@ const Dashboard = () => {
         />
       )}
 
-      {/* Season Widget - Frost countdown and seasonal info */}
-      <SeasonWidget />
-
-      {/* Widgets Row - Weather, Tasks, Harvests */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
+      {/* Widgets Row - Weather, Tasks (with Harvests & Plans integrated) */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
         <WeatherWidget />
         <TaskList />
-        <UpcomingHarvests />
       </div>
-
-      {/* Upcoming Plans Widget */}
-      <UpcomingPlans />
-
-      {/* Bloom Calendar - Horizontal Layout */}
-      <BloomCalendar horizontal />
 
       {/* Succession Planting Widget */}
       <SuccessionWidget />
@@ -322,7 +454,7 @@ const Dashboard = () => {
           </div>
           <div className="divide-y divide-gray-200 dark:divide-gray-700">
             {reminders.map((reminder) => (
-              <div key={reminder.id} className="px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors">
+              <div key={reminder.id} className="px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
                     <p className="text-sm font-medium text-gray-900 dark:text-white">{reminder.message}</p>
@@ -354,7 +486,7 @@ const Dashboard = () => {
           </div>
           <div className="divide-y divide-gray-200 dark:divide-gray-700">
             {activeSprays.map((spray) => (
-              <div key={spray.id} className="px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors">
+              <div key={spray.id} className="px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                 <div className="flex justify-between items-start">
                   <div>
                     <p className="text-sm font-medium text-gray-900 dark:text-white">{spray.spray_name}</p>
@@ -375,72 +507,6 @@ const Dashboard = () => {
         </div>
       )}
 
-      {/* Quick Actions */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 transition-colors">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Szybkie akcje</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <Link
-            to="/plots/new"
-            className="flex items-center justify-center gap-2 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
-          >
-            <Plus size={18} />
-            Nowe poletko
-          </Link>
-          <Link
-            to="/sprays"
-            className="flex items-center justify-center gap-2 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
-          >
-            <BarChart3 size={18} />
-            Historia oprysków
-          </Link>
-          <Link
-            to="/export"
-            className="flex items-center justify-center gap-2 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
-          >
-            <Save size={18} />
-            Eksport danych
-          </Link>
-        </div>
-      </div>
-
-      {/* FAQ Section */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow transition-colors overflow-hidden">
-        <div className="px-6 py-4 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-b border-green-200 dark:border-green-800">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-            <span>❓</span> Często zadawane pytania
-          </h2>
-        </div>
-        <div className="divide-y divide-gray-200 dark:divide-gray-700">
-          <FAQItem
-            question="Od czego zacząć?"
-            answer="Rozpocznij od stworzenia swojego pierwszego poletka (ogród, balkon, działka). Następnie dodaj grządki z roślinami, które chcesz uprawiać. Aplikacja automatycznie obliczy daty zbiorów i zasugeruje najlepsze momenty na prace ogrodnicze!"
-          />
-          <FAQItem
-            question="Czym różni się poletko od grządki?"
-            answer="Poletko to fizyczna lokalizacja (np. 'Ogród za domem', 'Balkon od południa'). Grządka to konkretna roślina lub grupa roślin na tym poletku (np. Rząd 1: Pomidory, Rząd 2: Ogórki)."
-          />
-          <FAQItem
-            question="Jak działa kalendarz księżycowy?"
-            answer="Kalendarz księżycowy pokazuje najlepsze dni do siewu, sadzenia i zbioru według faz Księżyca. Dni korzystne oznaczone są zielonym kolorem, a niekorzystne - czerwonym. To sprawdzone metody ogrodnicze!"
-          />
-          <FAQItem
-            question="Co to są rośliny towarzyszące?"
-            answer="To system podpowiedzi pokazujący, które rośliny dobrze rosną obok siebie (np. pomidor + bazylia), a których należy unikać (np. pomidor + kapusta). Zobaczysz te podpowiedzi podczas edycji grządki!"
-          />
-          <FAQItem
-            question="Jak działają automatyczne zadania?"
-            answer="Aplikacja automatycznie generuje zadania na podstawie Twoich roślin: przypomnienia o zbiorze, podlewaniu, czy upływie karencji po oprysku. Wszystko w jednym miejscu!"
-          />
-          <FAQItem
-            question="Czy mogę śledzić postępy zdjęciami?"
-            answer="Tak! W galerii możesz dodawać zdjęcia swoich roślin, tagować je i śledzić jak rosną w czasie. To wspaniała pamiątka sezonu ogrodniczego!"
-          />
-          <FAQItem
-            question="Skąd aplikacja wie o pogodzie?"
-            answer="Po ustawieniu lokalizacji w profilu, aplikacja pobiera aktualne dane pogodowe i prognozy dla Twojej okolicy. Możesz zobaczyć temperaturę, opady i wiatr!"
-          />
-        </div>
-      </div>
 
       {/* Footer with Privacy Policy link */}
       <div className="mt-8 text-center pb-4">
@@ -455,32 +521,6 @@ const Dashboard = () => {
       </div>
     </div>
     </>
-  );
-};
-
-// FAQ Item Component
-const FAQItem = ({ question, answer }) => {
-  const [isOpen, setIsOpen] = useState(false);
-
-  return (
-    <div className="px-6 py-4">
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-start justify-between text-left"
-      >
-        <span className="text-sm font-medium text-gray-900 dark:text-white pr-4">
-          {question}
-        </span>
-        <span className={`flex-shrink-0 text-green-600 dark:text-green-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}>
-          ▼
-        </span>
-      </button>
-      {isOpen && (
-        <p className="mt-2 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
-          {answer}
-        </p>
-      )}
-    </div>
   );
 };
 

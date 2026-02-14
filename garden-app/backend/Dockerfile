@@ -1,7 +1,7 @@
 FROM node:20-alpine
 
 # Sharp i sqlite3 wymagają natywnej kompilacji
-RUN apk add --no-cache python3 make g++ vips-dev
+RUN apk add --no-cache python3 py3-setuptools make g++ vips-dev
 
 WORKDIR /app
 

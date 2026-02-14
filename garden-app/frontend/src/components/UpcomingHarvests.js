@@ -108,7 +108,7 @@ const UpcomingHarvests = () => {
             <Link
               key={harvest.id}
               to={`/plots/${harvest.plot_id}`}
-              className="block hover:bg-gray-50 dark:hover:bg-gray-750 rounded-lg transition-colors"
+              className="block hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors"
             >
               <div className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-700 rounded-lg">
                 <div className="flex-1">

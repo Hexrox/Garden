@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import axios from '../config/axios';
+import axios, { getImageUrl } from '../config/axios';
 import PhotoTimeline from '../features/photo-timeline/PhotoTimeline';
 import { Upload, Camera } from 'lucide-react';
 
@@ -63,8 +63,13 @@ const PhotoGallery = ({ bedId }) => {
     }
   };
 
+  const [deleteConfirm, setDeleteConfirm] = useState({ open: false, photoId: null });
+
   const handleDelete = async (photoId) => {
-    if (!window.confirm('Usunąć to zdjęcie?')) return;
+    setDeleteConfirm({ open: true, photoId });
+  };
+
+  const executeDelete = async (photoId) => {
     try {
       await axios.delete(`/api/photos/${photoId}`);
       setMessage({ type: 'success', text: 'Zdjęcie usunięte' });
@@ -81,7 +86,7 @@ const PhotoGallery = ({ bedId }) => {
   // Format photos for PhotoTimeline component
   const formattedPhotos = photos.map(photo => ({
     ...photo,
-    url: `/${photo.photo_path}`,
+    url: getImageUrl(photo.photo_path),
     description: photo.caption
   }));
 
@@ -162,6 +167,19 @@ const PhotoGallery = ({ bedId }) => {
         photos={formattedPhotos}
         onPhotoDelete={handleDelete}
       />
+      {/* Delete Confirmation Modal */}
+      {deleteConfirm.open && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={() => setDeleteConfirm({ open: false, photoId: null })}>
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-sm w-full shadow-xl" onClick={e => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Usuń zdjęcie</h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">Usunąć to zdjęcie?</p>
+            <div className="flex gap-3 justify-end">
+              <button onClick={() => setDeleteConfirm({ open: false, photoId: null })} className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">Anuluj</button>
+              <button onClick={() => { executeDelete(deleteConfirm.photoId); setDeleteConfirm({ open: false, photoId: null }); }} className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors">Usuń</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

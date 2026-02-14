@@ -6,14 +6,16 @@ import { X, AlertTriangle } from 'lucide-react';
  */
 const DeleteConfirmDialog = ({ bed, onClose, onDelete }) => {
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleDelete = async () => {
     setLoading(true);
+    setError('');
     try {
       await onDelete(bed.id);
       onClose();
     } catch (err) {
-      alert(err.response?.data?.error || 'Błąd podczas usuwania');
+      setError(err.response?.data?.error || 'Błąd podczas usuwania');
     } finally {
       setLoading(false);
     }
@@ -86,6 +88,10 @@ const DeleteConfirmDialog = ({ bed, onClose, onDelete }) => {
               <li>Zdjęcia zostaną zachowane w galerii</li>
             </ul>
           </div>
+
+          {error && (
+            <div className="p-3 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-lg text-sm">{error}</div>
+          )}
 
           {/* Buttons */}
           <div className="flex gap-3 pt-2">

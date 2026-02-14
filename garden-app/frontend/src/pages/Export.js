@@ -3,6 +3,7 @@ import axios from '../config/axios';
 
 const Export = () => {
   const [loading, setLoading] = useState(null);
+  const [message, setMessage] = useState({ type: '', text: '' });
 
   const handleExport = async (endpoint, filename) => {
     setLoading(endpoint);
@@ -22,7 +23,7 @@ const Export = () => {
       window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Export error:', error);
-      alert('Błąd podczas eksportu danych');
+      setMessage({ type: 'error', text: 'Błąd podczas eksportu danych' });
     } finally {
       setLoading(null);
     }
@@ -31,6 +32,12 @@ const Export = () => {
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Eksport danych</h1>
+
+      {message.text && (
+        <div className={`p-3 rounded-lg text-sm ${message.type === 'error' ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300' : 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'}`}>
+          {message.text}
+        </div>
+      )}
 
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
         <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">Poletka</h2>

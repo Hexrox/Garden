@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Camera, Calendar, X, Upload, Image as ImageIcon } from 'lucide-react';
+import { getImageUrl } from '../../config/axios';
 
 /**
  * PhotoTimeline Component
@@ -9,6 +10,7 @@ import { Camera, Calendar, X, Upload, Image as ImageIcon } from 'lucide-react';
  */
 const PhotoTimeline = ({ photos = [], onPhotoAdd, onPhotoDelete }) => {
   const [selectedPhoto, setSelectedPhoto] = useState(null);
+  const [deleteConfirm, setDeleteConfirm] = useState({ open: false, photoId: null });
 
   // Format date for display
   const formatDate = (dateString) => {
@@ -56,7 +58,7 @@ const PhotoTimeline = ({ photos = [], onPhotoAdd, onPhotoDelete }) => {
               {/* Photo */}
               <div className="aspect-square bg-gray-100 dark:bg-gray-900">
                 <img
-                  src={photo.url || photo.photo_url}
+                  src={photo.url || getImageUrl(photo.photo_path) || photo.photo_url}
                   alt={photo.description || 'Plant photo'}
                   className="w-full h-full object-cover"
                 />
@@ -82,9 +84,7 @@ const PhotoTimeline = ({ photos = [], onPhotoAdd, onPhotoDelete }) => {
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    if (window.confirm('Czy na pewno chcesz usunąć to zdjęcie?')) {
-                      onPhotoDelete(photo.id);
-                    }
+                    setDeleteConfirm({ open: true, photoId: photo.id });
                   }}
                   className="absolute top-2 right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
                 >
@@ -123,7 +123,7 @@ const PhotoTimeline = ({ photos = [], onPhotoAdd, onPhotoDelete }) => {
 
             {/* Photo */}
             <img
-              src={selectedPhoto.url || selectedPhoto.photo_url}
+              src={selectedPhoto.url || getImageUrl(selectedPhoto.photo_path) || selectedPhoto.photo_url}
               alt={selectedPhoto.description || 'Plant photo'}
               className="w-full h-auto max-h-[80vh] object-contain rounded-lg"
             />
@@ -142,6 +142,19 @@ const PhotoTimeline = ({ photos = [], onPhotoAdd, onPhotoDelete }) => {
                 )}
               </div>
             )}
+          </div>
+        </div>
+      )}
+      {/* Delete Confirmation Modal */}
+      {deleteConfirm.open && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={() => setDeleteConfirm({ open: false, photoId: null })}>
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-sm w-full shadow-xl" onClick={e => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Usuń zdjęcie</h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">Czy na pewno chcesz usunąć to zdjęcie?</p>
+            <div className="flex gap-3 justify-end">
+              <button onClick={() => setDeleteConfirm({ open: false, photoId: null })} className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">Anuluj</button>
+              <button onClick={() => { onPhotoDelete(deleteConfirm.photoId); setDeleteConfirm({ open: false, photoId: null }); }} className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors">Usuń</button>
+            </div>
           </div>
         </div>
       )}

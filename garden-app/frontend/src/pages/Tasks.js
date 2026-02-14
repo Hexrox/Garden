@@ -1,26 +1,31 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from '../config/axios';
-import { CheckSquare, Plus, Calendar, AlertCircle, Sparkles, Trash2, Check, Repeat } from 'lucide-react';
+import { CheckSquare, Plus, Calendar, AlertCircle, Sparkles, Trash2, Check, Repeat, Leaf, Loader2 } from 'lucide-react';
+import { useToast } from '../context/ToastContext';
 
-/**
- * Strona Zadań
- *
- * Pełne zarządzanie zadaniami z:
- * - Automatycznie generowanymi inteligentnymi zadaniami
- * - Ręcznym tworzeniem zadań
- * - Filtrowaniem według statusu
- * - Zarządzaniem priorytetami
- */
 const Tasks = () => {
+  const { showToast } = useToast();
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('pending'); // 'all', 'pending', 'completed', 'today'
+  const [filter, setFilter] = useState('pending');
   const [showForm, setShowForm] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
+
+  // Date change dialog state
+  const [dateDialog, setDateDialog] = useState(null); // { task, newDate }
+  const [dateDialogDate, setDateDialogDate] = useState('');
+
+  // Planting confirmation dialog state
+  const [plantingDialog, setPlantingDialog] = useState(null); // { task, planItems, plan }
+  const [selectedPlantItems, setSelectedPlantItems] = useState([]);
+  const [plantingInProgress, setPlantingInProgress] = useState(false);
+
   const [newTask, setNewTask] = useState({
     description: '',
     due_date: new Date().toISOString().split('T')[0],
     priority: 1,
     task_type: 'custom',
+    time_of_day: null,
     is_recurring: false,
     recurrence_frequency: 1,
     recurrence_times: ['anytime']
@@ -55,11 +60,11 @@ const Tasks = () => {
   const generateSmartTasks = async () => {
     try {
       await axios.post('/api/tasks/generate');
-      alert('✨ Wygenerowano inteligentne zadania!');
+      showToast('Wygenerowano inteligentne zadania!', 'success');
       fetchTasks();
     } catch (err) {
       console.error('Error generating tasks:', err);
-      alert('Błąd podczas generowania zadań');
+      showToast('Błąd podczas generowania zadań', 'error');
     }
   };
 
@@ -68,11 +73,9 @@ const Tasks = () => {
     try {
       const taskData = { ...newTask };
 
-      // Jeśli recurring, konwertuj recurrence_times na JSON string
       if (taskData.is_recurring) {
         taskData.recurrence_times = JSON.stringify(taskData.recurrence_times);
       } else {
-        // Usuń recurring fields jeśli nie recurring
         delete taskData.is_recurring;
         delete taskData.recurrence_frequency;
         delete taskData.recurrence_times;
@@ -84,21 +87,43 @@ const Tasks = () => {
         due_date: new Date().toISOString().split('T')[0],
         priority: 1,
         task_type: 'custom',
+        time_of_day: null,
         is_recurring: false,
         recurrence_frequency: 1,
         recurrence_times: ['anytime']
       });
       setShowForm(false);
+      showToast('Zadanie utworzone', 'success');
       fetchTasks();
     } catch (err) {
       console.error('Error creating task:', err);
-      alert(err.response?.data?.error || 'Błąd podczas tworzenia zadania');
+      showToast(err.response?.data?.error || 'Błąd podczas tworzenia zadania', 'error');
     }
   };
 
+  // Handle task completion - check if it's a plan task
   const toggleComplete = async (taskId, currentStatus) => {
     try {
       if (!currentStatus) {
+        const task = tasks.find(t => t.id === taskId);
+
+        // If this is a garden plan task, show planting dialog
+        if (task && task.garden_plan_id) {
+          try {
+            const response = await axios.get(`/api/tasks/${taskId}/plan-items`);
+            const { plan, items } = response.data;
+            const unplantedItems = items.filter(i => !i.planted_at);
+
+            if (unplantedItems.length > 0) {
+              setPlantingDialog({ task, planItems: unplantedItems, plan });
+              setSelectedPlantItems(unplantedItems.map(i => i.id));
+              return;
+            }
+          } catch (err) {
+            console.error('Error loading plan items:', err);
+          }
+        }
+
         await axios.post(`/api/tasks/${taskId}/complete`);
       } else {
         await axios.put(`/api/tasks/${taskId}`, { completed: false });
@@ -109,17 +134,79 @@ const Tasks = () => {
     }
   };
 
-  const deleteTask = async (taskId) => {
-    if (!window.confirm('Czy na pewno usunąć to zadanie?')) return;
-    try {
-      await axios.delete(`/api/tasks/${taskId}`);
-      fetchTasks();
-    } catch (err) {
-      console.error('Error deleting task:', err);
+  // Handle date click for plan tasks
+  const handleDateClick = (task) => {
+    if (task.garden_plan_id && !task.completed) {
+      setDateDialog(task);
+      setDateDialogDate(task.due_date || new Date().toISOString().split('T')[0]);
     }
   };
 
-  const getTaskIcon = (type) => {
+  // Update date (single or all plan tasks)
+  const handleDateUpdate = async (updateAll) => {
+    if (!dateDialog || !dateDialogDate) return;
+
+    try {
+      await axios.put(`/api/tasks/${dateDialog.id}/update-plan-date`, {
+        due_date: dateDialogDate,
+        update_all: updateAll
+      });
+      showToast(
+        updateAll
+          ? 'Zmieniono datę wszystkich zadań z planu'
+          : 'Zmieniono datę zadania',
+        'success'
+      );
+      setDateDialog(null);
+      fetchTasks();
+    } catch (err) {
+      showToast('Błąd zmiany daty', 'error');
+    }
+  };
+
+  // Confirm planting
+  const handleConfirmPlanting = async () => {
+    if (!plantingDialog || selectedPlantItems.length === 0) return;
+
+    setPlantingInProgress(true);
+    try {
+      const response = await axios.post(`/api/tasks/${plantingDialog.task.id}/complete-planting`, {
+        planted_items: selectedPlantItems
+      });
+      showToast(response.data.message, 'success');
+      setPlantingDialog(null);
+      setSelectedPlantItems([]);
+      fetchTasks();
+    } catch (err) {
+      showToast(err.response?.data?.error || 'Błąd potwierdzania sadzenia', 'error');
+    } finally {
+      setPlantingInProgress(false);
+    }
+  };
+
+  const togglePlantItem = (itemId) => {
+    setSelectedPlantItems(prev =>
+      prev.includes(itemId)
+        ? prev.filter(id => id !== itemId)
+        : [...prev, itemId]
+    );
+  };
+
+  const deleteTask = async (taskId) => {
+    try {
+      await axios.delete(`/api/tasks/${taskId}`);
+      showToast('Zadanie usunięte', 'success');
+      fetchTasks();
+    } catch (err) {
+      console.error('Error deleting task:', err);
+      showToast('Błąd usuwania zadania', 'error');
+    } finally {
+      setDeleteConfirm(null);
+    }
+  };
+
+  const getTaskIcon = (type, gardenPlanId) => {
+    if (gardenPlanId) return '🌱';
     const icons = {
       spray: '💧',
       harvest: '🌾',
@@ -146,7 +233,6 @@ const Tasks = () => {
       <div className="max-w-4xl mx-auto p-4 md:p-6 space-y-6">
         {/* Header Card */}
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden transition-colors">
-          {/* Gradient Top Bar */}
           <div className="bg-gradient-to-r from-blue-500 to-purple-600 dark:from-blue-600 dark:to-purple-700 p-6">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
@@ -159,7 +245,6 @@ const Tasks = () => {
             </div>
           </div>
 
-          {/* Stats - now inside white card */}
           <div className="grid grid-cols-3 gap-3 p-4">
             <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 text-center border border-blue-100 dark:border-blue-800">
               <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{stats.total}</div>
@@ -242,6 +327,48 @@ const Tasks = () => {
                 </div>
               </div>
 
+              {/* Pora dnia */}
+              <div>
+                <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
+                  Pora dnia (opcjonalne)
+                </label>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setNewTask({ ...newTask, time_of_day: 'morning' })}
+                    className={`flex-1 px-3 py-2.5 rounded-lg text-sm font-medium transition-all border ${
+                      newTask.time_of_day === 'morning'
+                        ? 'bg-yellow-100 dark:bg-yellow-900/30 border-yellow-400 dark:border-yellow-600 text-yellow-800 dark:text-yellow-200'
+                        : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600'
+                    }`}
+                  >
+                    🌅 Rano
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setNewTask({ ...newTask, time_of_day: 'evening' })}
+                    className={`flex-1 px-3 py-2.5 rounded-lg text-sm font-medium transition-all border ${
+                      newTask.time_of_day === 'evening'
+                        ? 'bg-indigo-100 dark:bg-indigo-900/30 border-indigo-400 dark:border-indigo-600 text-indigo-800 dark:text-indigo-200'
+                        : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600'
+                    }`}
+                  >
+                    🌙 Wieczorem
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setNewTask({ ...newTask, time_of_day: null })}
+                    className={`flex-1 px-3 py-2.5 rounded-lg text-sm font-medium transition-all border ${
+                      newTask.time_of_day === null
+                        ? 'bg-gray-200 dark:bg-gray-600 border-gray-400 dark:border-gray-500 text-gray-800 dark:text-gray-200'
+                        : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600'
+                    }`}
+                  >
+                    Dowolnie
+                  </button>
+                </div>
+              </div>
+
               {/* Recurring Section */}
               <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
                 <label className="flex items-center gap-2 cursor-pointer">
@@ -254,9 +381,6 @@ const Tasks = () => {
                   <Repeat size={16} className="text-purple-600 dark:text-purple-400" />
                   <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                     Zadanie cykliczne
-                  </span>
-                  <span className="text-xs text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/30 px-2 py-0.5 rounded">
-                    NOWOŚĆ
                   </span>
                 </label>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 ml-6">
@@ -340,7 +464,7 @@ const Tasks = () => {
                   </div>
 
                   <div className="bg-purple-100 dark:bg-purple-900/30 rounded-lg p-3 text-xs text-purple-800 dark:text-purple-200">
-                    <strong>💡 Podgląd:</strong> Zadanie będzie się powtarzać <strong>co {newTask.recurrence_frequency} {newTask.recurrence_frequency === 1 ? 'dzień' : 'dni'}</strong>
+                    <strong>Podgląd:</strong> Zadanie będzie się powtarzać <strong>co {newTask.recurrence_frequency} {newTask.recurrence_frequency === 1 ? 'dzień' : 'dni'}</strong>
                     {newTask.recurrence_times.includes('anytime') ? '' : ` o ${newTask.recurrence_times.map(t => {
                       const labels = { morning: 'rano', afternoon: 'po południu', evening: 'wieczorem' };
                       return labels[t];
@@ -428,7 +552,7 @@ const Tasks = () => {
                   {/* Content */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start gap-2">
-                      <span className="text-xl">{getTaskIcon(task.task_type)}</span>
+                      <span className="text-xl">{getTaskIcon(task.task_type, task.garden_plan_id)}</span>
                       <div className="flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
                           <p className={`font-medium text-gray-900 dark:text-gray-100 ${
@@ -436,6 +560,12 @@ const Tasks = () => {
                           }`}>
                             {task.description}
                           </p>
+                          {task.garden_plan_id && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-xs font-medium rounded">
+                              <Leaf size={12} />
+                              Plan
+                            </span>
+                          )}
                           {task.is_recurring && (
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-xs font-medium rounded">
                               <Repeat size={12} />
@@ -449,12 +579,26 @@ const Tasks = () => {
                             </span>
                           )}
                         </div>
-                        {task.due_date && (
-                          <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 mt-1">
-                            <Calendar size={12} />
-                            <span>{new Date(task.due_date).toLocaleDateString('pl-PL')}</span>
-                          </div>
-                        )}
+                        <div className="flex items-center gap-2 mt-1 flex-wrap">
+                          {task.due_date && (
+                            <button
+                              onClick={() => handleDateClick(task)}
+                              className={`flex items-center gap-1 text-xs ${
+                                task.garden_plan_id && !task.completed
+                                  ? 'text-blue-600 dark:text-blue-400 hover:underline cursor-pointer'
+                                  : 'text-gray-500 dark:text-gray-400 cursor-default'
+                              }`}
+                            >
+                              <Calendar size={12} />
+                              <span>{new Date(task.due_date).toLocaleDateString('pl-PL')}</span>
+                            </button>
+                          )}
+                          {task.garden_plan_name && (
+                            <span className="text-xs text-gray-400 dark:text-gray-500">
+                              ({task.garden_plan_name})
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -465,8 +609,9 @@ const Tasks = () => {
                       {task.priority >= 3 ? <AlertCircle size={20} /> : null}
                     </div>
                     <button
-                      onClick={() => deleteTask(task.id)}
+                      onClick={() => setDeleteConfirm(task.id)}
                       className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                      aria-label="Usuń zadanie"
                     >
                       <Trash2 size={18} />
                     </button>
@@ -477,6 +622,193 @@ const Tasks = () => {
           )}
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-sm w-full p-6">
+            <div className="text-center">
+              <div className="w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mx-auto mb-4">
+                <span className="text-2xl">🗑️</span>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                Usuń zadanie?
+              </h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+                Ta operacja jest nieodwracalna.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setDeleteConfirm(null)}
+                  className="flex-1 px-4 py-3 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition font-medium"
+                >
+                  Anuluj
+                </button>
+                <button
+                  onClick={() => deleteTask(deleteConfirm)}
+                  className="flex-1 px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-medium"
+                >
+                  Usuń
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Date Change Dialog (for plan tasks) */}
+      {dateDialog && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center sm:p-4 z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-md p-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1 flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-blue-600" />
+              Zmień datę sadzenia
+            </h3>
+            {dateDialog.garden_plan_name && (
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                Plan: {dateDialog.garden_plan_name}
+              </p>
+            )}
+
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Nowa data
+              </label>
+              <input
+                type="date"
+                value={dateDialogDate}
+                onChange={(e) => setDateDialogDate(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-base"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <button
+                onClick={() => handleDateUpdate(false)}
+                className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+              >
+                Zmień datę tylko tego zadania
+              </button>
+              <button
+                onClick={() => handleDateUpdate(true)}
+                className="w-full px-4 py-3 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors font-medium"
+              >
+                Zmień datę wszystkich zadań z planu
+              </button>
+              <button
+                onClick={() => setDateDialog(null)}
+                className="w-full px-4 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+              >
+                Anuluj
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Planting Confirmation Dialog */}
+      {plantingDialog && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center sm:p-4 z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-md max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                <Leaf className="w-5 h-5 text-green-600" />
+                Potwierdź sadzenie
+              </h3>
+              {plantingDialog.plan && (
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                  Plan: {plantingDialog.plan.name}
+                </p>
+              )}
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                Zaznacz rośliny, które zostały posadzone
+              </p>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-6 space-y-2">
+              {plantingDialog.planItems.map(item => (
+                <label
+                  key={item.id}
+                  className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors ${
+                    selectedPlantItems.includes(item.id)
+                      ? 'bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800'
+                      : 'bg-gray-50 dark:bg-gray-700/50 border border-transparent'
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedPlantItems.includes(item.id)}
+                    onChange={() => togglePlantItem(item.id)}
+                    className="w-5 h-5 rounded border-gray-300 text-green-600 focus:ring-green-500"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-gray-900 dark:text-white">
+                      {item.plant_name}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      Ilość: {item.quantity || 1} szt.
+                    </p>
+                  </div>
+                  {selectedPlantItems.includes(item.id) && (
+                    <Check size={20} className="text-green-600 flex-shrink-0" />
+                  )}
+                </label>
+              ))}
+
+              {/* Select all / none */}
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setSelectedPlantItems(plantingDialog.planItems.map(i => i.id))}
+                  className="text-xs px-2 py-1 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30 rounded"
+                >
+                  Zaznacz wszystkie
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedPlantItems([])}
+                  className="text-xs px-2 py-1 text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+                >
+                  Odznacz wszystkie
+                </button>
+              </div>
+
+              {plantingDialog.plan && !plantingDialog.plan.plot_id && (
+                <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800 text-sm text-amber-700 dark:text-amber-300">
+                  Plan nie jest przypisany do poletka - grządki nie zostaną automatycznie utworzone.
+                </div>
+              )}
+            </div>
+
+            <div className="p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 flex gap-3">
+              <button
+                onClick={() => { setPlantingDialog(null); setSelectedPlantItems([]); }}
+                disabled={plantingInProgress}
+                className="flex-1 px-4 py-3 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+              >
+                Anuluj
+              </button>
+              <button
+                onClick={handleConfirmPlanting}
+                disabled={plantingInProgress || selectedPlantItems.length === 0}
+                className="flex-1 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {plantingInProgress ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Sadzenie...
+                  </>
+                ) : (
+                  <>
+                    <Leaf className="w-4 h-4" />
+                    Posadzone ({selectedPlantItems.length})
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
