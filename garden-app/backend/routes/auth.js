@@ -165,10 +165,7 @@ router.post('/login',
 
         // Check if email is verified
         if (!user.email_verified) {
-          return res.status(403).json({
-            error: 'Email nie zweryfikowany',
-            message: 'Musisz potwierdzić swój adres email przed zalogowaniem. Sprawdź swoją skrzynkę email.'
-          });
+          return res.status(401).json({ error: 'Nieprawidłowe dane logowania' });
         }
 
         // Update last_login timestamp and increment login_count

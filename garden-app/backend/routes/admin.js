@@ -45,22 +45,24 @@ router.get('/stats', auth, adminAuth, async (req, res) => {
       );
     });
 
-    // Lista użytkowników (bez haseł)
+    // Lista użytkowników (bez haseł) - JOIN zamiast subquery N+1
     const users = await new Promise((resolve, reject) => {
       db.all(
         `SELECT
-          id,
-          username,
-          email,
-          created_at,
-          last_login,
-          COALESCE(login_count, 0) as login_count,
-          city,
-          hardiness_zone,
-          (SELECT COUNT(*) FROM plots WHERE user_id = users.id) as plots_count,
-          (SELECT COUNT(*) FROM tasks WHERE user_id = users.id) as tasks_count
-        FROM users
-        ORDER BY created_at DESC`,
+          u.id,
+          u.username,
+          u.email,
+          u.created_at,
+          u.last_login,
+          COALESCE(u.login_count, 0) as login_count,
+          u.city,
+          u.hardiness_zone,
+          COALESCE(p.plots_count, 0) as plots_count,
+          COALESCE(t.tasks_count, 0) as tasks_count
+        FROM users u
+        LEFT JOIN (SELECT user_id, COUNT(*) as plots_count FROM plots GROUP BY user_id) p ON p.user_id = u.id
+        LEFT JOIN (SELECT user_id, COUNT(*) as tasks_count FROM tasks GROUP BY user_id) t ON t.user_id = u.id
+        ORDER BY u.created_at DESC`,
         [],
         (err, rows) => {
           if (err) reject(err);
@@ -100,6 +102,55 @@ router.get('/stats', auth, adminAuth, async (req, res) => {
     console.error('Error fetching admin stats:', error);
     res.status(500).json({ error: 'Błąd podczas pobierania statystyk' });
   }
+});
+
+/**
+ * GET /api/admin/users
+ * Lista użytkowników z paginacją (tylko dla admina)
+ */
+router.get('/users', auth, adminAuth, (req, res) => {
+  const page = Math.max(1, parseInt(req.query.page) || 1);
+  const limit = Math.min(200, Math.max(1, parseInt(req.query.limit) || 50));
+  const offset = (page - 1) * limit;
+
+  db.get('SELECT COUNT(*) as total FROM users', [], (err, countRow) => {
+    if (err) {
+      console.error('Error counting users:', err);
+      return res.status(500).json({ error: 'Błąd serwera' });
+    }
+
+    const total = countRow.total;
+    const totalPages = Math.ceil(total / limit);
+
+    db.all(
+      `SELECT
+        id,
+        username,
+        email,
+        created_at,
+        last_login,
+        COALESCE(login_count, 0) as login_count,
+        city,
+        hardiness_zone,
+        role,
+        (SELECT COUNT(*) FROM plots WHERE user_id = users.id) as plots_count,
+        (SELECT COUNT(*) FROM tasks WHERE user_id = users.id) as tasks_count
+      FROM users
+      ORDER BY created_at DESC
+      LIMIT ? OFFSET ?`,
+      [limit, offset],
+      (err, rows) => {
+        if (err) {
+          console.error('Error fetching users:', err);
+          return res.status(500).json({ error: 'Błąd serwera' });
+        }
+        res.json({
+          data: rows || [],
+          pagination: { page, limit, total, totalPages }
+        });
+      }
+    );
+  });
 });
 
 /**

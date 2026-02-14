@@ -657,38 +657,38 @@ class WeatherService {
 
   /**
    * Sprawdź ryzyko chorób grzybowych (wysoka wilgotność)
-   * UWAGA: Nie pokazuj rekomendacji podlewania przy ujemnych/niskich temperaturach!
+   * UWAGA: Pokazuj TYLKO gdy temperatura sprzyja chorobom grzybowym (>10°C)
+   * Zimą wysoka wilgotność jest normalna i NIE stanowi zagrożenia dla roślin
    */
   checkHumidityAndFungalRisk(weather, forecast) {
     const humidity = weather.humidity;
     const temp = weather.temperature;
 
-    // Przy mrozie lub niskich temperaturach (<5°C) - nie pokazuj alertów o wilgotności
-    // Wysoka wilgotność zimą jest normalna i NIE wymaga reakcji podlewania
-    if (temp < 5) {
+    // BLOKADA: Przy temperaturze < 10°C grzyby są nieaktywne
+    // Wysoka wilgotność zimą jest NORMALNA i nie wymaga reakcji
+    if (temp < 10) {
       return null;
     }
 
-    // WYSOKIE RYZYKO: wilgotność >80%, temp 15-25°C
-    if (humidity > 80 && temp >= 15 && temp <= 25) {
+    // WYSOKIE RYZYKO: wilgotność >85%, temp 15-25°C (optymalne dla grzybów)
+    if (humidity > 85 && temp >= 15 && temp <= 25) {
       return {
         type: 'fungal-risk',
         priority: 'high',
         icon: '🍄',
-        message: `Wysokie ryzyko chorób grzybowych (${humidity}% wilg.)`,
-        details: 'NIE podlewaj późnym wieczorem! Podlewaj POD KORZEŃ (nie zwilżaj liści). Zwiększ odstępy między roślinami. Rozważ oprysk profilaktyczny'
+        message: `Wysokie ryzyko chorób grzybowych`,
+        details: `Wilgotność ${humidity}% przy ${temp}°C sprzyja rozwojowi grzybów. Wietrz szklarnie, nie zwilżaj liści. Obserwuj: mączniak, szara pleśń, rdza`
       };
     }
 
-    // UMIARKOWANE RYZYKO: wilgotność >70%, ale tylko gdy temp >= 10°C
-    // Przy temp 5-10°C wysoka wilgotność jest mniej problematyczna
-    if (humidity > 70 && temp >= 10) {
+    // UMIARKOWANE RYZYKO: wilgotność >75%, temp 10-30°C
+    if (humidity > 75 && temp >= 10) {
       return {
         type: 'fungal-warning',
-        priority: 'medium',
+        priority: 'low',
         icon: '💧',
-        message: `Podwyższona wilgotność (${humidity}%)`,
-        details: 'Podlewaj rano (rośliny wyschną w ciągu dnia). Unikaj zwilżania liści. Obserwuj rośliny: rdza, szara pleśń, mączniak'
+        message: `Podwyższona wilgotność powietrza`,
+        details: `${humidity}% wilgotności. Wietrz rośliny, unikaj zwilżania liści. Obserwuj czy nie pojawiają się plamy na liściach`
       };
     }
 
@@ -971,9 +971,9 @@ class WeatherService {
         db.run(
           `INSERT OR REPLACE INTO weather_history
            (user_id, date, temp_avg, temp_min, temp_max, humidity_avg, total_rain, wind_speed_avg, description)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+           VALUES ((SELECT COALESCE(MIN(id), 1) FROM users WHERE latitude = ? AND longitude = ?), ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
-            1, // Default user_id for now
+            lat, lon,
             today,
             weather.temperature,
             todayForecast.tempMin || weather.temperature - 2,

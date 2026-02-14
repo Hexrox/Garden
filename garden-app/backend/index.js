@@ -10,6 +10,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const compression = require('compression');
+const morgan = require('morgan');
 const db = require('./db');
 
 // Import routes
@@ -83,6 +84,9 @@ app.use(helmet({
 
 // Compression middleware
 app.use(compression());
+
+// HTTP request logging
+app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 
 // CORS configuration
 // Support multiple domains (comma-separated in FRONTEND_URL)
@@ -241,10 +245,20 @@ app.param('id', (req, res, next, value) => {
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
-  res.json({
-    status: 'ok',
-    message: 'Garden App API v2.0',
-    timestamp: new Date().toISOString()
+  db.get('SELECT 1', (err) => {
+    if (err) {
+      console.error('Health check DB error:', err);
+      return res.status(503).json({
+        status: 'error',
+        message: 'Database unavailable',
+        timestamp: new Date().toISOString()
+      });
+    }
+    res.json({
+      status: 'ok',
+      message: 'Garden App API v2.0',
+      timestamp: new Date().toISOString()
+    });
   });
 });
 

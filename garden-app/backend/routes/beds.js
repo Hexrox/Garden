@@ -315,37 +315,34 @@ router.put('/beds/:id',
           }
 
           function performSimpleUpdate() {
+            // Whitelist of allowed fields for update
+            const ALLOWED_FIELDS = {
+              row_number: 'row_number',
+              plant_variety: 'plant_variety',
+              note: 'note',
+              yield_amount: 'yield_amount',
+              yield_unit: 'yield_unit',
+              actual_harvest_date: 'actual_harvest_date'
+            };
+
+            // Use sanitized values instead of raw req.body
+            const sanitizedData = { row_number, plant_variety, note, yield_amount, yield_unit, actual_harvest_date };
+
             let updateFields = [];
             let values = [];
 
-            if (row_number !== undefined) {
-              updateFields.push('row_number = ?');
-              values.push(row_number);
+            for (const [field, column] of Object.entries(ALLOWED_FIELDS)) {
+              if (sanitizedData[field] !== undefined) {
+                updateFields.push(`${column} = ?`);
+                values.push(sanitizedData[field]);
+              }
             }
-      if (plant_variety !== undefined) {
-        updateFields.push('plant_variety = ?');
-        values.push(plant_variety);
-      }
-      if (note !== undefined) {
-        updateFields.push('note = ?');
-        values.push(note);
-      }
-      if (imagePath !== undefined) {
-        updateFields.push('image_path = ?');
-        values.push(imagePath);
-      }
-      if (yield_amount !== undefined) {
-        updateFields.push('yield_amount = ?');
-        values.push(yield_amount);
-      }
-      if (yield_unit !== undefined) {
-        updateFields.push('yield_unit = ?');
-        values.push(yield_unit);
-      }
-      if (actual_harvest_date !== undefined) {
-        updateFields.push('actual_harvest_date = ?');
-        values.push(actual_harvest_date);
-      }
+
+            // Handle image_path separately (from multer, not req.body)
+            if (imagePath !== undefined) {
+              updateFields.push('image_path = ?');
+              values.push(imagePath);
+            }
 
       if (updateFields.length === 0) {
         return res.status(400).json({ error: 'Brak danych do aktualizacji' });

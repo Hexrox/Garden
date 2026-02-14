@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import axios from '../config/axios';
+import axios, { getImageUrl } from '../config/axios';
 import { useAuth } from '../context/AuthContext';
 import { Share2, Eye, Check, X, Image as ImageIcon, TrendingUp, Users, Calendar, MapPin } from 'lucide-react';
 
@@ -82,10 +82,24 @@ const Profile = () => {
   const [savingPublic, setSavingPublic] = useState(false);
   const [publicMessage, setPublicMessage] = useState({ type: '', text: '' });
   const [showPhotoSelector, setShowPhotoSelector] = useState(false);
+  const [showDeleteAccountModal, setShowDeleteAccountModal] = useState(false);
   const [availablePhotos, setAvailablePhotos] = useState([]);
   const [analytics, setAnalytics] = useState(null);
   const [loadingAnalytics, setLoadingAnalytics] = useState(false);
   const [originalUsername, setOriginalUsername] = useState('');
+  const [isDirty, setIsDirty] = useState(false);
+
+  // Ostrzeżenie przed utratą niezapisanych zmian
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (isDirty) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isDirty]);
 
   useEffect(() => {
     loadUserData();
@@ -287,6 +301,7 @@ const Profile = () => {
   const handleLocationChange = (field, value) => {
     setLocation(prev => ({ ...prev, [field]: value }));
     setMessage({ type: '', text: '' });
+    setIsDirty(true);
   };
 
   const handleSaveLocation = async (e) => {
@@ -331,6 +346,7 @@ const Profile = () => {
             last_frost_date: prev.last_frost_date || `${year}-${suggested.lastFrost}`,
             first_frost_date: prev.first_frost_date || `${year}-${suggested.firstFrost}`
           }));
+          setIsDirty(false);
           setMessage({
             type: 'success',
             text: `Lokalizacja zapisana! Automatycznie wykryto strefę ${suggested.zone}. Sprawdź i zapisz ustawienia klimatyczne poniżej.`
@@ -339,6 +355,7 @@ const Profile = () => {
         }
       }
 
+      setIsDirty(false);
       setMessage({
         type: 'success',
         text: 'Lokalizacja zapisana! Odśwież Dashboard aby zobaczyć pogodę.'
@@ -391,6 +408,7 @@ const Profile = () => {
   const handleProfileChange = (field, value) => {
     setProfile(prev => ({ ...prev, [field]: value }));
     setProfileMessage({ type: '', text: '' });
+    setIsDirty(true);
   };
 
   const handleSaveProfile = async (e) => {
@@ -400,6 +418,7 @@ const Profile = () => {
       setSavingProfile(true);
       await axios.put('/api/auth/profile', profile);
 
+      setIsDirty(false);
       setProfileMessage({
         type: 'success',
         text: 'Profil zapisany pomyślnie!'
@@ -430,6 +449,7 @@ const Profile = () => {
   const handlePublicProfileChange = (field, value) => {
     setPublicProfile(prev => ({ ...prev, [field]: value }));
     setPublicMessage({ type: '', text: '' });
+    setIsDirty(true);
 
     // Reset username availability when username changes
     if (field === 'username') {
@@ -469,6 +489,7 @@ const Profile = () => {
       setSavingPublic(true);
       await axios.post('/api/profile/public', publicProfile);
 
+      setIsDirty(false);
       setPublicMessage({
         type: 'success',
         text: 'Ustawienia publicznego profilu zapisane!'
@@ -563,13 +584,15 @@ const Profile = () => {
   const handleDeleteAccount = async () => {
     try {
       await axios.delete('/api/auth/account');
-      alert('Konto zostało oznaczone do usunięcia. Sprawdź swoją skrzynkę email aby je przywrócić w ciągu 30 dni.');
-      // Wyloguj użytkownika
-      localStorage.removeItem('token');
-      window.location.href = '/login';
+      setMessage({ type: 'success', text: 'Konto zostało oznaczone do usunięcia. Sprawdź swoją skrzynkę email aby je przywrócić w ciągu 30 dni.' });
+      // Wyloguj użytkownika po chwili
+      setTimeout(() => {
+        localStorage.removeItem('token');
+        window.location.href = '/login';
+      }, 3000);
     } catch (error) {
       console.error('Error deleting account:', error);
-      alert('Wystąpił błąd podczas usuwania konta');
+      setMessage({ type: 'error', text: 'Wystąpił błąd podczas usuwania konta' });
     }
   };
 
@@ -1190,7 +1213,7 @@ const Profile = () => {
             {publicProfile.profilePhoto ? (
               <div className="relative inline-block">
                 <img
-                  src={`/${publicProfile.profilePhoto}`}
+                  src={getImageUrl(publicProfile.profilePhoto)}
                   alt="Profile"
                   className="w-32 h-32 object-cover rounded-full border-4 border-gray-200 dark:border-gray-700"
                 />
@@ -1227,7 +1250,7 @@ const Profile = () => {
             {getCoverPhotoPath() ? (
               <div className="relative">
                 <img
-                  src={`/${getCoverPhotoPath()}`}
+                  src={getImageUrl(getCoverPhotoPath())}
                   alt="Cover"
                   className="w-full h-48 object-cover rounded-lg"
                 />
@@ -1262,7 +1285,7 @@ const Profile = () => {
               Co chcesz pokazać?
             </label>
             <div className="space-y-3">
-              <label className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-750 cursor-pointer">
+              <label className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer">
                 <div>
                   <span className="text-sm font-medium text-gray-900 dark:text-white">📊 Statystyki</span>
                   <p className="text-xs text-gray-500 dark:text-gray-400">Liczba grządek, roślin, plonów</p>
@@ -1275,7 +1298,7 @@ const Profile = () => {
                 />
               </label>
 
-              <label className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-750 cursor-pointer">
+              <label className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer">
                 <div>
                   <span className="text-sm font-medium text-gray-900 dark:text-white">🌱 Co rośnie teraz</span>
                   <p className="text-xs text-gray-500 dark:text-gray-400">Oś czasu aktualnych upraw</p>
@@ -1288,7 +1311,7 @@ const Profile = () => {
                 />
               </label>
 
-              <label className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-750 cursor-pointer">
+              <label className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer">
                 <div>
                   <span className="text-sm font-medium text-gray-900 dark:text-white">📸 Galeria zdjęć</span>
                   <p className="text-xs text-gray-500 dark:text-gray-400">Wybrane zdjęcia z galerii</p>
@@ -1301,7 +1324,7 @@ const Profile = () => {
                 />
               </label>
 
-              <label className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-750 cursor-pointer opacity-50">
+              <label className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer opacity-50">
                 <div>
                   <span className="text-sm font-medium text-gray-900 dark:text-white">🏆 Odznaki</span>
                   <p className="text-xs text-gray-500 dark:text-gray-400">Wkrótce!</p>
@@ -1380,7 +1403,7 @@ const Profile = () => {
             </div>
 
             {/* Analytics Widget */}
-            <div className="mt-6 p-6 bg-white dark:bg-gray-750 rounded-lg border border-gray-200 dark:border-gray-700">
+            <div className="mt-6 p-6 bg-white dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-700">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                   <TrendingUp size={20} className="text-purple-600 dark:text-purple-400" />
@@ -1503,11 +1526,7 @@ const Profile = () => {
             </div>
 
             <button
-              onClick={() => {
-                if (window.confirm('Czy na pewno chcesz usunąć swoje konto? Będziesz mieć 30 dni na przywrócenie.')) {
-                  handleDeleteAccount();
-                }
-              }}
+              onClick={() => setShowDeleteAccountModal(true)}
               className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors"
             >
               Usuń moje konto
@@ -1562,7 +1581,7 @@ const Profile = () => {
                       }`}
                     >
                       <img
-                        src={`/${photo.path}`}
+                        src={getImageUrl(photo.path)}
                         alt={photo.caption || 'Photo'}
                         className="w-full h-full object-cover"
                       />
@@ -1605,6 +1624,20 @@ const Profile = () => {
               >
                 Gotowe
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal potwierdzenia usunięcia konta */}
+      {showDeleteAccountModal && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={() => setShowDeleteAccountModal(false)}>
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-sm w-full shadow-xl" onClick={e => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-2">Usuń konto</h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">Czy na pewno chcesz usunąć swoje konto? Będziesz mieć 30 dni na przywrócenie.</p>
+            <div className="flex gap-3 justify-end">
+              <button onClick={() => setShowDeleteAccountModal(false)} className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">Anuluj</button>
+              <button onClick={() => { handleDeleteAccount(); setShowDeleteAccountModal(false); }} className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors">Usuń konto</button>
             </div>
           </div>
         </div>

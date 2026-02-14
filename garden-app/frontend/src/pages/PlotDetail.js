@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { MoreVertical, Edit2, Copy, Trash2 } from 'lucide-react';
 import axios from '../config/axios';
@@ -17,6 +17,7 @@ const PlotDetail = () => {
   const navigate = useNavigate();
   const [plot, setPlot] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState('');
   const [showBedForm, setShowBedForm] = useState(false);
   const [bedForm, setBedForm] = useState({
     row_number: '',
@@ -34,6 +35,19 @@ const PlotDetail = () => {
   const [showDuplicateModal, setShowDuplicateModal] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [openMenuId, setOpenMenuId] = useState(null);
+  const menuRef = useRef(null);
+
+  // Zamknij menu po kliknięciu poza nim
+  useEffect(() => {
+    if (!openMenuId) return;
+    const handleClickOutside = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setOpenMenuId(null);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [openMenuId]);
 
   const loadPlotDetails = useCallback(async () => {
     try {
@@ -66,7 +80,8 @@ const PlotDetail = () => {
       loadPlotDetails();
     } catch (error) {
       console.error('Error adding bed:', error);
-      alert('Błąd podczas dodawania grządki');
+      setErrorMessage('Błąd podczas dodawania grządki');
+      setTimeout(() => setErrorMessage(''), 4000);
     }
   };
 
@@ -147,7 +162,8 @@ const PlotDetail = () => {
       });
     } catch (error) {
       console.error('Error reordering beds:', error);
-      alert('Błąd podczas zapisywania kolejności');
+      setErrorMessage('Błąd podczas zapisywania kolejności');
+      setTimeout(() => setErrorMessage(''), 4000);
       // Reload on error to restore original order
       loadPlotDetails();
     }
@@ -158,6 +174,11 @@ const PlotDetail = () => {
 
   return (
     <div className="space-y-6">
+      {errorMessage && (
+        <div className="p-3 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-lg text-sm">
+          {errorMessage}
+        </div>
+      )}
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{plot.name}</h1>
@@ -390,7 +411,7 @@ const PlotDetail = () => {
                   </div>
 
                   {/* Action Menu */}
-                  <div className="ml-4 relative">
+                  <div className="ml-4 relative" ref={openMenuId === bed.id ? menuRef : null}>
                     <button
                       onClick={() => setOpenMenuId(openMenuId === bed.id ? null : bed.id)}
                       className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"

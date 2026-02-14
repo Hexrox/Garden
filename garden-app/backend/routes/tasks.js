@@ -9,24 +9,55 @@ const db = require('../db');
  */
 router.get('/', auth, (req, res) => {
   const { completed } = req.query;
+  const page = Math.max(1, parseInt(req.query.page) || 1);
+  const limit = Math.min(500, Math.max(1, parseInt(req.query.limit) || 100));
+  const offset = (page - 1) * limit;
 
-  let query = 'SELECT * FROM tasks WHERE user_id = ?';
+  let whereClause = 'WHERE t.user_id = ?';
   const params = [req.user.id];
 
   if (completed !== undefined) {
-    query += ' AND completed = ?';
+    whereClause += ' AND t.completed = ?';
     params.push(completed === 'true' ? 1 : 0);
   }
 
-  query += ' ORDER BY priority DESC, due_date ASC, created_at DESC';
-
-  db.all(query, params, (err, rows) => {
-    if (err) {
-      console.error('Tasks error:', err.message);
+  // Pobierz łączną liczbę zadań
+  db.get(
+    `SELECT COUNT(*) as total FROM tasks t ${whereClause}`,
+    params,
+    (err, countRow) => {
+      if (err) {
+        console.error('Tasks error:', err.message);
         return res.status(500).json({ error: 'Błąd serwera' });
+      }
+
+      const total = countRow.total;
+      const totalPages = Math.ceil(total / limit);
+
+      const query = `
+        SELECT t.*, b.plant_name, b.plot_id, p.name as plot_name,
+               gp.name as garden_plan_name
+        FROM tasks t
+        LEFT JOIN beds b ON t.bed_id = b.id
+        LEFT JOIN plots p ON b.plot_id = p.id
+        LEFT JOIN garden_plans gp ON t.garden_plan_id = gp.id
+        ${whereClause}
+        ORDER BY t.priority DESC, t.due_date ASC, t.created_at DESC
+        LIMIT ? OFFSET ?
+      `;
+
+      db.all(query, [...params, limit, offset], (err, rows) => {
+        if (err) {
+          console.error('Tasks error:', err.message);
+          return res.status(500).json({ error: 'Błąd serwera' });
+        }
+        res.json({
+          data: rows,
+          pagination: { page, limit, total, totalPages }
+        });
+      });
     }
-    res.json(rows);
-  });
+  );
 });
 
 /**
@@ -37,13 +68,18 @@ router.get('/today', auth, (req, res) => {
   const today = new Date().toISOString().split('T')[0];
 
   db.all(
-    `SELECT * FROM tasks
-     WHERE user_id = ?
-     AND completed = 0
-     AND (due_date <= ? OR due_date IS NULL)
-     AND (dismissed_at IS NULL OR datetime(dismissed_at, '+14 days') < datetime('now'))
-     AND (snoozed_until IS NULL OR datetime(snoozed_until) < datetime('now'))
-     ORDER BY priority DESC, due_date ASC`,
+    `SELECT t.*, b.plant_name, b.plot_id, p.name as plot_name,
+            gp.name as garden_plan_name
+     FROM tasks t
+     LEFT JOIN beds b ON t.bed_id = b.id
+     LEFT JOIN plots p ON b.plot_id = p.id
+     LEFT JOIN garden_plans gp ON t.garden_plan_id = gp.id
+     WHERE t.user_id = ?
+     AND t.completed = 0
+     AND (t.due_date <= ? OR t.due_date IS NULL)
+     AND (t.dismissed_at IS NULL OR datetime(t.dismissed_at, '+14 days') < datetime('now'))
+     AND (t.snoozed_until IS NULL OR datetime(t.snoozed_until) < datetime('now'))
+     ORDER BY t.priority DESC, t.due_date ASC`,
     [req.user.id, today],
     (err, rows) => {
       if (err) {
@@ -69,7 +105,8 @@ router.post('/', auth, (req, res) => {
     is_recurring,
     recurrence_frequency,
     recurrence_times,
-    recurrence_end_date
+    recurrence_end_date,
+    time_of_day
   } = req.body;
 
   if (!task_type || !description) {
@@ -79,6 +116,12 @@ router.post('/', auth, (req, res) => {
   const validTypes = ['spray', 'harvest', 'water', 'custom'];
   if (!validTypes.includes(task_type)) {
     return res.status(400).json({ error: 'Nieprawidłowy task_type' });
+  }
+
+  // Walidacja time_of_day
+  const validTimeOfDay = ['morning', 'evening', null, undefined];
+  if (time_of_day && !['morning', 'evening'].includes(time_of_day)) {
+    return res.status(400).json({ error: 'Nieprawidłowy time_of_day (dozwolone: morning, evening lub puste)' });
   }
 
   // Walidacja recurring fields
@@ -113,8 +156,8 @@ router.post('/', auth, (req, res) => {
     `INSERT INTO tasks (
       user_id, task_type, description, due_date, priority, bed_id,
       is_recurring, recurrence_frequency, recurrence_times,
-      next_occurrence, recurrence_end_date
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      next_occurrence, recurrence_end_date, time_of_day
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       req.user.id,
       task_type,
@@ -126,7 +169,8 @@ router.post('/', auth, (req, res) => {
       recurrence_frequency || null,
       recurrence_times || null,
       next_occurrence,
-      recurrence_end_date || null
+      recurrence_end_date || null,
+      time_of_day || null
     ],
     function (err) {
       if (err) {
@@ -150,7 +194,7 @@ router.post('/', auth, (req, res) => {
  * Zaktualizuj zadanie
  */
 router.put('/:id', auth, (req, res) => {
-  const { task_type, description, due_date, priority, completed } = req.body;
+  const { task_type, description, due_date, priority, completed, time_of_day } = req.body;
 
   db.get(
     'SELECT * FROM tasks WHERE id = ? AND user_id = ?',
@@ -182,6 +226,13 @@ router.put('/:id', auth, (req, res) => {
       if (priority !== undefined) {
         updates.push('priority = ?');
         params.push(priority);
+      }
+      if (time_of_day !== undefined) {
+        if (time_of_day !== null && !['morning', 'evening'].includes(time_of_day)) {
+          return res.status(400).json({ error: 'Nieprawidłowy time_of_day' });
+        }
+        updates.push('time_of_day = ?');
+        params.push(time_of_day);
       }
       if (completed !== undefined) {
         updates.push('completed = ?');
@@ -918,6 +969,231 @@ router.delete('/:id/recurring', auth, (req, res) => {
           );
         }
       );
+    }
+  );
+});
+
+// ==========================================
+// GARDEN PLAN TASK ENDPOINTS
+// ==========================================
+
+/**
+ * PUT /api/tasks/:id/update-plan-date
+ * Zmień datę zadania z planu - opcjonalnie wszystkich zadań z tego planu
+ */
+router.put('/:id/update-plan-date', auth, (req, res) => {
+  const { due_date, update_all } = req.body;
+
+  if (!due_date) {
+    return res.status(400).json({ error: 'due_date jest wymagane' });
+  }
+
+  db.get(
+    'SELECT * FROM tasks WHERE id = ? AND user_id = ?',
+    [req.params.id, req.user.id],
+    (err, task) => {
+      if (err) {
+        return res.status(500).json({ error: 'Błąd serwera' });
+      }
+      if (!task) {
+        return res.status(404).json({ error: 'Zadanie nie znalezione' });
+      }
+
+      if (update_all && task.garden_plan_id) {
+        // Update all tasks from this plan
+        db.run(
+          'UPDATE tasks SET due_date = ? WHERE garden_plan_id = ? AND user_id = ? AND completed = 0',
+          [due_date, task.garden_plan_id, req.user.id],
+          function(err) {
+            if (err) {
+              return res.status(500).json({ error: 'Błąd serwera' });
+            }
+            // Also update planned_planting_date in garden_plans
+            db.run(
+              'UPDATE garden_plans SET planned_planting_date = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+              [due_date, task.garden_plan_id]
+            );
+            res.json({ message: `Zmieniono datę ${this.changes} zadań`, updated_count: this.changes });
+          }
+        );
+      } else {
+        // Update only this task
+        db.run(
+          'UPDATE tasks SET due_date = ? WHERE id = ? AND user_id = ?',
+          [due_date, req.params.id, req.user.id],
+          function(err) {
+            if (err) {
+              return res.status(500).json({ error: 'Błąd serwera' });
+            }
+            res.json({ message: 'Data zadania zmieniona' });
+          }
+        );
+      }
+    }
+  );
+});
+
+/**
+ * GET /api/tasks/:id/plan-items
+ * Pobierz rośliny z planu powiązanego z zadaniem
+ */
+router.get('/:id/plan-items', auth, (req, res) => {
+  db.get(
+    'SELECT * FROM tasks WHERE id = ? AND user_id = ?',
+    [req.params.id, req.user.id],
+    (err, task) => {
+      if (err) {
+        return res.status(500).json({ error: 'Błąd serwera' });
+      }
+      if (!task) {
+        return res.status(404).json({ error: 'Zadanie nie znalezione' });
+      }
+      if (!task.garden_plan_id) {
+        return res.status(400).json({ error: 'Zadanie nie pochodzi z planu' });
+      }
+
+      db.all(
+        `SELECT gpi.*, pl.display_name, t.id as task_id, t.completed as task_completed
+         FROM garden_plan_items gpi
+         LEFT JOIN plants pl ON gpi.plant_id = pl.id
+         LEFT JOIN tasks t ON gpi.task_id = t.id
+         WHERE gpi.plan_id = ?
+         ORDER BY gpi.id`,
+        [task.garden_plan_id],
+        (err, items) => {
+          if (err) {
+            return res.status(500).json({ error: 'Błąd serwera' });
+          }
+
+          db.get('SELECT * FROM garden_plans WHERE id = ?', [task.garden_plan_id], (err, plan) => {
+            if (err) {
+              return res.status(500).json({ error: 'Błąd serwera' });
+            }
+            res.json({ plan, items: items || [] });
+          });
+        }
+      );
+    }
+  );
+});
+
+/**
+ * POST /api/tasks/:id/complete-planting
+ * Oznacz wybrane rośliny jako posadzone i utwórz grządki
+ */
+router.post('/:id/complete-planting', auth, (req, res) => {
+  const { planted_items } = req.body; // Array of garden_plan_item IDs to mark as planted
+
+  if (!planted_items || !Array.isArray(planted_items) || planted_items.length === 0) {
+    return res.status(400).json({ error: 'Wybierz przynajmniej jedną roślinę' });
+  }
+
+  db.get(
+    'SELECT * FROM tasks WHERE id = ? AND user_id = ?',
+    [req.params.id, req.user.id],
+    (err, task) => {
+      if (err) {
+        return res.status(500).json({ error: 'Błąd serwera' });
+      }
+      if (!task) {
+        return res.status(404).json({ error: 'Zadanie nie znalezione' });
+      }
+      if (!task.garden_plan_id) {
+        return res.status(400).json({ error: 'Zadanie nie pochodzi z planu' });
+      }
+
+      // Get plan
+      db.get('SELECT * FROM garden_plans WHERE id = ?', [task.garden_plan_id], (err, plan) => {
+        if (err || !plan) {
+          return res.status(500).json({ error: 'Błąd serwera' });
+        }
+
+        // Get items to plant
+        db.all(
+          `SELECT * FROM garden_plan_items WHERE plan_id = ? AND id IN (${planted_items.map(() => '?').join(',')})`,
+          [task.garden_plan_id, ...planted_items],
+          (err, items) => {
+            if (err) {
+              return res.status(500).json({ error: 'Błąd serwera' });
+            }
+
+            const now = new Date().toISOString();
+            const today = now.split('T')[0];
+            const bedPromises = [];
+
+            items.forEach(item => {
+              // Mark item as planted
+              db.run(
+                'UPDATE garden_plan_items SET planted_at = ? WHERE id = ?',
+                [now, item.id]
+              );
+
+              // Complete the associated task
+              if (item.task_id) {
+                db.run(
+                  'UPDATE tasks SET completed = 1, completed_at = ? WHERE id = ? AND user_id = ?',
+                  [now, item.task_id, req.user.id]
+                );
+              }
+
+              // Create bed if plan has a plot
+              if (plan.plot_id) {
+                bedPromises.push(new Promise((resolve, reject) => {
+                  db.run(
+                    `INSERT INTO beds (plot_id, row_number, plant_name, planted_date, note)
+                     VALUES (?, ?, ?, ?, ?)`,
+                    [
+                      plan.plot_id,
+                      item.row_number || 1,
+                      item.plant_name,
+                      today,
+                      `Z planu: ${plan.name}. ${item.notes || ''}`
+                    ],
+                    function(err) {
+                      if (err) reject(err);
+                      else resolve(this.lastID);
+                    }
+                  );
+                }));
+              }
+            });
+
+            Promise.all(bedPromises)
+              .then(bedIds => {
+                // Check if all items in the plan are now planted
+                db.get(
+                  'SELECT COUNT(*) as total, SUM(CASE WHEN planted_at IS NOT NULL THEN 1 ELSE 0 END) as planted FROM garden_plan_items WHERE plan_id = ?',
+                  [task.garden_plan_id],
+                  (err, counts) => {
+                    if (!err && counts && counts.total === counts.planted) {
+                      // All planted - update plan status
+                      db.run(
+                        `UPDATE garden_plans SET status = 'completed', updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+                        [task.garden_plan_id]
+                      );
+                      // Complete remaining tasks from this plan
+                      db.run(
+                        'UPDATE tasks SET completed = 1, completed_at = ? WHERE garden_plan_id = ? AND user_id = ? AND completed = 0',
+                        [now, task.garden_plan_id, req.user.id]
+                      );
+                    }
+
+                    res.json({
+                      message: `Posadzono ${items.length} roślin`,
+                      planted_count: items.length,
+                      bed_ids: bedIds,
+                      all_planted: counts ? counts.total === counts.planted : false
+                    });
+                  }
+                );
+              })
+              .catch(err => {
+                console.error('Error creating beds:', err);
+                res.status(500).json({ error: 'Błąd tworzenia grządek' });
+              });
+          }
+        );
+      });
     }
   );
 });

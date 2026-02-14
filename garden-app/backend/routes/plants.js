@@ -7,6 +7,7 @@ const fs = require('fs');
 const path = require('path');
 const multer = require('multer');
 const sharp = require('sharp');
+const crypto = require('crypto');
 
 // Configure multer for plant photo uploads
 const storage = multer.diskStorage({
@@ -18,7 +19,7 @@ const storage = multer.diskStorage({
     cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const uniqueSuffix = Date.now() + '-' + crypto.randomBytes(16).toString('hex');
     cb(null, 'plant-' + uniqueSuffix + path.extname(file.originalname));
   }
 });
@@ -37,7 +38,7 @@ const upload = multer({
 });
 
 // Import extended plants from JSON to database (run once per user)
-router.post('/import-defaults', auth, (req, res) => {
+router.post('/import-defaults', auth, async (req, res) => {
   const extendedDataPath = path.join(__dirname, '../data/plants_extended.json');
 
   try {
@@ -47,95 +48,123 @@ router.post('/import-defaults', auth, (req, res) => {
     let imported = 0;
     let totalPlants = 0;
 
+    const dbRun = (sql, params) => new Promise((resolve, reject) => {
+      db.run(sql, params, (err) => {
+        if (err) reject(err);
+        else resolve();
+      });
+    });
+
+    const insertPromises = [];
+
     // Iterate through all categories
     for (const [category, plants] of Object.entries(plantsData)) {
       for (const [key, plant] of Object.entries(plants)) {
         totalPlants++;
-        db.run(
-          `INSERT INTO plants (
-            user_id, name, display_name, latin_name, category,
-            days_to_harvest, range_min, range_max, notes,
-            npk_needs, npk_ratio_recommended, fertilization_frequency,
-            organic_fertilizer, mineral_fertilizer,
-            soil_ph, soil_type, water_needs, sun_requirement,
-            companion_plants, avoid_plants,
-            height, is_perennial, planting_time, storage_requirement,
-            pruning_needs, winter_care, propagation_method,
-            is_custom
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)`,
-          [
-            req.user.id,
-            key.toLowerCase(),
-            plant.name,
-            plant.latinName || null,
-            plant.category || null,
-            plant.daysToHarvest,
-            plant.rangeMin || null,
-            plant.rangeMax || null,
-            plant.notes || null,
-            plant.npkNeeds || null,
-            plant.npkRatioRecommended || null,
-            plant.fertilizationFrequency || null,
-            plant.organicFertilizer || null,
-            plant.mineralFertilizer || null,
-            plant.soilPh || null,
-            plant.soilType || null,
-            plant.waterNeeds || null,
-            plant.sunRequirement || null,
-            plant.companionPlants || null,
-            plant.avoidPlants || null,
-            plant.height || null,
-            plant.isPerennial ? 1 : 0,
-            plant.plantingTime || null,
-            plant.storageRequirement || null,
-            plant.pruningNeeds || null,
-            plant.winterCare || null,
-            plant.propagationMethod || null
-          ],
-          (err) => {
-            if (!err) imported++;
-            if (err) console.error('Error importing plant:', key, err.message);
-          }
+        insertPromises.push(
+          dbRun(
+            `INSERT INTO plants (
+              user_id, name, display_name, latin_name, category,
+              days_to_harvest, range_min, range_max, notes,
+              npk_needs, npk_ratio_recommended, fertilization_frequency,
+              organic_fertilizer, mineral_fertilizer,
+              soil_ph, soil_type, water_needs, sun_requirement,
+              companion_plants, avoid_plants,
+              height, is_perennial, planting_time, storage_requirement,
+              pruning_needs, winter_care, propagation_method,
+              is_custom
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)`,
+            [
+              req.user.id,
+              key.toLowerCase(),
+              plant.name,
+              plant.latinName || null,
+              plant.category || null,
+              plant.daysToHarvest,
+              plant.rangeMin || null,
+              plant.rangeMax || null,
+              plant.notes || null,
+              plant.npkNeeds || null,
+              plant.npkRatioRecommended || null,
+              plant.fertilizationFrequency || null,
+              plant.organicFertilizer || null,
+              plant.mineralFertilizer || null,
+              plant.soilPh || null,
+              plant.soilType || null,
+              plant.waterNeeds || null,
+              plant.sunRequirement || null,
+              plant.companionPlants || null,
+              plant.avoidPlants || null,
+              plant.height || null,
+              plant.isPerennial ? 1 : 0,
+              plant.plantingTime || null,
+              plant.storageRequirement || null,
+              plant.pruningNeeds || null,
+              plant.winterCare || null,
+              plant.propagationMethod || null
+            ]
+          ).then(() => { imported++; })
+           .catch((err) => { console.error('Error importing plant:', key, err.message); })
         );
       }
     }
 
-    // Wait a bit for all inserts
-    setTimeout(() => {
-      res.json({
-        message: `Zaimportowano ${imported} z ${totalPlants} roślin`,
-        count: imported,
-        total: totalPlants
-      });
-    }, 1000);
+    await Promise.all(insertPromises);
+
+    res.json({
+      message: `Zaimportowano ${imported} z ${totalPlants} roślin`,
+      count: imported,
+      total: totalPlants
+    });
 
   } catch (error) {
     console.error('Import error:', error);
-    console.error('Import error:', error.message);
     res.status(500).json({ error: 'Błąd podczas importu' });
   }
 });
 
 // Get all plants for user (approved + own pending/rejected)
 router.get('/', auth, (req, res) => {
-  // Return:
-  // 1. All approved plants (visible to everyone)
-  // 2. Own pending/rejected plants (visible only to contributor)
-  db.all(
-    `SELECT p.*, u.username as contributor_username
-     FROM plants p
-     LEFT JOIN users u ON p.contributor_id = u.id
-     WHERE
+  const page = Math.max(1, parseInt(req.query.page) || 1);
+  const limit = Math.min(200, Math.max(1, parseInt(req.query.limit) || 50));
+  const offset = (page - 1) * limit;
+
+  const whereClause = `WHERE
        (p.status = 'approved' OR p.status IS NULL)
-       OR (p.contributor_id = ? AND p.status IN ('pending', 'rejected'))
-     ORDER BY p.is_custom DESC, p.name ASC`,
+       OR (p.contributor_id = ? AND p.status IN ('pending', 'rejected'))`;
+
+  // Pobierz łączną liczbę roślin
+  db.get(
+    `SELECT COUNT(*) as total FROM plants p ${whereClause}`,
     [req.user.id],
-    (err, rows) => {
+    (err, countRow) => {
       if (err) {
-        console.error('Error fetching plants:', err);
+        console.error('Error counting plants:', err);
         return res.status(500).json({ error: 'Błąd serwera' });
       }
-      res.json(rows);
+
+      const total = countRow.total;
+      const totalPages = Math.ceil(total / limit);
+
+      db.all(
+        `SELECT p.*, u.username as contributor_username
+         FROM plants p
+         LEFT JOIN users u ON p.contributor_id = u.id
+         ${whereClause}
+         ORDER BY p.is_custom DESC, p.name ASC
+         LIMIT ? OFFSET ?`,
+        [req.user.id, limit, offset],
+        (err, rows) => {
+          if (err) {
+            console.error('Error fetching plants:', err);
+            return res.status(500).json({ error: 'Błąd serwera' });
+          }
+          res.json({
+            data: rows,
+            pagination: { page, limit, total, totalPages }
+          });
+        }
+      );
     }
   );
 });

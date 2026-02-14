@@ -46,6 +46,9 @@ router.get('/', auth, (req, res) => {
   }
 
   if (year) {
+    if (!/^\d{4}$/.test(year)) {
+      return res.status(400).json({ error: 'Nieprawidłowy format roku' });
+    }
     query += ` AND strftime('%Y', p.created_at) = ?`;
     params.push(year);
   }

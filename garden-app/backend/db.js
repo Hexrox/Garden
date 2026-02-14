@@ -629,6 +629,9 @@ db.serialize(() => {
   db.run('CREATE INDEX IF NOT EXISTS idx_profile_views_date ON profile_views(viewed_at)');
   db.run('CREATE INDEX IF NOT EXISTS idx_weather_history_date ON weather_history(date)');
 
+  // Composite index for tasks sorted by priority + due_date (used in task listing)
+  db.run('CREATE INDEX IF NOT EXISTS idx_tasks_priority_date ON tasks(user_id, priority DESC, due_date ASC)');
+
   // ==========================================
   // COMPANION PLANTING FEATURE
   // ==========================================
@@ -1301,9 +1304,11 @@ db.serialize(() => {
     name TEXT NOT NULL,
     description TEXT,
     year INTEGER DEFAULT (strftime('%Y', 'now')),
-    status TEXT DEFAULT 'draft' CHECK(status IN ('draft', 'active', 'archived')),
+    status TEXT DEFAULT 'draft' CHECK(status IN ('draft', 'active', 'archived', 'completed')),
     width_cm INTEGER,
     length_cm INTEGER,
+    tasks_created_at DATETIME,
+    planned_planting_date DATE,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
@@ -1315,6 +1320,8 @@ db.serialize(() => {
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     plan_id INTEGER NOT NULL,
     plant_id INTEGER,
+    task_id INTEGER,
+    planted_at DATETIME,
     plant_name TEXT NOT NULL,
     quantity INTEGER DEFAULT 1,
     position_x INTEGER,
@@ -1335,6 +1342,31 @@ db.serialize(() => {
   db.run('CREATE INDEX IF NOT EXISTS idx_garden_plans_status ON garden_plans(status)');
   db.run('CREATE INDEX IF NOT EXISTS idx_garden_plan_items_plan_id ON garden_plan_items(plan_id)');
   db.run('CREATE INDEX IF NOT EXISTS idx_garden_plan_items_plant_id ON garden_plan_items(plant_id)');
+
+  // Migrations for garden_plans (add new columns if not exist)
+  db.run('ALTER TABLE garden_plans ADD COLUMN tasks_created_at DATETIME', () => {});
+  db.run('ALTER TABLE garden_plans ADD COLUMN planned_planting_date DATE', () => {});
+
+  // Migrations for garden_plan_items (add new columns if not exist)
+  db.run('ALTER TABLE garden_plan_items ADD COLUMN task_id INTEGER', () => {});
+  db.run('ALTER TABLE garden_plan_items ADD COLUMN planted_at DATETIME', () => {});
+
+  // Add garden_plan_id to planned_actions for linkage
+  db.run('ALTER TABLE planned_actions ADD COLUMN garden_plan_id INTEGER', () => {});
+  db.run('ALTER TABLE planned_actions ADD COLUMN garden_plan_item_id INTEGER', () => {});
+
+  // Add garden plan linkage columns to tasks table
+  db.run('ALTER TABLE tasks ADD COLUMN garden_plan_id INTEGER', (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding garden_plan_id to tasks:', err.message);
+    }
+  });
+  db.run('ALTER TABLE tasks ADD COLUMN garden_plan_item_id INTEGER', (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding garden_plan_item_id to tasks:', err.message);
+    }
+  });
+  db.run('CREATE INDEX IF NOT EXISTS idx_tasks_garden_plan_id ON tasks(garden_plan_id)');
 
   console.log('✅ Database tables and indexes created successfully');
 });

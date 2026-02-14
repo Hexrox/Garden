@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import axios from '../config/axios';
+import axios, { getImageUrl } from '../config/axios';
 
 const PlotForm = () => {
   const { id } = useParams();
@@ -17,6 +17,19 @@ const PlotForm = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [loadingPlot, setLoadingPlot] = useState(isEditMode);
+  const [isDirty, setIsDirty] = useState(false);
+
+  // Ostrzeżenie przed utratą niezapisanych zmian
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (isDirty) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isDirty]);
 
   const loadPlot = useCallback(async () => {
     try {
@@ -26,7 +39,7 @@ const PlotForm = () => {
         description: response.data.description || ''
       });
       if (response.data.image_path) {
-        setImagePreview(`/${response.data.image_path}`);
+        setImagePreview(getImageUrl(response.data.image_path));
       }
     } catch (error) {
       setError('Nie udało się załadować danych poletka');
@@ -48,6 +61,7 @@ const PlotForm = () => {
       ...prev,
       [name]: value
     }));
+    setIsDirty(true);
   };
 
   const handleImageChange = (e) => {
@@ -68,6 +82,7 @@ const PlotForm = () => {
       setImage(file);
       setDeleteImage(false);
       setError('');
+      setIsDirty(true);
 
       // Create preview
       const reader = new FileReader();
@@ -115,6 +130,7 @@ const PlotForm = () => {
         });
       }
 
+      setIsDirty(false);
       navigate('/plots');
     } catch (error) {
       console.error('Error saving plot:', error);

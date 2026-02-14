@@ -31,6 +31,19 @@ const PlanForm = ({ isOpen, onClose, onSuccess, editPlan, plots, prefillData }) 
   const { showToast } = useToast();
   const [loading, setLoading] = useState(false);
   const [beds, setBeds] = useState([]);
+  const [isDirty, setIsDirty] = useState(false);
+
+  // Ostrzeżenie przed utratą niezapisanych zmian
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (isDirty) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isDirty]);
 
   // Formularz
   const [formData, setFormData] = useState({
@@ -124,6 +137,7 @@ const PlanForm = ({ isOpen, onClose, onSuccess, editPlan, plots, prefillData }) 
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    setIsDirty(true);
   };
 
   const handleSubmit = async (e) => {
@@ -150,6 +164,7 @@ const PlanForm = ({ isOpen, onClose, onSuccess, editPlan, plots, prefillData }) 
         showToast('Plan dodany', 'success');
       }
 
+      setIsDirty(false);
       onSuccess();
     } catch (error) {
       console.error('Błąd:', error);
@@ -163,12 +178,13 @@ const PlanForm = ({ isOpen, onClose, onSuccess, editPlan, plots, prefillData }) 
 
   return (
     <div
-      className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-end sm:items-center justify-center sm:p-4"
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[70] flex items-end sm:items-center justify-center sm:p-4"
       onClick={onClose}
     >
       <div
-        className="bg-white dark:bg-gray-800 rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-lg max-h-[95vh] sm:max-h-[85vh] overflow-y-auto"
+        className="bg-white dark:bg-gray-800 rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-lg max-h-[85vh] sm:max-h-[85vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
+        style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 0px)' }}
       >
         {/* Nagłówek */}
         <div className="sticky top-0 z-10 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between shadow-sm">
@@ -423,7 +439,7 @@ const PlanForm = ({ isOpen, onClose, onSuccess, editPlan, plots, prefillData }) 
           </div>
 
           {/* Przyciski */}
-          <div className="flex gap-3 pt-4 pb-4">
+          <div className="flex gap-3 pt-4 pb-4 sticky bottom-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 -mx-6 px-6 -mb-6">
             <button
               type="button"
               onClick={onClose}
