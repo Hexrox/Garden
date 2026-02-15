@@ -25,10 +25,10 @@ class PageErrorBoundary extends React.Component {
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-8 max-w-md w-full text-center">
             <div className="text-4xl mb-4">😵</div>
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-              Wystapil blad na tej stronie
+              Wystąpił błąd na tej stronie
             </h2>
             <p className="text-gray-600 dark:text-gray-400 mb-6 text-sm">
-              Pozostale strony powinny dzialac normalnie.
+              Pozostałe strony powinny działać normalnie.
             </p>
             {process.env.NODE_ENV === 'development' && this.state.error && (
               <pre className="text-left text-xs bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 p-3 rounded mb-4 overflow-auto max-h-32">
@@ -40,7 +40,7 @@ class PageErrorBoundary extends React.Component {
                 onClick={this.handleRetry}
                 className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm"
               >
-                Sprobuj ponownie
+                Spróbuj ponownie
               </button>
               <button
                 onClick={() => window.location.href = '/dashboard'}

@@ -57,7 +57,7 @@ const PlantCatalog = () => {
   const fetchPlants = useCallback(async (signal) => {
     try {
       const response = await axios.get('/api/plants', { signal });
-      setPlants(response.data);
+      setPlants(Array.isArray(response.data) ? response.data : response.data.data || []);
     } catch (error) {
       if (error.name !== 'CanceledError') {
         console.error('Error fetching plants:', error);
