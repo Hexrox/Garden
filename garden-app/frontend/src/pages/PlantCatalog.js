@@ -56,8 +56,21 @@ const PlantCatalog = () => {
 
   const fetchPlants = useCallback(async (signal) => {
     try {
-      const response = await axios.get('/api/plants', { signal });
-      setPlants(Array.isArray(response.data) ? response.data : response.data.data || []);
+      let allPlants = [];
+      let page = 1;
+      let totalPages = 1;
+      do {
+        const response = await axios.get('/api/plants', {
+          params: { page, limit: 200 },
+          signal
+        });
+        const data = response.data;
+        const plants = Array.isArray(data) ? data : data.data || [];
+        allPlants = allPlants.concat(plants);
+        totalPages = data.pagination?.totalPages || 1;
+        page++;
+      } while (page <= totalPages);
+      setPlants(allPlants);
     } catch (error) {
       if (error.name !== 'CanceledError') {
         console.error('Error fetching plants:', error);
