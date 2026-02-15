@@ -1,0 +1,55 @@
+# Claude Code
+.claude/
+
+# Folder ze śmieciami
+smieci/
+
+# Notatki robocze
+TODO.md
+nowasesja.md
+
+# Stare pliki / archiwa
+oldfiles/
+
+# Backupy baz danych
+*.db.backup*
+*.db.before-*
+*.db.merged-*
+*.db.broken*
+*.db.pre_*
+
+# Artefakty buildów
+*.tar.gz
+
+# Dane importowe (jednorazowe JSON)
+garden-app/backend/data/
+garden-app/backend/scripts/
+
+# Poradnik / manual
+garden-app/manual/
+
+# Zduplikowane / błędne katalogi
+garden-app/garden-app/
+garden-app/backend/garden-app/
+garden-app/frontend/garden-app/
+garden-app/backend/production:*/
+garden-app/frontend/production:*/
+
+# Pliki CLAUDE.md (poza rootem)
+garden-app/backend/CLAUDE.md
+garden-app/backend/routes/CLAUDE.md
+garden-app/frontend/CLAUDE.md
+garden-app/frontend/src/CLAUDE.md
+garden-app/frontend/src/components/CLAUDE.md
+garden-app/frontend/src/components/gallery/CLAUDE.md
+garden-app/frontend/src/components/modals/CLAUDE.md
+garden-app/frontend/src/config/CLAUDE.md
+garden-app/frontend/src/hooks/CLAUDE.md
+garden-app/frontend/src/pages/CLAUDE.md
+
+# Deploy script (zawiera hasła)
+garden-app/deploy.sh
+
+# OS
+.DS_Store
+Thumbs.db
