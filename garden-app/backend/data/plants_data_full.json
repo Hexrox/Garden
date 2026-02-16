@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
   "last_updated": "2025-12-20",
-  "total_plants": 641,
+  "total_plants": 628,
   "categories": {
     "vegetable": 200,
     "flower_perennial": 150,
@@ -4994,98 +4994,7 @@
       ]
     },
     {
-      "name": "Rudbeckia 'Goldsturm'",
-      "name_latin": "Rudbeckia fulgida 'Goldsturm'",
-      "category": "flower_perennial",
-      "subcategory": "rudbeckia",
-      "flower_color": "żółty z czarnym środkiem",
-      "bloom_season": "lipiec-październik",
-      "height": "średnie (60-80cm)",
-      "sun_requirement": "pełne słońce,półcień",
-      "is_perennial": true,
-      "hardiness_zone": "3-9",
-      "is_fragrant": false,
-      "is_bee_friendly": true,
-      "soil_preference": "żyzna,przepuszczalna,wilgotna",
-      "watering_needs": "średnie",
-      "fertilization_needs": "NISKIE",
-      "npk": "10:10:10",
-      "fertilization_frequency": "Wiosna raz w roku",
-      "planting_depth": "rozsada na poziomie gruntu",
-      "spacing": "40-50cm",
-      "days_to_harvest": null,
-      "care_notes": "Złota burza! Masowo kwitnie VII-X. Bardzo odporna, niezniszczalna. Dzielić co 3-4 lata wiosną. Usuwać przekwitłe kwiaty (dłużej kwitnie). Tolerancja suszy. Nagroda Perennial Plant of the Year! Idealna do naturalnych ogrodów.",
-      "origin": "USA",
-      "uses": [
-        "rabaty",
-        "łąki kwietne",
-        "kwiaty cięte",
-        "ogrody naturalistyczne"
-      ]
-    },
-    {
-      "name": "Echinacea 'Magnus'",
-      "name_latin": "Echinacea purpurea 'Magnus'",
-      "category": "flower_perennial",
-      "subcategory": "echinaceajeżówka",
-      "flower_color": "różowopurpurowy z pomarańczowym stożkiem",
-      "bloom_season": "czerwiec-wrzesień",
-      "height": "wysokie (90-100cm)",
-      "sun_requirement": "pełne słońce",
-      "is_perennial": true,
-      "hardiness_zone": "3-9",
-      "is_fragrant": false,
-      "is_bee_friendly": true,
-      "soil_preference": "żyzna,przepuszczalna,sucha do umiarkowanie wilgotnej",
-      "watering_needs": "niskie-średnie",
-      "fertilization_needs": "NISKIE",
-      "npk": "5:10:10",
-      "fertilization_frequency": "Wiosna raz w roku (opcjonalnie)",
-      "planting_depth": "rozsada na poziomie gruntu",
-      "spacing": "45-60cm",
-      "days_to_harvest": null,
-      "care_notes": "Purpurowa piękność! Duże kwiaty 10-12cm, płaskie płatki. Lecznicza (odporność!). Tolerancja suszy i upałów. Zimuje na stojąco - nasiona dla ptaków. Dzielić co 4-5 lat. Perennial Plant of the Year 1998!",
-      "origin": "USA",
-      "uses": [
-        "rabaty",
-        "zioła lecznicze",
-        "kwiaty cięte",
-        "ogrody naturalistyczne",
-        "dla motyli i pszczół"
-      ]
-    },
-    {
-      "name": "Hemerocallis 'Stella de Oro'",
-      "name_latin": "Hemerocallis 'Stella de Oro'",
-      "category": "flower_perennial",
-      "subcategory": "liliowiec",
-      "flower_color": "złotożółty",
-      "bloom_season": "czerwiec-wrzesień (powtarza!)",
-      "height": "niskie (25-40cm)",
-      "sun_requirement": "pełne słońce,półcień",
-      "is_perennial": true,
-      "hardiness_zone": "3-9",
-      "is_fragrant": true,
-      "is_bee_friendly": true,
-      "soil_preference": "dowolna,przepuszczalna",
-      "watering_needs": "niskie-średnie",
-      "fertilization_needs": "NISKIE",
-      "npk": "10:10:10",
-      "fertilization_frequency": "Wiosna raz w roku",
-      "planting_depth": "korzenie 2-3cm pod ziemią",
-      "spacing": "30-45cm",
-      "days_to_harvest": null,
-      "care_notes": "Bestsellerowe! Małe złote kwiaty, nieustanne kwitnienie VI-IX! Każdy kwiat 1 dzień, ale setki pąków. Niezniszczalna - rośnie wszędzie. Dzielić co 3-4 lata. Kompaktowa - idealna na obrzeża. Award of Garden Merit!",
-      "origin": "hybrida (USA)",
-      "uses": [
-        "obrzeża rabat",
-        "donice",
-        "obsadzenie masowe",
-        "kwiaty cięte"
-      ]
-    },
-    {
-      "name": "Sedum 'Autumn Joy'",
+      "name": "Rozchodnik okazały 'Autumn Joy'",
       "name_latin": "Sedum 'Herbstfreude'",
       "category": "flower_perennial",
       "subcategory": "rozchodnik",
@@ -5145,36 +5054,6 @@
       ]
     },
     {
-      "name": "Salvia nemorosa 'Caradonna'",
-      "name_latin": "Salvia nemorosa 'Caradonna'",
-      "category": "flower_perennial",
-      "subcategory": "szalwia_omszona",
-      "flower_color": "ciemnofioletowy",
-      "bloom_season": "czerwiec-wrzesień (powtarza!)",
-      "height": "średnie (50-70cm)",
-      "sun_requirement": "pełne słońce",
-      "is_perennial": true,
-      "hardiness_zone": "4-8",
-      "is_fragrant": true,
-      "is_bee_friendly": true,
-      "soil_preference": "przepuszczalna,sucha do umiarkowanie wilgotnej",
-      "watering_needs": "niskie",
-      "fertilization_needs": "NISKIE",
-      "npk": "5:10:10",
-      "fertilization_frequency": "Wiosna raz w roku",
-      "planting_depth": "rozsada na poziomie gruntu",
-      "spacing": "40-50cm",
-      "days_to_harvest": null,
-      "care_notes": "Ciemnofioletowe świece! Czarne łodygi + ciemnofioletowe kwiaty = dramatyczny efekt. Przyciąć po I kwitnieniu - kwitnie ponownie! Tolerancja suszy. Aromatyczne liście. Pszczoły uwielbiają! Perennial Plant of the Year 1997 (Salvia)!",
-      "origin": "Europa",
-      "uses": [
-        "rabaty",
-        "ogrody zapachowe",
-        "dla pszczół",
-        "ogrody minimalistyczne"
-      ]
-    },
-    {
       "name": "Gaillardia 'Arizona Sun'",
       "name_latin": "Gaillardia × grandiflora 'Arizona Sun'",
       "category": "flower_perennial",
@@ -5202,66 +5081,6 @@
         "ogrody preriowe",
         "łąki kwietne",
         "kwiaty cięte"
-      ]
-    },
-    {
-      "name": "Coreopsis 'Moonbeam'",
-      "name_latin": "Coreopsis verticillata 'Moonbeam'",
-      "category": "flower_perennial",
-      "subcategory": "nachylek",
-      "flower_color": "bladożółty (cytrynowy)",
-      "bloom_season": "czerwiec-wrzesień",
-      "height": "niskie-średnie (40-50cm)",
-      "sun_requirement": "pełne słońce",
-      "is_perennial": true,
-      "hardiness_zone": "3-9",
-      "is_fragrant": false,
-      "is_bee_friendly": true,
-      "soil_preference": "przepuszczalna,sucha do umiarkowanie wilgotnej",
-      "watering_needs": "niskie",
-      "fertilization_needs": "NISKIE",
-      "npk": "5:10:10",
-      "fertilization_frequency": "Wiosna raz w roku",
-      "planting_depth": "rozsada na poziomie gruntu",
-      "spacing": "40-50cm",
-      "days_to_harvest": null,
-      "care_notes": "Blask księżyca! Drobne bladożółte gwiazdki pokrywają igłowate liście. Kwitnie MIESIĄCAMI! Przyciąć w połowie lata - odmłodzi się. Tolerancja suszy. Rozrasta się kłączami - dzielić co 2-3 lata. Perennial Plant of the Year 1992!",
-      "origin": "USA",
-      "uses": [
-        "obrzeża rabat",
-        "obsadzenie masowe",
-        "naturalistyczne",
-        "kwiaty cięte"
-      ]
-    },
-    {
-      "name": "Geranium 'Rozanne'",
-      "name_latin": "Geranium 'Rozanne'",
-      "category": "flower_perennial",
-      "subcategory": "bodziszek_ogrodowy",
-      "flower_color": "niebieskofioletowy z białym środkiem",
-      "bloom_season": "czerwiec-październik (!)",
-      "height": "niskie-średnie (40-50cm)",
-      "sun_requirement": "pełne słońce,półcień",
-      "is_perennial": true,
-      "hardiness_zone": "5-8",
-      "is_fragrant": false,
-      "is_bee_friendly": true,
-      "soil_preference": "żyzna,przepuszczalna,wilgotna",
-      "watering_needs": "średnie",
-      "fertilization_needs": "ŚREDNIE",
-      "npk": "10:10:10",
-      "fertilization_frequency": "Co miesiąc w sezonie",
-      "planting_depth": "rozsada na poziomie gruntu",
-      "spacing": "60-80cm (rozrasta się!)",
-      "days_to_harvest": null,
-      "care_notes": "LEGENDA ogrodowa! Kwitnie NON-STOP VI-X (5 miesięcy!). Rozrasta się płożąc (pokrywa grunt). Nie wymaga usuwania przekwitłych! Płotne. Setki nagród międzynarodowych! Jeden z najlepszych bylin ever. Bezproblemowa.",
-      "origin": "hybrida (Wielka Brytania)",
-      "uses": [
-        "pokrycie gruntu",
-        "obsadzenie masowe",
-        "kontenery",
-        "rabaty mieszane"
       ]
     },
     {
@@ -5325,36 +5144,6 @@
       ]
     },
     {
-      "name": "Heuchera 'Palace Purple'",
-      "name_latin": "Heuchera micrantha 'Palace Purple'",
-      "category": "flower_perennial",
-      "subcategory": "zurawka",
-      "flower_color": "białe (liście purpurowe!)",
-      "bloom_season": "czerwiec-lipiec (kwiaty drugorzędne)",
-      "height": "niskie-średnie (45-60cm z kwiatami)",
-      "sun_requirement": "półcień,pełne słońce",
-      "is_perennial": true,
-      "hardiness_zone": "4-9",
-      "is_fragrant": false,
-      "is_bee_friendly": true,
-      "soil_preference": "żyzna,przepuszczalna,wilgotna",
-      "watering_needs": "średnie",
-      "fertilization_needs": "NISKIE-ŚREDNIE",
-      "npk": "10:10:10",
-      "fertilization_frequency": "Wiosna + lato (2 razy)",
-      "planting_depth": "korona na poziomie gruntu",
-      "spacing": "30-40cm",
-      "days_to_harvest": null,
-      "care_notes": "Purpurowe liście cały sezon! Kształt liści klonowy, kolor ciemnopurpurowy z metalicznym połyskiem. Zimozielona (w łagodnych strefach). Dzielić co 3-4 lata. Usuwać stare liście wiosną. Perennial Plant of the Year 1991!",
-      "origin": "USA",
-      "uses": [
-        "obrzeża rabat",
-        "ciemne akcenty",
-        "kontrast kolorów",
-        "donice"
-      ]
-    },
-    {
       "name": "Pulmonaria 'Trevi Fountain'",
       "name_latin": "Pulmonaria 'Trevi Fountain'",
       "category": "flower_perennial",
@@ -5382,36 +5171,6 @@
         "wiosenne kwiaty",
         "pokrycie gruntu",
         "liście ozdobne"
-      ]
-    },
-    {
-      "name": "Brunnera 'Jack Frost'",
-      "name_latin": "Brunnera macrophylla 'Jack Frost'",
-      "category": "flower_perennial",
-      "subcategory": "bruner",
-      "flower_color": "niebieski (jak niezapominajki)",
-      "bloom_season": "kwiecień-maj",
-      "height": "niskie-średnie (30-45cm)",
-      "sun_requirement": "cień,półcień",
-      "is_perennial": true,
-      "hardiness_zone": "3-8",
-      "is_fragrant": false,
-      "is_bee_friendly": true,
-      "soil_preference": "żyzna,próchniczna,wilgotna",
-      "watering_needs": "średnie-wysokie",
-      "fertilization_needs": "NISKIE",
-      "npk": "10:10:10",
-      "fertilization_frequency": "Wiosna raz w roku",
-      "planting_depth": "rozsada na poziomie gruntu",
-      "spacing": "40-50cm",
-      "days_to_harvest": null,
-      "care_notes": "Srebrne liście jak szron! Duże sercowate liście, srebrzyste z zielonymi żyłkami. Wiosną chmura niebieskich kwiatów. Pokrywa grunt w cieniu. Tolerancja suszy (w cieniu!). Perennial Plant of the Year 2012! Spektakularna cały sezon.",
-      "origin": "hybrida (Kaukaz)",
-      "uses": [
-        "cień",
-        "pokrycie gruntu",
-        "liście ozdobne",
-        "wiosenne kwiaty"
       ]
     },
     {
@@ -5445,67 +5204,7 @@
       ]
     },
     {
-      "name": "Hosta 'Sum and Substance'",
-      "name_latin": "Hosta 'Sum and Substance'",
-      "category": "flower_perennial",
-      "subcategory": "funkia_olbrzymia",
-      "flower_color": "bladolawendowy (liście główna atrakcja!)",
-      "bloom_season": "lipiec-sierpień",
-      "height": "wysokie (70-90cm)",
-      "sun_requirement": "półcień,pełne słońce (toleruje!)",
-      "is_perennial": true,
-      "hardiness_zone": "3-9",
-      "is_fragrant": true,
-      "is_bee_friendly": false,
-      "soil_preference": "żyzna,wilgotna,próchniczna",
-      "watering_needs": "wysokie",
-      "fertilization_needs": "ŚREDNIE-WYSOKIE",
-      "npk": "10:10:10",
-      "fertilization_frequency": "Co miesiąc V-VIII",
-      "planting_depth": "korona 2-3cm pod ziemią",
-      "spacing": "90-120cm (!)",
-      "days_to_harvest": null,
-      "care_notes": "GIGANTYCZNA! Liście chartreuse (żółtozielone) do 50cm długości! Najbardziej tolerancyjna słońce hosta. Tolerancja ślimków. Wolno rośnie pierwsze lata → potem OGROMNA. NIE dzielić (soliter!). Hosta of the Year 2004!",
-      "origin": "hybrida (USA)",
-      "uses": [
-        "soliter",
-        "cień",
-        "duże akcenty",
-        "tolerancja słońca"
-      ]
-    },
-    {
-      "name": "Astilbe 'Fanal'",
-      "name_latin": "Astilbe × arendsii 'Fanal'",
-      "category": "flower_perennial",
-      "subcategory": "tawulka",
-      "flower_color": "ciemnoczerwony",
-      "bloom_season": "czerwiec-lipiec",
-      "height": "średnie (60-70cm)",
-      "sun_requirement": "półcień,cień",
-      "is_perennial": true,
-      "hardiness_zone": "4-9",
-      "is_fragrant": false,
-      "is_bee_friendly": false,
-      "soil_preference": "żyzna,wilgotna,próchniczna",
-      "watering_needs": "wysokie",
-      "fertilization_needs": "ŚREDNIE",
-      "npk": "10:10:10",
-      "fertilization_frequency": "Wiosna + po kwitnieniu (2 razy)",
-      "planting_depth": "korona na poziomie gruntu",
-      "spacing": "40-50cm",
-      "days_to_harvest": null,
-      "care_notes": "Pióropusze w cieniu! Ciemnoczerwone pierzaste kwiatostany. Liście brązowozielone (młode). Wymaga wilgoci - schnięcie = brzydkie. Ściółkować! Dzielić co 3-4 lata wiosną. Kwiaty długo ozdobne (również suche). Idealna nad stawem.",
-      "origin": "hybrida (Niemcy)",
-      "uses": [
-        "cień",
-        "wilgotne miejsca",
-        "stawy",
-        "kwiaty cięte i suszone"
-      ]
-    },
-    {
-      "name": "Anemone 'Honorine Jobert'",
+      "name": "Zawilec japoński 'Honorine Jobert'",
       "name_latin": "Anemone × hybrida 'Honorine Jobert'",
       "category": "flower_perennial",
       "subcategory": "zawilec_jesienny",
@@ -5535,36 +5234,6 @@
       ]
     },
     {
-      "name": "Monarda 'Cambridge Scarlet'",
-      "name_latin": "Monarda didyma 'Cambridge Scarlet'",
-      "category": "flower_perennial",
-      "subcategory": "pysznogłowka",
-      "flower_color": "szkarłatnoczerwony",
-      "bloom_season": "lipiec-wrzesień",
-      "height": "wysokie (90-100cm)",
-      "sun_requirement": "pełne słońce,półcień",
-      "is_perennial": true,
-      "hardiness_zone": "4-9",
-      "is_fragrant": true,
-      "is_bee_friendly": true,
-      "soil_preference": "żyzna,wilgotna,próchniczna",
-      "watering_needs": "wysokie",
-      "fertilization_needs": "ŚREDNIE",
-      "npk": "10:10:10",
-      "fertilization_frequency": "Wiosna + lato (2 razy)",
-      "planting_depth": "rozsada na poziomie gruntu",
-      "spacing": "50-60cm",
-      "days_to_harvest": null,
-      "care_notes": "Magnes dla kolibr... pszczół i motyli! Intensywnie czerwone \"kudłate\" kwiaty. Liście aromatyczne (herbata bergamotka!). Problem: mączniak - sadzić wietrzne miejsca. Dzielić co 2-3 lata (zapobiega mączniakowi). Rozrasta się kłączami.",
-      "origin": "USA",
-      "uses": [
-        "dla motyli i pszczół",
-        "herbata",
-        "rabaty wilgotne",
-        "cięte"
-      ]
-    },
-    {
       "name": "Achillea 'Moonshine'",
       "name_latin": "Achillea 'Moonshine'",
       "category": "flower_perennial",
@@ -5591,36 +5260,6 @@
         "rabaty",
         "kwiaty suszone",
         "ogrody suchebez podlewania"
-      ]
-    },
-    {
-      "name": "Campanula glomerata 'Superba'",
-      "name_latin": "Campanula glomerata 'Superba'",
-      "category": "flower_perennial",
-      "subcategory": "dzwonek_skupiony",
-      "flower_color": "fioletowy",
-      "bloom_season": "czerwiec-sierpień",
-      "height": "średnie (50-70cm)",
-      "sun_requirement": "pełne słońce,półcień",
-      "is_perennial": true,
-      "hardiness_zone": "3-8",
-      "is_fragrant": false,
-      "is_bee_friendly": true,
-      "soil_preference": "żyzna,wilgotna,przepuszczalna",
-      "watering_needs": "średnie",
-      "fertilization_needs": "NISKIE-ŚREDNIE",
-      "npk": "10:10:10",
-      "fertilization_frequency": "Wiosna raz w roku",
-      "planting_depth": "rozsada na poziomie gruntu",
-      "spacing": "40-50cm",
-      "days_to_harvest": null,
-      "care_notes": "Kule fioletowych dzwonków! Kwiaty skupione w głowiastych baldachach. Przyciąć po kwitnieniu - może kwitnąć ponownie! Rozrasta się kłączami - może być agresywna. Dzielić co 2-3 lata. Naturalizuje się łatwo.",
-      "origin": "Europa",
-      "uses": [
-        "rabaty",
-        "ogrody wiejskie",
-        "naturalizacja",
-        "kwiaty cięte"
       ]
     },
     {
@@ -5684,37 +5323,7 @@
       ]
     },
     {
-      "name": "Veronica 'Royal Candles'",
-      "name_latin": "Veronica longifolia 'Royal Candles'",
-      "category": "flower_perennial",
-      "subcategory": "przetacznik",
-      "flower_color": "niebieskofioletowy",
-      "bloom_season": "lipiec-wrzesień",
-      "height": "średnie-wysokie (60-80cm)",
-      "sun_requirement": "pełne słońce,półcień",
-      "is_perennial": true,
-      "hardiness_zone": "4-8",
-      "is_fragrant": false,
-      "is_bee_friendly": true,
-      "soil_preference": "żyzna,wilgotna,przepuszczalna",
-      "watering_needs": "średnie",
-      "fertilization_needs": "NISKIE-ŚREDNIE",
-      "npk": "10:10:10",
-      "fertilization_frequency": "Wiosna raz w roku",
-      "planting_depth": "rozsada na poziomie gruntu",
-      "spacing": "40-50cm",
-      "days_to_harvest": null,
-      "care_notes": "Królewskie świece! Długie (30cm) pionowe kłosy niebieskich kwiatów. Kwitnie tygodniami! Mocne łodygi - bez podpory. Usuwać przekwitłe kłosy - boczne kwiaty. Dzielić co 3-4 lata. Przyciąga pszczoły masowo!",
-      "origin": "Europa",
-      "uses": [
-        "rabaty",
-        "dla pszczół",
-        "kwiaty cięte",
-        "pionowe akcenty"
-      ]
-    },
-    {
-      "name": "Liatris spicata 'Kobold'",
+      "name": "Liatra kłosowa 'Kobold'",
       "name_latin": "Liatris spicata 'Kobold'",
       "category": "flower_perennial",
       "subcategory": "płomiennik_klosowy",
@@ -7553,7 +7162,7 @@
       ]
     },
     {
-      "name": "Allium 'Purple Sensation'",
+      "name": "Czosnek ozdobny 'Purple Sensation'",
       "name_latin": "Allium aflatunense 'Purple Sensation'",
       "category": "flower_bulb",
       "subcategory": "czosnek_ozdobny",
@@ -7582,7 +7191,7 @@
       ]
     },
     {
-      "name": "Allium 'Globemaster'",
+      "name": "Czosnek ozdobny 'Globemaster'",
       "name_latin": "Allium 'Globemaster'",
       "category": "flower_bulb",
       "subcategory": "czosnek_ozdobny",
@@ -8412,7 +8021,7 @@
       ]
     },
     {
-      "name": "Allium 'Mont Blanc'",
+      "name": "Czosnek ozdobny 'Mont Blanc'",
       "name_latin": "Allium 'Mont Blanc'",
       "category": "flower_bulb",
       "subcategory": "allium",
@@ -8442,7 +8051,7 @@
       ]
     },
     {
-      "name": "Allium 'Gladiator'",
+      "name": "Czosnek ozdobny 'Gladiator'",
       "name_latin": "Allium 'Gladiator'",
       "category": "flower_bulb",
       "subcategory": "allium",
@@ -8472,7 +8081,7 @@
       ]
     },
     {
-      "name": "Allium schubertii",
+      "name": "Czosnek Schuberta",
       "name_latin": "Allium schubertii",
       "category": "flower_bulb",
       "subcategory": "allium_botaniczny",
@@ -8502,7 +8111,7 @@
       ]
     },
     {
-      "name": "Allium christophii (Gwiazda Persji)",
+      "name": "Czosnek gwiaździsty (Gwiazda Persji)",
       "name_latin": "Allium christophii",
       "category": "flower_bulb",
       "subcategory": "allium_botaniczny",
@@ -8532,7 +8141,7 @@
       ]
     },
     {
-      "name": "Allium sphaerocephalon (Czosnek główkowaty)",
+      "name": "Czosnek główkowaty",
       "name_latin": "Allium sphaerocephalon",
       "category": "flower_bulb",
       "subcategory": "allium_botaniczny",

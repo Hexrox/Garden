@@ -1,94 +1,29 @@
 const sqlite3 = require('sqlite3').verbose();
-const db = new sqlite3.Database('garden.db');
+const path = require('path');
 
-// CRITICAL: Enable foreign keys for CASCADE DELETE to work
-db.run('PRAGMA foreign_keys = ON;');
+const PLANTS_DB_PATH = path.join(__dirname, 'plants.db');
+const GARDEN_DB_PATH = path.join(__dirname, 'garden.db');
 
-db.serialize(() => {
-  // Users table
-  db.run(`CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username TEXT UNIQUE NOT NULL,
-    email TEXT UNIQUE NOT NULL,
-    password TEXT NOT NULL,
-    role TEXT DEFAULT 'user',
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-  )`);
+// Baza referencyjna (rośliny, szablony, produkty)
+const plantsDb = new sqlite3.Database(PLANTS_DB_PATH);
+plantsDb.run('PRAGMA foreign_keys = ON;');
 
-  // Plots table (updated with user relationship)
-  db.run(`CREATE TABLE IF NOT EXISTS plots (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
-    name TEXT NOT NULL,
-    description TEXT,
-    image_path TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
-  )`);
+// Baza użytkownika (użytkownicy, działki, grządki, itd.)
+const userDb = new sqlite3.Database(GARDEN_DB_PATH);
+userDb.run('PRAGMA foreign_keys = ON;');
 
-  // Beds/Rows table (updated)
-  db.run(`CREATE TABLE IF NOT EXISTS beds (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    plot_id INTEGER NOT NULL,
-    row_number INTEGER NOT NULL,
-    plant_name TEXT,
-    plant_variety TEXT,
-    planted_date TEXT,
-    note TEXT,
-    image_path TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY(plot_id) REFERENCES plots(id) ON DELETE CASCADE
-  )`);
+// ATTACH plants.db w userDb dla cross-database JOINów
+// Dzięki temu zapytania typu "SELECT * FROM plants" działają z userDb,
+// ponieważ SQLite przeszukuje podłączone bazy dla niekwalifikowanych nazw tabel
+userDb.run(`ATTACH DATABASE ? AS plants_ref`, [PLANTS_DB_PATH]);
 
-  // Spray history table (new - separated from beds for better tracking)
-  db.run(`CREATE TABLE IF NOT EXISTS spray_history (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    bed_id INTEGER NOT NULL,
-    spray_name TEXT NOT NULL,
-    spray_type TEXT,
-    spray_date DATE NOT NULL,
-    withdrawal_period INTEGER NOT NULL,
-    safe_harvest_date DATE NOT NULL,
-    dosage TEXT,
-    weather_conditions TEXT,
-    note TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY(bed_id) REFERENCES beds(id) ON DELETE CASCADE
-  )`);
+// ==========================================
+// BAZA REFERENCYJNA (plants.db)
+// ==========================================
 
-  // Reminders table (new - for active reminders)
-  db.run(`CREATE TABLE IF NOT EXISTS reminders (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
-    spray_id INTEGER NOT NULL,
-    bed_id INTEGER NOT NULL,
-    reminder_date DATE NOT NULL,
-    is_read BOOLEAN DEFAULT 0,
-    message TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY(spray_id) REFERENCES spray_history(id) ON DELETE CASCADE,
-    FOREIGN KEY(bed_id) REFERENCES beds(id) ON DELETE CASCADE
-  )`);
-
-  // Tasks table (new - task management)
-  db.run(`CREATE TABLE IF NOT EXISTS tasks (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
-    bed_id INTEGER,
-    task_type TEXT CHECK(task_type IN ('spray', 'harvest', 'water', 'custom')) NOT NULL,
-    description TEXT NOT NULL,
-    due_date DATE,
-    priority INTEGER DEFAULT 1,
-    completed BOOLEAN DEFAULT 0,
-    completed_at DATETIME,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY(bed_id) REFERENCES beds(id) ON DELETE CASCADE
-  )`);
-
+plantsDb.serialize(() => {
   // Plants library table (custom + default plants)
-  db.run(`CREATE TABLE IF NOT EXISTS plants (
+  plantsDb.run(`CREATE TABLE IF NOT EXISTS plants (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER,
     name TEXT NOT NULL,
@@ -98,546 +33,114 @@ db.serialize(() => {
     range_max INTEGER,
     notes TEXT,
     is_custom BOOLEAN DEFAULT 1,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )`);
 
   // Add columns for flower properties if they don't exist
-  db.run(`ALTER TABLE plants ADD COLUMN category TEXT`, (err) => {
+  plantsDb.run(`ALTER TABLE plants ADD COLUMN category TEXT`, (err) => {
     // Ignore if column already exists
   });
-  db.run(`ALTER TABLE plants ADD COLUMN flower_color TEXT`, (err) => {});
-  db.run(`ALTER TABLE plants ADD COLUMN bloom_season TEXT`, (err) => {});
-  db.run(`ALTER TABLE plants ADD COLUMN height TEXT`, (err) => {});
-  db.run(`ALTER TABLE plants ADD COLUMN sun_requirement TEXT`, (err) => {});
-  db.run(`ALTER TABLE plants ADD COLUMN is_perennial BOOLEAN DEFAULT 0`, (err) => {});
-  db.run(`ALTER TABLE plants ADD COLUMN planting_time TEXT`, (err) => {});
-  db.run(`ALTER TABLE plants ADD COLUMN storage_requirement TEXT`, (err) => {});
+  plantsDb.run(`ALTER TABLE plants ADD COLUMN flower_color TEXT`, (err) => {});
+  plantsDb.run(`ALTER TABLE plants ADD COLUMN bloom_season TEXT`, (err) => {});
+  plantsDb.run(`ALTER TABLE plants ADD COLUMN height TEXT`, (err) => {});
+  plantsDb.run(`ALTER TABLE plants ADD COLUMN sun_requirement TEXT`, (err) => {});
+  plantsDb.run(`ALTER TABLE plants ADD COLUMN is_perennial BOOLEAN DEFAULT 0`, (err) => {});
+  plantsDb.run(`ALTER TABLE plants ADD COLUMN planting_time TEXT`, (err) => {});
+  plantsDb.run(`ALTER TABLE plants ADD COLUMN storage_requirement TEXT`, (err) => {});
 
   // Add columns for latin names and extended info
-  db.run(`ALTER TABLE plants ADD COLUMN latin_name TEXT`, (err) => {});
-  db.run(`ALTER TABLE plants ADD COLUMN common_names TEXT`, (err) => {});
+  plantsDb.run(`ALTER TABLE plants ADD COLUMN latin_name TEXT`, (err) => {});
+  plantsDb.run(`ALTER TABLE plants ADD COLUMN common_names TEXT`, (err) => {});
 
   // Add columns for fertilization needs
-  db.run(`ALTER TABLE plants ADD COLUMN npk_needs TEXT`, (err) => {});
-  db.run(`ALTER TABLE plants ADD COLUMN npk_ratio_recommended TEXT`, (err) => {});
-  db.run(`ALTER TABLE plants ADD COLUMN fertilization_frequency TEXT`, (err) => {});
-  db.run(`ALTER TABLE plants ADD COLUMN organic_fertilizer TEXT`, (err) => {});
-  db.run(`ALTER TABLE plants ADD COLUMN mineral_fertilizer TEXT`, (err) => {});
+  plantsDb.run(`ALTER TABLE plants ADD COLUMN npk_needs TEXT`, (err) => {});
+  plantsDb.run(`ALTER TABLE plants ADD COLUMN npk_ratio_recommended TEXT`, (err) => {});
+  plantsDb.run(`ALTER TABLE plants ADD COLUMN fertilization_frequency TEXT`, (err) => {});
+  plantsDb.run(`ALTER TABLE plants ADD COLUMN organic_fertilizer TEXT`, (err) => {});
+  plantsDb.run(`ALTER TABLE plants ADD COLUMN mineral_fertilizer TEXT`, (err) => {});
 
   // Add columns for soil requirements
-  db.run(`ALTER TABLE plants ADD COLUMN soil_ph TEXT`, (err) => {});
-  db.run(`ALTER TABLE plants ADD COLUMN soil_type TEXT`, (err) => {});
-  db.run(`ALTER TABLE plants ADD COLUMN water_needs TEXT`, (err) => {});
+  plantsDb.run(`ALTER TABLE plants ADD COLUMN soil_ph TEXT`, (err) => {});
+  plantsDb.run(`ALTER TABLE plants ADD COLUMN soil_type TEXT`, (err) => {});
+  plantsDb.run(`ALTER TABLE plants ADD COLUMN water_needs TEXT`, (err) => {});
 
   // Add columns for companion planting
-  db.run(`ALTER TABLE plants ADD COLUMN companion_plants TEXT`, (err) => {});
-  db.run(`ALTER TABLE plants ADD COLUMN avoid_plants TEXT`, (err) => {});
+  plantsDb.run(`ALTER TABLE plants ADD COLUMN companion_plants TEXT`, (err) => {});
+  plantsDb.run(`ALTER TABLE plants ADD COLUMN avoid_plants TEXT`, (err) => {});
 
   // Add columns for care requirements
-  db.run(`ALTER TABLE plants ADD COLUMN pruning_needs TEXT`, (err) => {});
-  db.run(`ALTER TABLE plants ADD COLUMN winter_care TEXT`, (err) => {});
-  db.run(`ALTER TABLE plants ADD COLUMN propagation_method TEXT`, (err) => {});
+  plantsDb.run(`ALTER TABLE plants ADD COLUMN pruning_needs TEXT`, (err) => {});
+  plantsDb.run(`ALTER TABLE plants ADD COLUMN winter_care TEXT`, (err) => {});
+  plantsDb.run(`ALTER TABLE plants ADD COLUMN propagation_method TEXT`, (err) => {});
 
   // Hardiness zone for cold tolerance (e.g., "6a", "7b")
-  db.run(`ALTER TABLE plants ADD COLUMN hardiness_zone TEXT`, (err) => {});
+  plantsDb.run(`ALTER TABLE plants ADD COLUMN hardiness_zone TEXT`, (err) => {});
 
   // ==========================================
   // COMMUNITY PLANT MODERATION SYSTEM
   // ==========================================
 
   // Status: pending (awaiting moderation), approved, rejected
-  db.run(`ALTER TABLE plants ADD COLUMN status TEXT DEFAULT 'approved'`, (err) => {
+  plantsDb.run(`ALTER TABLE plants ADD COLUMN status TEXT DEFAULT 'approved'`, (err) => {
     if (err && !err.message.includes('duplicate column')) {
       console.error('Error adding status column:', err.message);
     }
   });
 
   // Who contributed this plant (user_id of contributor)
-  db.run(`ALTER TABLE plants ADD COLUMN contributor_id INTEGER`, (err) => {
+  plantsDb.run(`ALTER TABLE plants ADD COLUMN contributor_id INTEGER`, (err) => {
     if (err && !err.message.includes('duplicate column')) {
       console.error('Error adding contributor_id column:', err.message);
     }
   });
 
   // Admin who reviewed the plant
-  db.run(`ALTER TABLE plants ADD COLUMN reviewed_by INTEGER`, (err) => {
+  plantsDb.run(`ALTER TABLE plants ADD COLUMN reviewed_by INTEGER`, (err) => {
     if (err && !err.message.includes('duplicate column')) {
       console.error('Error adding reviewed_by column:', err.message);
     }
   });
 
   // When was it reviewed
-  db.run(`ALTER TABLE plants ADD COLUMN reviewed_at DATETIME`, (err) => {
+  plantsDb.run(`ALTER TABLE plants ADD COLUMN reviewed_at DATETIME`, (err) => {
     if (err && !err.message.includes('duplicate column')) {
       console.error('Error adding reviewed_at column:', err.message);
     }
   });
 
   // Rejection reason (if rejected)
-  db.run(`ALTER TABLE plants ADD COLUMN rejection_reason TEXT`, (err) => {
+  plantsDb.run(`ALTER TABLE plants ADD COLUMN rejection_reason TEXT`, (err) => {
     if (err && !err.message.includes('duplicate column')) {
       console.error('Error adding rejection_reason column:', err.message);
     }
   });
 
   // Photo author (required when photo is uploaded)
-  db.run(`ALTER TABLE plants ADD COLUMN photo_author TEXT`, (err) => {
+  plantsDb.run(`ALTER TABLE plants ADD COLUMN photo_author TEXT`, (err) => {
     if (err && !err.message.includes('duplicate column')) {
       console.error('Error adding photo_author column:', err.message);
     }
   });
 
   // Photo license/source info
-  db.run(`ALTER TABLE plants ADD COLUMN photo_license TEXT`, (err) => {
+  plantsDb.run(`ALTER TABLE plants ADD COLUMN photo_license TEXT`, (err) => {
     if (err && !err.message.includes('duplicate column')) {
       console.error('Error adding photo_license column:', err.message);
     }
   });
 
   // Create index for fast status filtering
-  db.run('CREATE INDEX IF NOT EXISTS idx_plants_status ON plants(status)');
-  db.run('CREATE INDEX IF NOT EXISTS idx_plants_contributor ON plants(contributor_id)');
-
-  // Add columns for frost dates and hardiness zones
-  db.run(`ALTER TABLE users ADD COLUMN hardiness_zone TEXT`, (err) => {});
-  db.run(`ALTER TABLE users ADD COLUMN first_frost_date TEXT`, (err) => {});
-  db.run(`ALTER TABLE users ADD COLUMN last_frost_date TEXT`, (err) => {});
-  db.run(`ALTER TABLE users ADD COLUMN location TEXT`, (err) => {});
-
-  // Plant photos table
-  db.run(`CREATE TABLE IF NOT EXISTS plant_photos (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    bed_id INTEGER,
-    photo_path TEXT NOT NULL,
-    caption TEXT,
-    taken_date DATE,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY(bed_id) REFERENCES beds(id) ON DELETE CASCADE
-  )`);
-
-  // Extend plant_photos for unified gallery (preserve context after deletion)
-  db.run(`ALTER TABLE plant_photos ADD COLUMN user_id INTEGER`, (err) => {});
-  db.run(`ALTER TABLE plant_photos ADD COLUMN source_type TEXT DEFAULT 'progress'`, (err) => {});
-  db.run(`ALTER TABLE plant_photos ADD COLUMN bed_row_number INTEGER`, (err) => {});
-  db.run(`ALTER TABLE plant_photos ADD COLUMN bed_plant_name TEXT`, (err) => {});
-  db.run(`ALTER TABLE plant_photos ADD COLUMN bed_plant_variety TEXT`, (err) => {});
-  db.run(`ALTER TABLE plant_photos ADD COLUMN plot_name TEXT`, (err) => {});
-  db.run(`ALTER TABLE plant_photos ADD COLUMN tag TEXT`, (err) => {
-    if (err && !err.message.includes('duplicate column')) {
-      console.error('Error adding tag column:', err.message);
-    }
-  });
-
-  // Add columns for image thumbnails (performance optimization)
-  db.run(`ALTER TABLE plant_photos ADD COLUMN thumb_path TEXT`, (err) => {});
-  db.run(`ALTER TABLE plant_photos ADD COLUMN medium_path TEXT`, (err) => {});
-
-  // Migrate existing plant_photos data (fill context for existing photos)
-  db.run(`
-    UPDATE plant_photos
-    SET
-      user_id = (
-        SELECT pl.user_id
-        FROM beds b
-        JOIN plots pl ON b.plot_id = pl.id
-        WHERE b.id = plant_photos.bed_id
-      ),
-      bed_row_number = (SELECT row_number FROM beds WHERE id = plant_photos.bed_id),
-      bed_plant_name = (SELECT plant_name FROM beds WHERE id = plant_photos.bed_id),
-      bed_plant_variety = (SELECT plant_variety FROM beds WHERE id = plant_photos.bed_id),
-      plot_name = (
-        SELECT pl.name
-        FROM beds b
-        JOIN plots pl ON b.plot_id = pl.id
-        WHERE b.id = plant_photos.bed_id
-      )
-    WHERE bed_id IS NOT NULL AND user_id IS NULL
-  `);
-
-  // Trigger before deleting bed - preserve photo context
-  db.run(`
-    CREATE TRIGGER IF NOT EXISTS preserve_photo_context_before_bed_delete
-    BEFORE DELETE ON beds
-    FOR EACH ROW
-    BEGIN
-      UPDATE plant_photos
-      SET
-        user_id = (SELECT user_id FROM plots WHERE id = OLD.plot_id),
-        bed_row_number = OLD.row_number,
-        bed_plant_name = OLD.plant_name,
-        bed_plant_variety = OLD.plant_variety,
-        plot_name = (SELECT name FROM plots WHERE id = OLD.plot_id)
-      WHERE bed_id = OLD.id;
-    END;
-  `);
-
-  // Succession planting reminders table
-  db.run(`CREATE TABLE IF NOT EXISTS succession_reminders (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
-    bed_id INTEGER,
-    plant_name TEXT NOT NULL,
-    interval_days INTEGER NOT NULL,
-    last_planted_date DATE,
-    next_planting_date DATE,
-    is_active BOOLEAN DEFAULT 1,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY(bed_id) REFERENCES beds(id) ON DELETE SET NULL
-  )`);
-
-  // Add location columns to users table (for weather)
-  db.run(`ALTER TABLE users ADD COLUMN latitude REAL`, (err) => {
-    if (err && !err.message.includes('duplicate column')) {
-      console.error('Error adding latitude column:', err.message);
-    }
-  });
-
-  db.run(`ALTER TABLE users ADD COLUMN longitude REAL`, (err) => {
-    if (err && !err.message.includes('duplicate column')) {
-      console.error('Error adding longitude column:', err.message);
-    }
-  });
-
-  db.run(`ALTER TABLE users ADD COLUMN city TEXT`, (err) => {
-    if (err && !err.message.includes('duplicate column')) {
-      console.error('Error adding city column:', err.message);
-    }
-  });
-
-  // Add harvest prediction columns to beds table
-  db.run(`ALTER TABLE beds ADD COLUMN expected_harvest_date DATE`, (err) => {
-    if (err && !err.message.includes('duplicate column')) {
-      console.error('Error adding expected_harvest_date column:', err.message);
-    }
-  });
-
-  db.run(`ALTER TABLE beds ADD COLUMN actual_harvest_date DATE`, (err) => {
-    if (err && !err.message.includes('duplicate column')) {
-      console.error('Error adding actual_harvest_date column:', err.message);
-    }
-  });
-
-  db.run(`ALTER TABLE beds ADD COLUMN yield_amount REAL`, (err) => {
-    if (err && !err.message.includes('duplicate column')) {
-      console.error('Error adding yield_amount column:', err.message);
-    }
-  });
-
-  db.run(`ALTER TABLE beds ADD COLUMN yield_unit TEXT`, (err) => {
-    if (err && !err.message.includes('duplicate column')) {
-      console.error('Error adding yield_unit column:', err.message);
-    }
-  });
-
-  // Harvest photo and notes (for flower gardens and quality descriptions)
-  db.run(`ALTER TABLE beds ADD COLUMN harvest_photo TEXT`, (err) => {
-    if (err && !err.message.includes('duplicate column')) {
-      console.error('Error adding harvest_photo column:', err.message);
-    }
-  });
-
-  db.run(`ALTER TABLE beds ADD COLUMN harvest_notes TEXT`, (err) => {
-    if (err && !err.message.includes('duplicate column')) {
-      console.error('Error adding harvest_notes column:', err.message);
-    }
-  });
-
-  // REMOVED: Duplicate 'notes' column - we use 'note' column from the original schema
-  // db.run(`ALTER TABLE beds ADD COLUMN notes TEXT`, (err) => {
-  //   if (err && !err.message.includes('duplicate column')) {
-  //     console.error('Error adding notes column:', err.message);
-  //   }
-  // });
-
-  // Add dark_mode preference to users table
-  db.run(`ALTER TABLE users ADD COLUMN dark_mode BOOLEAN DEFAULT 0`, (err) => {
-    if (err && !err.message.includes('duplicate column')) {
-      console.error('Error adding dark_mode column:', err.message);
-    }
-  });
-
-  // Add last_login to track user activity
-  db.run(`ALTER TABLE users ADD COLUMN last_login DATETIME`, (err) => {
-    if (err && !err.message.includes('duplicate column')) {
-      console.error('Error adding last_login column:', err.message);
-    }
-  });
-
-  // Add login_count to track number of logins
-  db.run(`ALTER TABLE users ADD COLUMN login_count INTEGER DEFAULT 0`, (err) => {
-    if (err && !err.message.includes('duplicate column')) {
-      console.error('Error adding login_count column:', err.message);
-    }
-  });
-
-  // Add onboarding_completed flag
-  db.run(`ALTER TABLE users ADD COLUMN onboarding_completed BOOLEAN DEFAULT 0`, (err) => {
-    if (err && !err.message.includes('duplicate column')) {
-      console.error('Error adding onboarding_completed column:', err.message);
-    }
-  });
-
-  // Add onboarding_step to track current step
-  db.run(`ALTER TABLE users ADD COLUMN onboarding_step INTEGER DEFAULT 0`, (err) => {
-    if (err && !err.message.includes('duplicate column')) {
-      console.error('Error adding onboarding_step column:', err.message);
-    }
-  });
-
-  // Add visited_calendar flag for onboarding checklist
-  db.run(`ALTER TABLE users ADD COLUMN visited_calendar BOOLEAN DEFAULT 0`, (err) => {
-    if (err && !err.message.includes('duplicate column')) {
-      console.error('Error adding visited_calendar column:', err.message);
-    }
-  });
-
-  // Add welcome_card_dismissed flag for onboarding
-  db.run(`ALTER TABLE users ADD COLUMN welcome_card_dismissed BOOLEAN DEFAULT 0`, (err) => {
-    if (err && !err.message.includes('duplicate column')) {
-      console.error('Error adding welcome_card_dismissed column:', err.message);
-    }
-  });
-
-  // Add role column for RBAC
-  db.run(`ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'user'`, (err) => {
-    if (err && !err.message.includes('duplicate column')) {
-      console.error('Error adding role column:', err.message);
-    } else if (!err) {
-      // Set existing admin user to admin role
-      db.run(`UPDATE users SET role = 'admin' WHERE username = 'admin'`, (updateErr) => {
-        if (updateErr) {
-          console.error('Error setting admin role:', updateErr.message);
-        } else {
-          console.log('✅ Admin role assigned to admin user');
-        }
-      });
-    }
-  });
-
-  // Add last_watered_date for smart watering system
-  db.run(`ALTER TABLE beds ADD COLUMN last_watered_date DATE`, (err) => {
-    if (err && !err.message.includes('duplicate column')) {
-      console.error('Error adding last_watered_date column:', err.message);
-    }
-  });
-
-  // Add auto-generated task management columns
-  db.run(`ALTER TABLE tasks ADD COLUMN auto_generated BOOLEAN DEFAULT 0`, (err) => {
-    if (err && !err.message.includes('duplicate column')) {
-      console.error('Error adding auto_generated column:', err.message);
-    }
-  });
-
-  db.run(`ALTER TABLE tasks ADD COLUMN dismissed_at DATETIME`, (err) => {
-    if (err && !err.message.includes('duplicate column')) {
-      console.error('Error adding dismissed_at column:', err.message);
-    }
-  });
-
-  db.run(`ALTER TABLE tasks ADD COLUMN snoozed_until DATETIME`, (err) => {
-    if (err && !err.message.includes('duplicate column')) {
-      console.error('Error adding snoozed_until column:', err.message);
-    }
-  });
-
-  // Add recurring tasks columns
-  db.run(`ALTER TABLE tasks ADD COLUMN is_recurring BOOLEAN DEFAULT 0`, (err) => {
-    if (err && !err.message.includes('duplicate column')) {
-      console.error('Error adding is_recurring column:', err.message);
-    }
-  });
-
-  db.run(`ALTER TABLE tasks ADD COLUMN recurrence_frequency INTEGER`, (err) => {
-    if (err && !err.message.includes('duplicate column')) {
-      console.error('Error adding recurrence_frequency column:', err.message);
-    }
-  });
-
-  db.run(`ALTER TABLE tasks ADD COLUMN recurrence_times TEXT`, (err) => {
-    if (err && !err.message.includes('duplicate column')) {
-      console.error('Error adding recurrence_times column:', err.message);
-    }
-  });
-
-  db.run(`ALTER TABLE tasks ADD COLUMN next_occurrence DATE`, (err) => {
-    if (err && !err.message.includes('duplicate column')) {
-      console.error('Error adding next_occurrence column:', err.message);
-    }
-  });
-
-  db.run(`ALTER TABLE tasks ADD COLUMN recurrence_end_date DATE`, (err) => {
-    if (err && !err.message.includes('duplicate column')) {
-      console.error('Error adding recurrence_end_date column:', err.message);
-    }
-  });
-
-  db.run(`ALTER TABLE tasks ADD COLUMN parent_task_id INTEGER`, (err) => {
-    if (err && !err.message.includes('duplicate column')) {
-      console.error('Error adding parent_task_id column:', err.message);
-    }
-  });
-
-  // Weather history table (for monthly statistics)
-  db.run(`CREATE TABLE IF NOT EXISTS weather_history (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
-    date DATE NOT NULL,
-    city TEXT,
-    temp_min REAL,
-    temp_max REAL,
-    temp_avg REAL,
-    feels_like_avg REAL,
-    humidity_avg INTEGER,
-    pressure_avg INTEGER,
-    wind_speed_avg REAL,
-    wind_speed_max REAL,
-    total_rain REAL DEFAULT 0,
-    total_snow REAL DEFAULT 0,
-    clouds_avg INTEGER,
-    description TEXT,
-    icon TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
-    UNIQUE(user_id, date)
-  )`);
-
-  // Create indexes for better query performance
-  db.run('CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)');
-  db.run('CREATE INDEX IF NOT EXISTS idx_plots_user_id ON plots(user_id)');
-  db.run('CREATE INDEX IF NOT EXISTS idx_beds_plot_id ON beds(plot_id)');
-  db.run('CREATE INDEX IF NOT EXISTS idx_spray_bed_id ON spray_history(bed_id)');
-  db.run('CREATE INDEX IF NOT EXISTS idx_reminders_user_id ON reminders(user_id)');
-  db.run('CREATE INDEX IF NOT EXISTS idx_reminders_spray_id ON reminders(spray_id)');
-  db.run('CREATE INDEX IF NOT EXISTS idx_spray_date ON spray_history(spray_date)');
-  db.run('CREATE INDEX IF NOT EXISTS idx_safe_harvest_date ON spray_history(safe_harvest_date)');
-  db.run('CREATE INDEX IF NOT EXISTS idx_tasks_user_id ON tasks(user_id)');
-  db.run('CREATE INDEX IF NOT EXISTS idx_tasks_due_date ON tasks(due_date)');
-  db.run('CREATE INDEX IF NOT EXISTS idx_tasks_completed ON tasks(completed)');
-  db.run('CREATE INDEX IF NOT EXISTS idx_tasks_parent_id ON tasks(parent_task_id)');
-  db.run('CREATE INDEX IF NOT EXISTS idx_tasks_is_recurring ON tasks(is_recurring)');
-  db.run('CREATE INDEX IF NOT EXISTS idx_plants_user_id ON plants(user_id)');
-  db.run('CREATE INDEX IF NOT EXISTS idx_plants_name ON plants(name)');
-  db.run('CREATE INDEX IF NOT EXISTS idx_plant_photos_bed_id ON plant_photos(bed_id)');
-  db.run('CREATE INDEX IF NOT EXISTS idx_plant_photos_user_id ON plant_photos(user_id)');
-  db.run('CREATE INDEX IF NOT EXISTS idx_succession_user_id ON succession_reminders(user_id)');
-  db.run('CREATE INDEX IF NOT EXISTS idx_succession_next_date ON succession_reminders(next_planting_date)');
-  db.run('CREATE INDEX IF NOT EXISTS idx_weather_history_user_date ON weather_history(user_id, date)');
-  db.run('CREATE INDEX IF NOT EXISTS idx_weather_history_date ON weather_history(date)');
-
-  // ==========================================
-  // PUBLIC GARDEN PROFILE FEATURE
-  // ==========================================
-
-  // Add public profile columns to users table
-  db.run(`ALTER TABLE users ADD COLUMN public_username TEXT`, (err) => {
-    if (err && !err.message.includes('duplicate column')) {
-      console.error('Error adding public_username column:', err.message);
-    }
-  });
-
-  db.run(`ALTER TABLE users ADD COLUMN public_profile_enabled BOOLEAN DEFAULT 0`, (err) => {
-    if (err && !err.message.includes('duplicate column')) {
-      console.error('Error adding public_profile_enabled column:', err.message);
-    }
-  });
-
-  db.run(`ALTER TABLE users ADD COLUMN public_bio TEXT`, (err) => {
-    if (err && !err.message.includes('duplicate column')) {
-      console.error('Error adding public_bio column:', err.message);
-    }
-  });
-
-  db.run(`ALTER TABLE users ADD COLUMN public_display_name TEXT`, (err) => {
-    if (err && !err.message.includes('duplicate column')) {
-      console.error('Error adding public_display_name column:', err.message);
-    }
-  });
-
-  db.run(`ALTER TABLE users ADD COLUMN public_cover_photo_id INTEGER`, (err) => {
-    if (err && !err.message.includes('duplicate column')) {
-      console.error('Error adding public_cover_photo_id column:', err.message);
-    }
-  });
-
-  db.run(`ALTER TABLE users ADD COLUMN public_show_stats BOOLEAN DEFAULT 1`, (err) => {
-    if (err && !err.message.includes('duplicate column')) {
-      console.error('Error adding public_show_stats column:', err.message);
-    }
-  });
-
-  db.run(`ALTER TABLE users ADD COLUMN public_show_timeline BOOLEAN DEFAULT 1`, (err) => {
-    if (err && !err.message.includes('duplicate column')) {
-      console.error('Error adding public_show_timeline column:', err.message);
-    }
-  });
-
-  db.run(`ALTER TABLE users ADD COLUMN public_show_gallery BOOLEAN DEFAULT 1`, (err) => {
-    if (err && !err.message.includes('duplicate column')) {
-      console.error('Error adding public_show_gallery column:', err.message);
-    }
-  });
-
-  db.run(`ALTER TABLE users ADD COLUMN public_show_badges BOOLEAN DEFAULT 1`, (err) => {
-    if (err && !err.message.includes('duplicate column')) {
-      console.error('Error adding public_show_badges column:', err.message);
-    }
-  });
-
-  db.run(`ALTER TABLE users ADD COLUMN social_instagram TEXT`, (err) => {
-    if (err && !err.message.includes('duplicate column')) {
-      console.error('Error adding social_instagram column:', err.message);
-    }
-  });
-
-  db.run(`ALTER TABLE users ADD COLUMN profile_photo TEXT`, (err) => {
-    if (err && !err.message.includes('duplicate column')) {
-      console.error('Error adding profile_photo column:', err.message);
-    }
-  });
-
-  // Public gallery photos table (selected photos for public profile)
-  db.run(`CREATE TABLE IF NOT EXISTS public_gallery_photos (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
-    photo_id INTEGER NOT NULL,
-    display_order INTEGER DEFAULT 0,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY(photo_id) REFERENCES plant_photos(id) ON DELETE CASCADE,
-    UNIQUE(user_id, photo_id)
-  )`);
-
-  // Profile views analytics table
-  db.run(`CREATE TABLE IF NOT EXISTS profile_views (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username TEXT NOT NULL,
-    viewed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    referrer TEXT,
-    user_agent TEXT
-  )`);
-
-  // NOTE: weather_history table already defined above (line 409-430)
-  // Duplicate definition removed to avoid schema conflicts
-
-  // Create indexes for public profile feature
-  db.run('CREATE UNIQUE INDEX IF NOT EXISTS idx_users_public_username ON users(public_username)');
-  db.run('CREATE INDEX IF NOT EXISTS idx_public_gallery_user_id ON public_gallery_photos(user_id)');
-  db.run('CREATE INDEX IF NOT EXISTS idx_public_gallery_photo_id ON public_gallery_photos(photo_id)');
-  db.run('CREATE INDEX IF NOT EXISTS idx_profile_views_username ON profile_views(username)');
-  db.run('CREATE INDEX IF NOT EXISTS idx_profile_views_date ON profile_views(viewed_at)');
-  db.run('CREATE INDEX IF NOT EXISTS idx_weather_history_date ON weather_history(date)');
-
-  // Composite index for tasks sorted by priority + due_date (used in task listing)
-  db.run('CREATE INDEX IF NOT EXISTS idx_tasks_priority_date ON tasks(user_id, priority DESC, due_date ASC)');
+  plantsDb.run('CREATE INDEX IF NOT EXISTS idx_plants_status ON plants(status)');
+  plantsDb.run('CREATE INDEX IF NOT EXISTS idx_plants_contributor ON plants(contributor_id)');
+  plantsDb.run('CREATE INDEX IF NOT EXISTS idx_plants_user_id ON plants(user_id)');
+  plantsDb.run('CREATE INDEX IF NOT EXISTS idx_plants_name ON plants(name)');
 
   // ==========================================
   // COMPANION PLANTING FEATURE
   // ==========================================
 
   // Companion plants table (good and bad plant combinations)
-  db.run(`CREATE TABLE IF NOT EXISTS companion_plants (
+  plantsDb.run(`CREATE TABLE IF NOT EXISTS companion_plants (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     plant_name TEXT NOT NULL,
     companion_name TEXT NOT NULL,
@@ -647,11 +150,11 @@ db.serialize(() => {
   )`);
 
   // Create index for fast lookups
-  db.run('CREATE INDEX IF NOT EXISTS idx_companion_plant_name ON companion_plants(plant_name)');
-  db.run('CREATE INDEX IF NOT EXISTS idx_companion_relationship ON companion_plants(plant_name, relationship)');
+  plantsDb.run('CREATE INDEX IF NOT EXISTS idx_companion_plant_name ON companion_plants(plant_name)');
+  plantsDb.run('CREATE INDEX IF NOT EXISTS idx_companion_relationship ON companion_plants(plant_name, relationship)');
 
   // Populate companion plants data (only if empty)
-  db.get('SELECT COUNT(*) as count FROM companion_plants', (err, row) => {
+  plantsDb.get('SELECT COUNT(*) as count FROM companion_plants', (err, row) => {
     if (err) {
       console.error('Error checking companion_plants:', err.message);
       return;
@@ -772,7 +275,7 @@ db.serialize(() => {
         { plant: 'truskawka', companion: 'kapusta', relationship: 'bad', reason: 'Kapusta hamuje wzrost truskawek' }
       ];
 
-      const stmt = db.prepare(`
+      const stmt = plantsDb.prepare(`
         INSERT INTO companion_plants (plant_name, companion_name, relationship, reason)
         VALUES (?, ?, ?, ?)
       `);
@@ -796,7 +299,7 @@ db.serialize(() => {
   // ==========================================
 
   // Garden templates table
-  db.run(`CREATE TABLE IF NOT EXISTS garden_templates (
+  plantsDb.run(`CREATE TABLE IF NOT EXISTS garden_templates (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     description TEXT NOT NULL,
@@ -810,7 +313,7 @@ db.serialize(() => {
   )`);
 
   // Template beds table
-  db.run(`CREATE TABLE IF NOT EXISTS template_beds (
+  plantsDb.run(`CREATE TABLE IF NOT EXISTS template_beds (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     template_id INTEGER NOT NULL,
     row_number INTEGER NOT NULL,
@@ -823,12 +326,12 @@ db.serialize(() => {
   )`);
 
   // Create indexes for garden templates
-  db.run('CREATE INDEX IF NOT EXISTS idx_template_beds_template_id ON template_beds(template_id)');
-  db.run('CREATE INDEX IF NOT EXISTS idx_templates_category ON garden_templates(category)');
-  db.run('CREATE INDEX IF NOT EXISTS idx_templates_difficulty ON garden_templates(difficulty)');
+  plantsDb.run('CREATE INDEX IF NOT EXISTS idx_template_beds_template_id ON template_beds(template_id)');
+  plantsDb.run('CREATE INDEX IF NOT EXISTS idx_templates_category ON garden_templates(category)');
+  plantsDb.run('CREATE INDEX IF NOT EXISTS idx_templates_difficulty ON garden_templates(difficulty)');
 
   // Populate garden templates (only if empty)
-  db.get('SELECT COUNT(*) as count FROM garden_templates', (err, row) => {
+  plantsDb.get('SELECT COUNT(*) as count FROM garden_templates', (err, row) => {
     if (err) {
       console.error('Error checking garden_templates:', err.message);
       return;
@@ -941,7 +444,7 @@ db.serialize(() => {
       };
 
       // Insert templates
-      const stmtTemplate = db.prepare(`
+      const stmtTemplate = plantsDb.prepare(`
         INSERT INTO garden_templates (name, description, size_m2, difficulty, category, tags, estimated_setup_time)
         VALUES (?, ?, ?, ?, ?, ?, ?)
       `);
@@ -954,7 +457,7 @@ db.serialize(() => {
         console.log(`✅ Added ${templates.length} garden templates`);
 
         // Insert template beds
-        const stmtBed = db.prepare(`
+        const stmtBed = plantsDb.prepare(`
           INSERT INTO template_beds (template_id, row_number, plant_name, plant_variety, note, quantity)
           VALUES (?, ?, ?, ?, ?, ?)
         `);
@@ -979,147 +482,11 @@ db.serialize(() => {
   });
 
   // ==========================================
-  // SECURITY FEATURES
+  // SPRAY PRODUCTS (reference data)
   // ==========================================
-
-  // Add email verification columns to users table
-  db.run(`ALTER TABLE users ADD COLUMN email_verified BOOLEAN DEFAULT 0`, (err) => {
-    if (err && !err.message.includes('duplicate column')) {
-      console.error('Error adding email_verified column:', err.message);
-    }
-  });
-
-  db.run(`ALTER TABLE users ADD COLUMN email_verification_token TEXT`, (err) => {
-    if (err && !err.message.includes('duplicate column')) {
-      console.error('Error adding email_verification_token column:', err.message);
-    }
-  });
-
-  db.run(`ALTER TABLE users ADD COLUMN email_verification_expires DATETIME`, (err) => {
-    if (err && !err.message.includes('duplicate column')) {
-      console.error('Error adding email_verification_expires column:', err.message);
-    }
-  });
-
-  // Add password reset columns to users table
-  db.run(`ALTER TABLE users ADD COLUMN password_reset_token TEXT`, (err) => {
-    if (err && !err.message.includes('duplicate column')) {
-      console.error('Error adding password_reset_token column:', err.message);
-    }
-  });
-
-  db.run(`ALTER TABLE users ADD COLUMN password_reset_expires DATETIME`, (err) => {
-    if (err && !err.message.includes('duplicate column')) {
-      console.error('Error adding password_reset_expires column:', err.message);
-    }
-  });
-
-  // Add soft delete columns to users table
-  db.run(`ALTER TABLE users ADD COLUMN deleted_at DATETIME`, (err) => {
-    if (err && !err.message.includes('duplicate column')) {
-      console.error('Error adding deleted_at column:', err.message);
-    }
-  });
-
-  db.run(`ALTER TABLE users ADD COLUMN deletion_scheduled_for DATETIME`, (err) => {
-    if (err && !err.message.includes('duplicate column')) {
-      console.error('Error adding deletion_scheduled_for column:', err.message);
-    }
-  });
-
-  // Password reset tokens history table
-  db.run(`CREATE TABLE IF NOT EXISTS password_reset_tokens (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
-    token TEXT NOT NULL,
-    expires_at DATETIME NOT NULL,
-    used_at DATETIME,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    ip_address TEXT,
-    user_agent TEXT,
-    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
-  )`);
-
-  // Deleted accounts archive table
-  db.run(`CREATE TABLE IF NOT EXISTS deleted_accounts (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
-    username TEXT NOT NULL,
-    email TEXT NOT NULL,
-    deletion_reason TEXT,
-    deleted_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    restore_token TEXT,
-    permanent_delete_at DATETIME NOT NULL,
-    restored_at DATETIME,
-    UNIQUE(user_id)
-  )`);
-
-  // Create indexes for security tables
-  db.run('CREATE INDEX IF NOT EXISTS idx_reset_token ON password_reset_tokens(token)');
-  db.run('CREATE INDEX IF NOT EXISTS idx_reset_user_id ON password_reset_tokens(user_id)');
-  db.run('CREATE INDEX IF NOT EXISTS idx_reset_expires ON password_reset_tokens(expires_at)');
-  db.run('CREATE INDEX IF NOT EXISTS idx_deleted_restore_token ON deleted_accounts(restore_token)');
-  db.run('CREATE INDEX IF NOT EXISTS idx_deleted_permanent_at ON deleted_accounts(permanent_delete_at)');
-
-  // Mark existing users as verified (backward compatibility)
-  db.run(`UPDATE users SET email_verified = 1 WHERE email_verified IS NULL OR email_verified = 0`, (err) => {
-    if (err) {
-      console.error('Error updating existing users email_verified:', err.message);
-    } else {
-      console.log('✅ Marked existing users as email verified');
-    }
-  });
-
-  // ==========================================
-  // CARE & FERTILIZATION SYSTEM
-  // ==========================================
-
-  // Unified care history table (sprays + fertilization)
-  db.run(`CREATE TABLE IF NOT EXISTS care_history (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    bed_id INTEGER NOT NULL,
-    action_type TEXT CHECK(action_type IN ('spray', 'fertilization')) NOT NULL,
-    action_name TEXT NOT NULL,
-    action_date DATE NOT NULL,
-    dosage TEXT,
-    weather_conditions TEXT,
-    note TEXT,
-
-    -- Spray-specific fields
-    withdrawal_period INTEGER,
-    safe_harvest_date DATE,
-
-    -- Fertilization-specific fields
-    fertilizer_type TEXT CHECK(fertilizer_type IN ('mineral', 'organic', 'natural')),
-    npk_ratio TEXT,
-    application_method TEXT CHECK(application_method IN ('soil', 'foliar')) DEFAULT 'soil',
-    is_recurring BOOLEAN DEFAULT 0,
-    repeat_frequency INTEGER,
-    next_application_date DATE,
-
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY(bed_id) REFERENCES beds(id) ON DELETE CASCADE
-  )`);
-
-  // Fertilizers products database
-  db.run(`CREATE TABLE IF NOT EXISTS fertilizers (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
-    fertilizer_type TEXT CHECK(fertilizer_type IN ('mineral', 'organic', 'natural')) NOT NULL,
-    npk_ratio TEXT,
-    suitable_for TEXT,
-    dosage_min INTEGER,
-    dosage_max INTEGER,
-    dosage_unit TEXT DEFAULT 'g/10m²',
-    frequency_days INTEGER,
-    application_method TEXT CHECK(application_method IN ('soil', 'foliar')) DEFAULT 'soil',
-    notes TEXT,
-    registered_poland BOOLEAN DEFAULT 1,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-  )`);
 
   // Spray products database (reference for CareForm autocomplete)
-  db.run(`CREATE TABLE IF NOT EXISTS spray_products (
+  plantsDb.run(`CREATE TABLE IF NOT EXISTS spray_products (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     active_substance TEXT,
@@ -1141,17 +508,35 @@ db.serialize(() => {
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )`);
 
-  // Create indexes for care & fertilization system
-  db.run('CREATE INDEX IF NOT EXISTS idx_care_bed_id ON care_history(bed_id)');
-  db.run('CREATE INDEX IF NOT EXISTS idx_care_action_date ON care_history(action_date)');
-  db.run('CREATE INDEX IF NOT EXISTS idx_care_action_type ON care_history(action_type)');
-  db.run('CREATE INDEX IF NOT EXISTS idx_fertilizers_name ON fertilizers(name)');
-  db.run('CREATE INDEX IF NOT EXISTS idx_fertilizers_type ON fertilizers(fertilizer_type)');
-  db.run('CREATE INDEX IF NOT EXISTS idx_spray_products_name ON spray_products(name)');
-  db.run('CREATE INDEX IF NOT EXISTS idx_spray_products_type ON spray_products(type)');
+  plantsDb.run('CREATE INDEX IF NOT EXISTS idx_spray_products_name ON spray_products(name)');
+  plantsDb.run('CREATE INDEX IF NOT EXISTS idx_spray_products_type ON spray_products(type)');
+
+  // ==========================================
+  // FERTILIZERS (reference data)
+  // ==========================================
+
+  // Fertilizers products database
+  plantsDb.run(`CREATE TABLE IF NOT EXISTS fertilizers (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    fertilizer_type TEXT CHECK(fertilizer_type IN ('mineral', 'organic', 'natural')) NOT NULL,
+    npk_ratio TEXT,
+    suitable_for TEXT,
+    dosage_min INTEGER,
+    dosage_max INTEGER,
+    dosage_unit TEXT DEFAULT 'g/10m²',
+    frequency_days INTEGER,
+    application_method TEXT CHECK(application_method IN ('soil', 'foliar')) DEFAULT 'soil',
+    notes TEXT,
+    registered_poland BOOLEAN DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )`);
+
+  plantsDb.run('CREATE INDEX IF NOT EXISTS idx_fertilizers_name ON fertilizers(name)');
+  plantsDb.run('CREATE INDEX IF NOT EXISTS idx_fertilizers_type ON fertilizers(fertilizer_type)');
 
   // Populate fertilizers database (only if empty)
-  db.get('SELECT COUNT(*) as count FROM fertilizers', (err, row) => {
+  plantsDb.get('SELECT COUNT(*) as count FROM fertilizers', (err, row) => {
     if (err) {
       console.error('Error checking fertilizers:', err.message);
       return;
@@ -1181,7 +566,7 @@ db.serialize(() => {
         { name: 'Fusumizacja kawy', type: 'natural', npk: '2:0.3:0.2', suitable: 'kwiaty, pomidory', dosage_min: 200, dosage_max: 400, unit: 'g/10m²', freq: 21, method: 'soil', notes: 'Zakwasza glebę, azot' }
       ];
 
-      const stmt = db.prepare(`
+      const stmt = plantsDb.prepare(`
         INSERT INTO fertilizers (name, fertilizer_type, npk_ratio, suitable_for, dosage_min, dosage_max, dosage_unit, frequency_days, application_method, notes)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `);
@@ -1200,12 +585,658 @@ db.serialize(() => {
     }
   });
 
+  console.log('✅ Baza referencyjna (plants.db) zainicjalizowana');
+});
+
+// ==========================================
+// BAZA UŻYTKOWNIKA (garden.db)
+// ==========================================
+
+userDb.serialize(() => {
+  // Users table
+  userDb.run(`CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT UNIQUE NOT NULL,
+    email TEXT UNIQUE NOT NULL,
+    password TEXT NOT NULL,
+    role TEXT DEFAULT 'user',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )`);
+
+  // Plots table (updated with user relationship)
+  userDb.run(`CREATE TABLE IF NOT EXISTS plots (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    description TEXT,
+    image_path TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+  )`);
+
+  // Beds/Rows table (updated)
+  userDb.run(`CREATE TABLE IF NOT EXISTS beds (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    plot_id INTEGER NOT NULL,
+    row_number INTEGER NOT NULL,
+    plant_name TEXT,
+    plant_variety TEXT,
+    planted_date TEXT,
+    note TEXT,
+    image_path TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(plot_id) REFERENCES plots(id) ON DELETE CASCADE
+  )`);
+
+  // Spray history table (new - separated from beds for better tracking)
+  userDb.run(`CREATE TABLE IF NOT EXISTS spray_history (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    bed_id INTEGER NOT NULL,
+    spray_name TEXT NOT NULL,
+    spray_type TEXT,
+    spray_date DATE NOT NULL,
+    withdrawal_period INTEGER NOT NULL,
+    safe_harvest_date DATE NOT NULL,
+    dosage TEXT,
+    weather_conditions TEXT,
+    note TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(bed_id) REFERENCES beds(id) ON DELETE CASCADE
+  )`);
+
+  // Reminders table (new - for active reminders)
+  userDb.run(`CREATE TABLE IF NOT EXISTS reminders (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    spray_id INTEGER NOT NULL,
+    bed_id INTEGER NOT NULL,
+    reminder_date DATE NOT NULL,
+    is_read BOOLEAN DEFAULT 0,
+    message TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY(spray_id) REFERENCES spray_history(id) ON DELETE CASCADE,
+    FOREIGN KEY(bed_id) REFERENCES beds(id) ON DELETE CASCADE
+  )`);
+
+  // Tasks table (new - task management)
+  userDb.run(`CREATE TABLE IF NOT EXISTS tasks (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    bed_id INTEGER,
+    task_type TEXT CHECK(task_type IN ('spray', 'harvest', 'water', 'custom')) NOT NULL,
+    description TEXT NOT NULL,
+    due_date DATE,
+    priority INTEGER DEFAULT 1,
+    completed BOOLEAN DEFAULT 0,
+    completed_at DATETIME,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY(bed_id) REFERENCES beds(id) ON DELETE CASCADE
+  )`);
+
+  // Add columns for frost dates and hardiness zones
+  userDb.run(`ALTER TABLE users ADD COLUMN hardiness_zone TEXT`, (err) => {});
+  userDb.run(`ALTER TABLE users ADD COLUMN first_frost_date TEXT`, (err) => {});
+  userDb.run(`ALTER TABLE users ADD COLUMN last_frost_date TEXT`, (err) => {});
+  userDb.run(`ALTER TABLE users ADD COLUMN location TEXT`, (err) => {});
+
+  // Plant photos table
+  userDb.run(`CREATE TABLE IF NOT EXISTS plant_photos (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    bed_id INTEGER,
+    photo_path TEXT NOT NULL,
+    caption TEXT,
+    taken_date DATE,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(bed_id) REFERENCES beds(id) ON DELETE CASCADE
+  )`);
+
+  // Extend plant_photos for unified gallery (preserve context after deletion)
+  userDb.run(`ALTER TABLE plant_photos ADD COLUMN user_id INTEGER`, (err) => {});
+  userDb.run(`ALTER TABLE plant_photos ADD COLUMN source_type TEXT DEFAULT 'progress'`, (err) => {});
+  userDb.run(`ALTER TABLE plant_photos ADD COLUMN bed_row_number INTEGER`, (err) => {});
+  userDb.run(`ALTER TABLE plant_photos ADD COLUMN bed_plant_name TEXT`, (err) => {});
+  userDb.run(`ALTER TABLE plant_photos ADD COLUMN bed_plant_variety TEXT`, (err) => {});
+  userDb.run(`ALTER TABLE plant_photos ADD COLUMN plot_name TEXT`, (err) => {});
+  userDb.run(`ALTER TABLE plant_photos ADD COLUMN tag TEXT`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding tag column:', err.message);
+    }
+  });
+
+  // Add columns for image thumbnails (performance optimization)
+  userDb.run(`ALTER TABLE plant_photos ADD COLUMN thumb_path TEXT`, (err) => {});
+  userDb.run(`ALTER TABLE plant_photos ADD COLUMN medium_path TEXT`, (err) => {});
+
+  // Migrate existing plant_photos data (fill context for existing photos)
+  userDb.run(`
+    UPDATE plant_photos
+    SET
+      user_id = (
+        SELECT pl.user_id
+        FROM beds b
+        JOIN plots pl ON b.plot_id = pl.id
+        WHERE b.id = plant_photos.bed_id
+      ),
+      bed_row_number = (SELECT row_number FROM beds WHERE id = plant_photos.bed_id),
+      bed_plant_name = (SELECT plant_name FROM beds WHERE id = plant_photos.bed_id),
+      bed_plant_variety = (SELECT plant_variety FROM beds WHERE id = plant_photos.bed_id),
+      plot_name = (
+        SELECT pl.name
+        FROM beds b
+        JOIN plots pl ON b.plot_id = pl.id
+        WHERE b.id = plant_photos.bed_id
+      )
+    WHERE bed_id IS NOT NULL AND user_id IS NULL
+  `);
+
+  // Trigger before deleting bed - preserve photo context
+  userDb.run(`
+    CREATE TRIGGER IF NOT EXISTS preserve_photo_context_before_bed_delete
+    BEFORE DELETE ON beds
+    FOR EACH ROW
+    BEGIN
+      UPDATE plant_photos
+      SET
+        user_id = (SELECT user_id FROM plots WHERE id = OLD.plot_id),
+        bed_row_number = OLD.row_number,
+        bed_plant_name = OLD.plant_name,
+        bed_plant_variety = OLD.plant_variety,
+        plot_name = (SELECT name FROM plots WHERE id = OLD.plot_id)
+      WHERE bed_id = OLD.id;
+    END;
+  `);
+
+  // Succession planting reminders table
+  userDb.run(`CREATE TABLE IF NOT EXISTS succession_reminders (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    bed_id INTEGER,
+    plant_name TEXT NOT NULL,
+    interval_days INTEGER NOT NULL,
+    last_planted_date DATE,
+    next_planting_date DATE,
+    is_active BOOLEAN DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY(bed_id) REFERENCES beds(id) ON DELETE SET NULL
+  )`);
+
+  // Add location columns to users table (for weather)
+  userDb.run(`ALTER TABLE users ADD COLUMN latitude REAL`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding latitude column:', err.message);
+    }
+  });
+
+  userDb.run(`ALTER TABLE users ADD COLUMN longitude REAL`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding longitude column:', err.message);
+    }
+  });
+
+  userDb.run(`ALTER TABLE users ADD COLUMN city TEXT`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding city column:', err.message);
+    }
+  });
+
+  // Add harvest prediction columns to beds table
+  userDb.run(`ALTER TABLE beds ADD COLUMN expected_harvest_date DATE`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding expected_harvest_date column:', err.message);
+    }
+  });
+
+  userDb.run(`ALTER TABLE beds ADD COLUMN actual_harvest_date DATE`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding actual_harvest_date column:', err.message);
+    }
+  });
+
+  userDb.run(`ALTER TABLE beds ADD COLUMN yield_amount REAL`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding yield_amount column:', err.message);
+    }
+  });
+
+  userDb.run(`ALTER TABLE beds ADD COLUMN yield_unit TEXT`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding yield_unit column:', err.message);
+    }
+  });
+
+  // Harvest photo and notes (for flower gardens and quality descriptions)
+  userDb.run(`ALTER TABLE beds ADD COLUMN harvest_photo TEXT`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding harvest_photo column:', err.message);
+    }
+  });
+
+  userDb.run(`ALTER TABLE beds ADD COLUMN harvest_notes TEXT`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding harvest_notes column:', err.message);
+    }
+  });
+
+  // REMOVED: Duplicate 'notes' column - we use 'note' column from the original schema
+  // userDb.run(`ALTER TABLE beds ADD COLUMN notes TEXT`, (err) => {
+  //   if (err && !err.message.includes('duplicate column')) {
+  //     console.error('Error adding notes column:', err.message);
+  //   }
+  // });
+
+  // Add dark_mode preference to users table
+  userDb.run(`ALTER TABLE users ADD COLUMN dark_mode BOOLEAN DEFAULT 0`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding dark_mode column:', err.message);
+    }
+  });
+
+  // Add last_login to track user activity
+  userDb.run(`ALTER TABLE users ADD COLUMN last_login DATETIME`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding last_login column:', err.message);
+    }
+  });
+
+  // Add login_count to track number of logins
+  userDb.run(`ALTER TABLE users ADD COLUMN login_count INTEGER DEFAULT 0`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding login_count column:', err.message);
+    }
+  });
+
+  // Add onboarding_completed flag
+  userDb.run(`ALTER TABLE users ADD COLUMN onboarding_completed BOOLEAN DEFAULT 0`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding onboarding_completed column:', err.message);
+    }
+  });
+
+  // Add onboarding_step to track current step
+  userDb.run(`ALTER TABLE users ADD COLUMN onboarding_step INTEGER DEFAULT 0`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding onboarding_step column:', err.message);
+    }
+  });
+
+  // Add visited_calendar flag for onboarding checklist
+  userDb.run(`ALTER TABLE users ADD COLUMN visited_calendar BOOLEAN DEFAULT 0`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding visited_calendar column:', err.message);
+    }
+  });
+
+  // Add welcome_card_dismissed flag for onboarding
+  userDb.run(`ALTER TABLE users ADD COLUMN welcome_card_dismissed BOOLEAN DEFAULT 0`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding welcome_card_dismissed column:', err.message);
+    }
+  });
+
+  // Add role column for RBAC
+  userDb.run(`ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'user'`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding role column:', err.message);
+    } else if (!err) {
+      // Set existing admin user to admin role
+      userDb.run(`UPDATE users SET role = 'admin' WHERE username = 'admin'`, (updateErr) => {
+        if (updateErr) {
+          console.error('Error setting admin role:', updateErr.message);
+        } else {
+          console.log('✅ Admin role assigned to admin user');
+        }
+      });
+    }
+  });
+
+  // Add last_watered_date for smart watering system
+  userDb.run(`ALTER TABLE beds ADD COLUMN last_watered_date DATE`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding last_watered_date column:', err.message);
+    }
+  });
+
+  // Add auto-generated task management columns
+  userDb.run(`ALTER TABLE tasks ADD COLUMN auto_generated BOOLEAN DEFAULT 0`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding auto_generated column:', err.message);
+    }
+  });
+
+  userDb.run(`ALTER TABLE tasks ADD COLUMN dismissed_at DATETIME`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding dismissed_at column:', err.message);
+    }
+  });
+
+  userDb.run(`ALTER TABLE tasks ADD COLUMN snoozed_until DATETIME`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding snoozed_until column:', err.message);
+    }
+  });
+
+  // Add recurring tasks columns
+  userDb.run(`ALTER TABLE tasks ADD COLUMN is_recurring BOOLEAN DEFAULT 0`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding is_recurring column:', err.message);
+    }
+  });
+
+  userDb.run(`ALTER TABLE tasks ADD COLUMN recurrence_frequency INTEGER`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding recurrence_frequency column:', err.message);
+    }
+  });
+
+  userDb.run(`ALTER TABLE tasks ADD COLUMN recurrence_times TEXT`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding recurrence_times column:', err.message);
+    }
+  });
+
+  userDb.run(`ALTER TABLE tasks ADD COLUMN next_occurrence DATE`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding next_occurrence column:', err.message);
+    }
+  });
+
+  userDb.run(`ALTER TABLE tasks ADD COLUMN recurrence_end_date DATE`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding recurrence_end_date column:', err.message);
+    }
+  });
+
+  userDb.run(`ALTER TABLE tasks ADD COLUMN parent_task_id INTEGER`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding parent_task_id column:', err.message);
+    }
+  });
+
+  // Weather history table (for monthly statistics)
+  userDb.run(`CREATE TABLE IF NOT EXISTS weather_history (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    date DATE NOT NULL,
+    city TEXT,
+    temp_min REAL,
+    temp_max REAL,
+    temp_avg REAL,
+    feels_like_avg REAL,
+    humidity_avg INTEGER,
+    pressure_avg INTEGER,
+    wind_speed_avg REAL,
+    wind_speed_max REAL,
+    total_rain REAL DEFAULT 0,
+    total_snow REAL DEFAULT 0,
+    clouds_avg INTEGER,
+    description TEXT,
+    icon TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
+    UNIQUE(user_id, date)
+  )`);
+
+  // Create indexes for better query performance
+  userDb.run('CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)');
+  userDb.run('CREATE INDEX IF NOT EXISTS idx_plots_user_id ON plots(user_id)');
+  userDb.run('CREATE INDEX IF NOT EXISTS idx_beds_plot_id ON beds(plot_id)');
+  userDb.run('CREATE INDEX IF NOT EXISTS idx_spray_bed_id ON spray_history(bed_id)');
+  userDb.run('CREATE INDEX IF NOT EXISTS idx_reminders_user_id ON reminders(user_id)');
+  userDb.run('CREATE INDEX IF NOT EXISTS idx_reminders_spray_id ON reminders(spray_id)');
+  userDb.run('CREATE INDEX IF NOT EXISTS idx_spray_date ON spray_history(spray_date)');
+  userDb.run('CREATE INDEX IF NOT EXISTS idx_safe_harvest_date ON spray_history(safe_harvest_date)');
+  userDb.run('CREATE INDEX IF NOT EXISTS idx_tasks_user_id ON tasks(user_id)');
+  userDb.run('CREATE INDEX IF NOT EXISTS idx_tasks_due_date ON tasks(due_date)');
+  userDb.run('CREATE INDEX IF NOT EXISTS idx_tasks_completed ON tasks(completed)');
+  userDb.run('CREATE INDEX IF NOT EXISTS idx_tasks_parent_id ON tasks(parent_task_id)');
+  userDb.run('CREATE INDEX IF NOT EXISTS idx_tasks_is_recurring ON tasks(is_recurring)');
+  userDb.run('CREATE INDEX IF NOT EXISTS idx_plant_photos_bed_id ON plant_photos(bed_id)');
+  userDb.run('CREATE INDEX IF NOT EXISTS idx_plant_photos_user_id ON plant_photos(user_id)');
+  userDb.run('CREATE INDEX IF NOT EXISTS idx_succession_user_id ON succession_reminders(user_id)');
+  userDb.run('CREATE INDEX IF NOT EXISTS idx_succession_next_date ON succession_reminders(next_planting_date)');
+  userDb.run('CREATE INDEX IF NOT EXISTS idx_weather_history_user_date ON weather_history(user_id, date)');
+  userDb.run('CREATE INDEX IF NOT EXISTS idx_weather_history_date ON weather_history(date)');
+
+  // ==========================================
+  // PUBLIC GARDEN PROFILE FEATURE
+  // ==========================================
+
+  // Add public profile columns to users table
+  userDb.run(`ALTER TABLE users ADD COLUMN public_username TEXT`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding public_username column:', err.message);
+    }
+  });
+
+  userDb.run(`ALTER TABLE users ADD COLUMN public_profile_enabled BOOLEAN DEFAULT 0`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding public_profile_enabled column:', err.message);
+    }
+  });
+
+  userDb.run(`ALTER TABLE users ADD COLUMN public_bio TEXT`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding public_bio column:', err.message);
+    }
+  });
+
+  userDb.run(`ALTER TABLE users ADD COLUMN public_display_name TEXT`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding public_display_name column:', err.message);
+    }
+  });
+
+  userDb.run(`ALTER TABLE users ADD COLUMN public_cover_photo_id INTEGER`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding public_cover_photo_id column:', err.message);
+    }
+  });
+
+  userDb.run(`ALTER TABLE users ADD COLUMN public_show_stats BOOLEAN DEFAULT 1`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding public_show_stats column:', err.message);
+    }
+  });
+
+  userDb.run(`ALTER TABLE users ADD COLUMN public_show_timeline BOOLEAN DEFAULT 1`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding public_show_timeline column:', err.message);
+    }
+  });
+
+  userDb.run(`ALTER TABLE users ADD COLUMN public_show_gallery BOOLEAN DEFAULT 1`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding public_show_gallery column:', err.message);
+    }
+  });
+
+  userDb.run(`ALTER TABLE users ADD COLUMN public_show_badges BOOLEAN DEFAULT 1`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding public_show_badges column:', err.message);
+    }
+  });
+
+  userDb.run(`ALTER TABLE users ADD COLUMN social_instagram TEXT`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding social_instagram column:', err.message);
+    }
+  });
+
+  userDb.run(`ALTER TABLE users ADD COLUMN profile_photo TEXT`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding profile_photo column:', err.message);
+    }
+  });
+
+  // Public gallery photos table (selected photos for public profile)
+  userDb.run(`CREATE TABLE IF NOT EXISTS public_gallery_photos (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    photo_id INTEGER NOT NULL,
+    display_order INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY(photo_id) REFERENCES plant_photos(id) ON DELETE CASCADE,
+    UNIQUE(user_id, photo_id)
+  )`);
+
+  // Profile views analytics table
+  userDb.run(`CREATE TABLE IF NOT EXISTS profile_views (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT NOT NULL,
+    viewed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    referrer TEXT,
+    user_agent TEXT
+  )`);
+
+  // Create indexes for public profile feature
+  userDb.run('CREATE UNIQUE INDEX IF NOT EXISTS idx_users_public_username ON users(public_username)');
+  userDb.run('CREATE INDEX IF NOT EXISTS idx_public_gallery_user_id ON public_gallery_photos(user_id)');
+  userDb.run('CREATE INDEX IF NOT EXISTS idx_public_gallery_photo_id ON public_gallery_photos(photo_id)');
+  userDb.run('CREATE INDEX IF NOT EXISTS idx_profile_views_username ON profile_views(username)');
+  userDb.run('CREATE INDEX IF NOT EXISTS idx_profile_views_date ON profile_views(viewed_at)');
+
+  // Composite index for tasks sorted by priority + due_date (used in task listing)
+  userDb.run('CREATE INDEX IF NOT EXISTS idx_tasks_priority_date ON tasks(user_id, priority DESC, due_date ASC)');
+
+  // ==========================================
+  // SECURITY FEATURES
+  // ==========================================
+
+  // Add email verification columns to users table
+  userDb.run(`ALTER TABLE users ADD COLUMN email_verified BOOLEAN DEFAULT 0`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding email_verified column:', err.message);
+    }
+  });
+
+  userDb.run(`ALTER TABLE users ADD COLUMN email_verification_token TEXT`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding email_verification_token column:', err.message);
+    }
+  });
+
+  userDb.run(`ALTER TABLE users ADD COLUMN email_verification_expires DATETIME`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding email_verification_expires column:', err.message);
+    }
+  });
+
+  // Add password reset columns to users table
+  userDb.run(`ALTER TABLE users ADD COLUMN password_reset_token TEXT`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding password_reset_token column:', err.message);
+    }
+  });
+
+  userDb.run(`ALTER TABLE users ADD COLUMN password_reset_expires DATETIME`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding password_reset_expires column:', err.message);
+    }
+  });
+
+  // Add soft delete columns to users table
+  userDb.run(`ALTER TABLE users ADD COLUMN deleted_at DATETIME`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding deleted_at column:', err.message);
+    }
+  });
+
+  userDb.run(`ALTER TABLE users ADD COLUMN deletion_scheduled_for DATETIME`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.error('Error adding deletion_scheduled_for column:', err.message);
+    }
+  });
+
+  // Password reset tokens history table
+  userDb.run(`CREATE TABLE IF NOT EXISTS password_reset_tokens (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    token TEXT NOT NULL,
+    expires_at DATETIME NOT NULL,
+    used_at DATETIME,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    ip_address TEXT,
+    user_agent TEXT,
+    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+  )`);
+
+  // Deleted accounts archive table
+  userDb.run(`CREATE TABLE IF NOT EXISTS deleted_accounts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    username TEXT NOT NULL,
+    email TEXT NOT NULL,
+    deletion_reason TEXT,
+    deleted_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    restore_token TEXT,
+    permanent_delete_at DATETIME NOT NULL,
+    restored_at DATETIME,
+    UNIQUE(user_id)
+  )`);
+
+  // Create indexes for security tables
+  userDb.run('CREATE INDEX IF NOT EXISTS idx_reset_token ON password_reset_tokens(token)');
+  userDb.run('CREATE INDEX IF NOT EXISTS idx_reset_user_id ON password_reset_tokens(user_id)');
+  userDb.run('CREATE INDEX IF NOT EXISTS idx_reset_expires ON password_reset_tokens(expires_at)');
+  userDb.run('CREATE INDEX IF NOT EXISTS idx_deleted_restore_token ON deleted_accounts(restore_token)');
+  userDb.run('CREATE INDEX IF NOT EXISTS idx_deleted_permanent_at ON deleted_accounts(permanent_delete_at)');
+
+  // Mark existing users as verified (backward compatibility)
+  userDb.run(`UPDATE users SET email_verified = 1 WHERE email_verified IS NULL OR email_verified = 0`, (err) => {
+    if (err) {
+      console.error('Error updating existing users email_verified:', err.message);
+    } else {
+      console.log('✅ Marked existing users as email verified');
+    }
+  });
+
+  // ==========================================
+  // CARE & FERTILIZATION SYSTEM
+  // ==========================================
+
+  // Unified care history table (sprays + fertilization)
+  userDb.run(`CREATE TABLE IF NOT EXISTS care_history (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    bed_id INTEGER NOT NULL,
+    action_type TEXT CHECK(action_type IN ('spray', 'fertilization')) NOT NULL,
+    action_name TEXT NOT NULL,
+    action_date DATE NOT NULL,
+    dosage TEXT,
+    weather_conditions TEXT,
+    note TEXT,
+
+    -- Spray-specific fields
+    withdrawal_period INTEGER,
+    safe_harvest_date DATE,
+
+    -- Fertilization-specific fields
+    fertilizer_type TEXT CHECK(fertilizer_type IN ('mineral', 'organic', 'natural')),
+    npk_ratio TEXT,
+    application_method TEXT CHECK(application_method IN ('soil', 'foliar')) DEFAULT 'soil',
+    is_recurring BOOLEAN DEFAULT 0,
+    repeat_frequency INTEGER,
+    next_application_date DATE,
+
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(bed_id) REFERENCES beds(id) ON DELETE CASCADE
+  )`);
+
+  // Create indexes for care & fertilization system
+  userDb.run('CREATE INDEX IF NOT EXISTS idx_care_bed_id ON care_history(bed_id)');
+  userDb.run('CREATE INDEX IF NOT EXISTS idx_care_action_date ON care_history(action_date)');
+  userDb.run('CREATE INDEX IF NOT EXISTS idx_care_action_type ON care_history(action_type)');
+
   // ==========================================
   // PHOTO REVIEW SYSTEM (Admin verification)
   // ==========================================
 
   // Photo reviews table - tracks admin verification of plant photos
-  db.run(`CREATE TABLE IF NOT EXISTS photo_reviews (
+  // UWAGA: plant_id walidacja po stronie aplikacji (cross-database FK nie działa w SQLite)
+  userDb.run(`CREATE TABLE IF NOT EXISTS photo_reviews (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     plant_id INTEGER NOT NULL,
     reviewed_by INTEGER,
@@ -1213,21 +1244,21 @@ db.serialize(() => {
     review_notes TEXT,
     reviewed_at DATETIME,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY(plant_id) REFERENCES plants(id) ON DELETE CASCADE,
     FOREIGN KEY(reviewed_by) REFERENCES users(id) ON DELETE SET NULL,
     UNIQUE(plant_id)
   )`);
 
   // Create index for photo reviews
-  db.run('CREATE INDEX IF NOT EXISTS idx_photo_reviews_plant_id ON photo_reviews(plant_id)');
-  db.run('CREATE INDEX IF NOT EXISTS idx_photo_reviews_is_correct ON photo_reviews(is_correct)');
+  userDb.run('CREATE INDEX IF NOT EXISTS idx_photo_reviews_plant_id ON photo_reviews(plant_id)');
+  userDb.run('CREATE INDEX IF NOT EXISTS idx_photo_reviews_is_correct ON photo_reviews(is_correct)');
 
   // ==========================================
   // GARDEN PLANNER FEATURE
   // ==========================================
 
   // Planned actions table - for planning future garden activities
-  db.run(`CREATE TABLE IF NOT EXISTS planned_actions (
+  // UWAGA: plant_id walidacja po stronie aplikacji (cross-database FK nie działa w SQLite)
+  userDb.run(`CREATE TABLE IF NOT EXISTS planned_actions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,
     action_type TEXT NOT NULL CHECK(action_type IN ('plant', 'spray', 'water', 'harvest', 'transplant', 'fertilize', 'prune', 'custom')),
@@ -1260,44 +1291,43 @@ db.serialize(() => {
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY (plant_id) REFERENCES plants(id) ON DELETE SET NULL,
     FOREIGN KEY (bed_id) REFERENCES beds(id) ON DELETE SET NULL,
     FOREIGN KEY (plot_id) REFERENCES plots(id) ON DELETE SET NULL,
     FOREIGN KEY (parent_plan_id) REFERENCES planned_actions(id) ON DELETE SET NULL
   )`);
 
   // Indeksy dla planned_actions
-  db.run('CREATE INDEX IF NOT EXISTS idx_planned_actions_user_id ON planned_actions(user_id)');
-  db.run('CREATE INDEX IF NOT EXISTS idx_planned_actions_date ON planned_actions(planned_date)');
-  db.run('CREATE INDEX IF NOT EXISTS idx_planned_actions_status ON planned_actions(status)');
-  db.run('CREATE INDEX IF NOT EXISTS idx_planned_actions_type ON planned_actions(action_type)');
-  db.run('CREATE INDEX IF NOT EXISTS idx_planned_actions_parent ON planned_actions(parent_plan_id)');
+  userDb.run('CREATE INDEX IF NOT EXISTS idx_planned_actions_user_id ON planned_actions(user_id)');
+  userDb.run('CREATE INDEX IF NOT EXISTS idx_planned_actions_date ON planned_actions(planned_date)');
+  userDb.run('CREATE INDEX IF NOT EXISTS idx_planned_actions_status ON planned_actions(status)');
+  userDb.run('CREATE INDEX IF NOT EXISTS idx_planned_actions_type ON planned_actions(action_type)');
+  userDb.run('CREATE INDEX IF NOT EXISTS idx_planned_actions_parent ON planned_actions(parent_plan_id)');
 
   // ==========================================
   // USER FAVORITE PLANTS
   // ==========================================
 
   // User favorite plants table
-  db.run(`CREATE TABLE IF NOT EXISTS user_favorite_plants (
+  // UWAGA: plant_id walidacja po stronie aplikacji (cross-database FK nie działa w SQLite)
+  userDb.run(`CREATE TABLE IF NOT EXISTS user_favorite_plants (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,
     plant_id INTEGER NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY(plant_id) REFERENCES plants(id) ON DELETE CASCADE,
     UNIQUE(user_id, plant_id)
   )`);
 
   // Indexes for favorites
-  db.run('CREATE INDEX IF NOT EXISTS idx_user_favorite_plants_user_id ON user_favorite_plants(user_id)');
-  db.run('CREATE INDEX IF NOT EXISTS idx_user_favorite_plants_plant_id ON user_favorite_plants(plant_id)');
+  userDb.run('CREATE INDEX IF NOT EXISTS idx_user_favorite_plants_user_id ON user_favorite_plants(user_id)');
+  userDb.run('CREATE INDEX IF NOT EXISTS idx_user_favorite_plants_plant_id ON user_favorite_plants(plant_id)');
 
   // ==========================================
   // GARDEN PLANS (Planning Mode)
   // ==========================================
 
   // Garden plans - draft plans for plots (not yet planted)
-  db.run(`CREATE TABLE IF NOT EXISTS garden_plans (
+  userDb.run(`CREATE TABLE IF NOT EXISTS garden_plans (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,
     plot_id INTEGER,
@@ -1316,7 +1346,8 @@ db.serialize(() => {
   )`);
 
   // Garden plan items - plants within a plan
-  db.run(`CREATE TABLE IF NOT EXISTS garden_plan_items (
+  // UWAGA: plant_id walidacja po stronie aplikacji (cross-database FK nie działa w SQLite)
+  userDb.run(`CREATE TABLE IF NOT EXISTS garden_plan_items (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     plan_id INTEGER NOT NULL,
     plant_id INTEGER,
@@ -1332,43 +1363,49 @@ db.serialize(() => {
     notes TEXT,
     planned_date DATE,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY(plan_id) REFERENCES garden_plans(id) ON DELETE CASCADE,
-    FOREIGN KEY(plant_id) REFERENCES plants(id) ON DELETE SET NULL
+    FOREIGN KEY(plan_id) REFERENCES garden_plans(id) ON DELETE CASCADE
   )`);
 
   // Indexes for garden plans
-  db.run('CREATE INDEX IF NOT EXISTS idx_garden_plans_user_id ON garden_plans(user_id)');
-  db.run('CREATE INDEX IF NOT EXISTS idx_garden_plans_plot_id ON garden_plans(plot_id)');
-  db.run('CREATE INDEX IF NOT EXISTS idx_garden_plans_status ON garden_plans(status)');
-  db.run('CREATE INDEX IF NOT EXISTS idx_garden_plan_items_plan_id ON garden_plan_items(plan_id)');
-  db.run('CREATE INDEX IF NOT EXISTS idx_garden_plan_items_plant_id ON garden_plan_items(plant_id)');
+  userDb.run('CREATE INDEX IF NOT EXISTS idx_garden_plans_user_id ON garden_plans(user_id)');
+  userDb.run('CREATE INDEX IF NOT EXISTS idx_garden_plans_plot_id ON garden_plans(plot_id)');
+  userDb.run('CREATE INDEX IF NOT EXISTS idx_garden_plans_status ON garden_plans(status)');
+  userDb.run('CREATE INDEX IF NOT EXISTS idx_garden_plan_items_plan_id ON garden_plan_items(plan_id)');
+  userDb.run('CREATE INDEX IF NOT EXISTS idx_garden_plan_items_plant_id ON garden_plan_items(plant_id)');
 
   // Migrations for garden_plans (add new columns if not exist)
-  db.run('ALTER TABLE garden_plans ADD COLUMN tasks_created_at DATETIME', () => {});
-  db.run('ALTER TABLE garden_plans ADD COLUMN planned_planting_date DATE', () => {});
+  userDb.run('ALTER TABLE garden_plans ADD COLUMN tasks_created_at DATETIME', () => {});
+  userDb.run('ALTER TABLE garden_plans ADD COLUMN planned_planting_date DATE', () => {});
 
   // Migrations for garden_plan_items (add new columns if not exist)
-  db.run('ALTER TABLE garden_plan_items ADD COLUMN task_id INTEGER', () => {});
-  db.run('ALTER TABLE garden_plan_items ADD COLUMN planted_at DATETIME', () => {});
+  userDb.run('ALTER TABLE garden_plan_items ADD COLUMN task_id INTEGER', () => {});
+  userDb.run('ALTER TABLE garden_plan_items ADD COLUMN planted_at DATETIME', () => {});
 
   // Add garden_plan_id to planned_actions for linkage
-  db.run('ALTER TABLE planned_actions ADD COLUMN garden_plan_id INTEGER', () => {});
-  db.run('ALTER TABLE planned_actions ADD COLUMN garden_plan_item_id INTEGER', () => {});
+  userDb.run('ALTER TABLE planned_actions ADD COLUMN garden_plan_id INTEGER', () => {});
+  userDb.run('ALTER TABLE planned_actions ADD COLUMN garden_plan_item_id INTEGER', () => {});
 
   // Add garden plan linkage columns to tasks table
-  db.run('ALTER TABLE tasks ADD COLUMN garden_plan_id INTEGER', (err) => {
+  userDb.run('ALTER TABLE tasks ADD COLUMN garden_plan_id INTEGER', (err) => {
     if (err && !err.message.includes('duplicate column')) {
       console.error('Error adding garden_plan_id to tasks:', err.message);
     }
   });
-  db.run('ALTER TABLE tasks ADD COLUMN garden_plan_item_id INTEGER', (err) => {
+  userDb.run('ALTER TABLE tasks ADD COLUMN garden_plan_item_id INTEGER', (err) => {
     if (err && !err.message.includes('duplicate column')) {
       console.error('Error adding garden_plan_item_id to tasks:', err.message);
     }
   });
-  db.run('CREATE INDEX IF NOT EXISTS idx_tasks_garden_plan_id ON tasks(garden_plan_id)');
+  userDb.run('CREATE INDEX IF NOT EXISTS idx_tasks_garden_plan_id ON tasks(garden_plan_id)');
 
-  console.log('✅ Database tables and indexes created successfully');
+  console.log('✅ Baza użytkownika (garden.db) zainicjalizowana');
 });
 
-module.exports = db;
+// Eksport z kompatybilnością wsteczną
+// Domyślny eksport to userDb - wszystkie istniejące require('../db') dalej działają
+// Dzięki ATTACH DATABASE, zapytania do tabel roślin działają bez zmian
+module.exports = userDb;
+module.exports.plantsDb = plantsDb;
+module.exports.userDb = userDb;
+
+console.log('✅ Bazy danych zainicjalizowane (plants.db + garden.db)');
