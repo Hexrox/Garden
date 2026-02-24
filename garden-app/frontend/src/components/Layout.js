@@ -109,6 +109,16 @@ const Layout = ({ children }) => {
                   Planer
                 </Link>
                 <Link
+                  to="/garden-planner"
+                  className={`inline-flex items-center px-1 pt-1 text-sm font-medium transition whitespace-nowrap border-b-2 ${
+                    isActive('/garden-planner')
+                      ? 'border-green-600 text-green-600 dark:text-green-400'
+                      : 'border-transparent text-gray-900 dark:text-gray-100 hover:text-green-600 dark:hover:text-green-400 hover:border-gray-300'
+                  }`}
+                >
+                  Zaplanuj ogródek
+                </Link>
+                <Link
                   to="/gallery"
                   className={`inline-flex items-center px-1 pt-1 text-sm font-medium transition whitespace-nowrap border-b-2 ${
                     isActive('/gallery')
