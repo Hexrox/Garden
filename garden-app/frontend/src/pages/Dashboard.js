@@ -389,6 +389,23 @@ const Dashboard = () => {
       {/* Succession Planting Widget */}
       <SuccessionWidget />
 
+      {/* CTA for new users without plots */}
+      {stats.totalPlots === 0 && !showOnboarding && (
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-green-100 dark:border-green-900 p-8 text-center">
+          <div className="w-16 h-16 bg-gradient-to-br from-green-100 to-green-50 dark:from-green-900/40 dark:to-green-800/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <Sprout className="w-8 h-8 text-green-600 dark:text-green-400" />
+          </div>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Nie masz jeszcze żadnej działki</h2>
+          <p className="text-gray-500 dark:text-gray-400 mb-6">Utwórz działkę i zacznij planować swój ogródek</p>
+          <Link
+            to="/plots/new"
+            className="inline-block px-6 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors"
+          >
+            Dodaj pierwszą działkę
+          </Link>
+        </div>
+      )}
+
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
         <Link to="/plots" className="group bg-white dark:bg-gray-800 rounded-xl shadow-sm hover:shadow-lg p-6 transition-all duration-300 hover:-translate-y-1 cursor-pointer border border-transparent hover:border-green-200 dark:hover:border-green-800">

@@ -748,8 +748,27 @@ const Gallery = () => {
       {/* Delete Confirmation Modal */}
       {deleteConfirm.open && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={() => setDeleteConfirm({ open: false, type: null, photoId: null })}>
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-sm w-full shadow-xl" onClick={e => e.stopPropagation()}>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-confirm-title"
+            className="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-sm w-full shadow-xl"
+            onClick={e => e.stopPropagation()}
+            onKeyDown={(e) => {
+              if (e.key === 'Tab') {
+                const focusable = e.currentTarget.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+                if (focusable.length === 0) return;
+                const first = focusable[0];
+                const last = focusable[focusable.length - 1];
+                if (e.shiftKey) {
+                  if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+                } else {
+                  if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+                }
+              }
+            }}
+          >
+            <h3 id="delete-confirm-title" className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
               {deleteConfirm.type === 'bulk' ? 'Usuń zaznaczone zdjęcia' : 'Usuń zdjęcie'}
             </h3>
             <p className="text-gray-600 dark:text-gray-400 mb-6">

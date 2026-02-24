@@ -174,6 +174,15 @@ const PlotDetail = () => {
 
   return (
     <div className="space-y-6">
+      {/* Breadcrumbs */}
+      <nav className="text-sm text-gray-500 dark:text-gray-400">
+        <Link to="/plots" className="text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 transition-colors">
+          Moje działki
+        </Link>
+        <span className="mx-2">&gt;</span>
+        <span className="text-gray-700 dark:text-gray-300">{plot.name}</span>
+      </nav>
+
       {errorMessage && (
         <div className="p-3 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-lg text-sm">
           {errorMessage}

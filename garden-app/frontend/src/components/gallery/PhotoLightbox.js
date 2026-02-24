@@ -84,6 +84,7 @@ const PhotoLightbox = ({ photo, photos, onClose, onNavigate, onDelete, onUpdateC
       {/* Close button - larger on mobile */}
       <button
         onClick={onClose}
+        aria-label="Zamknij"
         className="fixed top-4 right-4 p-3 sm:p-2 bg-black/60 hover:bg-black/80 backdrop-blur-sm rounded-full sm:rounded-lg text-white transition-colors z-10 shadow-lg border-2 border-white/20"
       >
         <X size={28} className="sm:w-6 sm:h-6" />

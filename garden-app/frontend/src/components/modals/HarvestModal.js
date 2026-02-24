@@ -64,7 +64,25 @@ const HarvestModal = ({ bed, onClose, onHarvest }) => {
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 pb-24 lg:pb-4 animate-fade-in">
-      <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl rounded-xl shadow-2xl max-w-md w-full max-h-full overflow-y-auto border border-white/20 dark:border-gray-700/50 animate-fade-in-up">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="harvest-modal-title"
+        className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl rounded-xl shadow-2xl max-w-md w-full max-h-full overflow-y-auto border border-white/20 dark:border-gray-700/50 animate-fade-in-up"
+        onKeyDown={(e) => {
+          if (e.key === 'Tab') {
+            const focusable = e.currentTarget.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+            if (focusable.length === 0) return;
+            const first = focusable[0];
+            const last = focusable[focusable.length - 1];
+            if (e.shiftKey) {
+              if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+            } else {
+              if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+            }
+          }
+        }}
+      >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center gap-3">
@@ -72,7 +90,7 @@ const HarvestModal = ({ bed, onClose, onHarvest }) => {
               <span className="text-2xl">🌾</span>
             </div>
             <div>
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+              <h3 id="harvest-modal-title" className="text-lg font-bold text-gray-900 dark:text-white">
                 Zbiór plonów
               </h3>
               <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -82,6 +100,7 @@ const HarvestModal = ({ bed, onClose, onHarvest }) => {
           </div>
           <button
             onClick={onClose}
+            aria-label="Zamknij"
             className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
           >
             <X className="w-5 h-5 text-gray-500" />
@@ -119,12 +138,13 @@ const HarvestModal = ({ bed, onClose, onHarvest }) => {
               <div className="relative">
                 <img
                   src={photoPreview}
-                  alt="Harvest preview"
+                  alt="Podgląd zdjęcia zbioru"
                   className="w-full h-40 object-cover rounded-lg"
                 />
                 <button
                   type="button"
                   onClick={handleRemovePhoto}
+                  aria-label="Usuń zdjęcie"
                   className="absolute top-2 right-2 p-1.5 bg-red-600 text-white rounded-full hover:bg-red-700 transition"
                 >
                   <X size={14} />

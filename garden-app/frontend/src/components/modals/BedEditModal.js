@@ -62,19 +62,37 @@ const BedEditModal = ({ bed, onClose, onSave }) => {
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 pb-24 lg:pb-4 overflow-y-auto animate-fade-in">
-      <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl rounded-xl shadow-2xl max-w-2xl w-full my-4 lg:my-8 border border-white/20 dark:border-gray-700/50 animate-fade-in-up">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="bed-edit-title"
+        className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl rounded-xl shadow-2xl max-w-2xl w-full my-4 lg:my-8 border border-white/20 dark:border-gray-700/50 animate-fade-in-up"
+        onKeyDown={(e) => {
+          if (e.key === 'Tab') {
+            const focusable = e.currentTarget.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+            if (focusable.length === 0) return;
+            const first = focusable[0];
+            const last = focusable[focusable.length - 1];
+            if (e.shiftKey) {
+              if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+            } else {
+              if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+            }
+          }
+        }}
+      >
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
               <span className="text-2xl">📝</span>
             </div>
             <div>
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+              <h3 id="bed-edit-title" className="text-lg font-bold text-gray-900 dark:text-white">
                 Edytuj grządkę #{bed.row_number}
               </h3>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+          <button onClick={onClose} aria-label="Zamknij" className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
             <X className="w-5 h-5 text-gray-500" />
           </button>
         </div>

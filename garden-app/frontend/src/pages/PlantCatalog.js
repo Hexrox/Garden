@@ -707,7 +707,8 @@ const PlantCard = ({ plant, onClick, isFavorite, onToggleFavorite }) => {
         {plant.photo_thumb && (
           <img
             src={getImageUrl(plant.photo_thumb)}
-            alt=""
+            alt={plant.name}
+            loading="lazy"
             className="w-12 h-12 rounded-lg object-cover flex-shrink-0"
           />
         )}
@@ -1218,6 +1219,7 @@ const PlantImages = ({ plant }) => {
               <img
                 src={getImageUrl(img.thumb || img.path)}
                 alt={plant.display_name + ' - ' + img.label}
+                loading="lazy"
                 className="w-full h-full object-cover"
               />
             </button>
@@ -1239,6 +1241,7 @@ const PlantImages = ({ plant }) => {
             <img
               src={getImageUrl(selectedImage.path)}
               alt={plant.display_name + ' - ' + selectedImage.label}
+              loading="lazy"
               className="w-full max-h-[80vh] object-contain rounded-lg"
             />
             <button
@@ -1767,6 +1770,7 @@ const AddPlantModal = ({ onClose, onSuccess }) => {
                 <img
                   src={photoPreview}
                   alt="Podgląd"
+                  loading="lazy"
                   className="w-full h-48 object-cover rounded-lg"
                 />
                 <button

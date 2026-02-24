@@ -32,17 +32,35 @@ const DeleteConfirmDialog = ({ bed, onClose, onDelete }) => {
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-md w-full">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="delete-dialog-title"
+        className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-md w-full"
+        onKeyDown={(e) => {
+          if (e.key === 'Tab') {
+            const focusable = e.currentTarget.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+            if (focusable.length === 0) return;
+            const first = focusable[0];
+            const last = focusable[focusable.length - 1];
+            if (e.shiftKey) {
+              if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+            } else {
+              if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+            }
+          }
+        }}
+      >
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-red-100 dark:bg-red-900/30 rounded-lg flex items-center justify-center">
               <AlertTriangle className="w-6 h-6 text-red-600 dark:text-red-400" />
             </div>
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+            <h3 id="delete-dialog-title" className="text-lg font-bold text-gray-900 dark:text-white">
               Usuń grządkę?
             </h3>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+          <button onClick={onClose} aria-label="Zamknij" className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
             <X className="w-5 h-5 text-gray-500" />
           </button>
         </div>
